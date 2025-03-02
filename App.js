@@ -1,27 +1,24 @@
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
-import Login from './src/page/auth/login'
+import React from "react";
+import { createStackNavigator } from "@react-navigation/stack";
+import { NavigationContainer } from "@react-navigation/native";
+import ChatScreen from "./ChatScreen";
+import FriendScreen from "./FriendScreen";
+import GroupScreen from "./GroupScreen";
+import SearchScreen from "./SearchScreen"
 
-const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
 
-export default function App() {
+const AppNavigator = () => {
   return (
-    <Project />
-  );
-}
-
-const Project = () => {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen
-          name="Login"
-          component={Login}
-          options={{ header: () => {} }}
-        />
+    <NavigationContainer initialRouteName="ChatScreen">
+      <Stack.Navigator>
+       <Stack.Screen name="FriendScreen" component={FriendScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="GroupScreen" component={GroupScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="SearchScreen" component={SearchScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 };
+
+export default AppNavigator;
