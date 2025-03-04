@@ -7,47 +7,178 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  Dimensions,
 } from "react-native";
+import {
+  Menu,
+  MenuOptions,
+  MenuOption,
+  MenuTrigger,
+} from "react-native-popup-menu";
 import Icon from "react-native-vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
+const { width, height } = Dimensions.get("window");
+const HEADER_HEIGHT = height * 0.08;
 
 export default function SearchHeader() {
+  const navigation = useNavigation();
   return (
     <View
       style={{
-        padding: 10,
-        backgroundColor: "#2196F3",
         flexDirection: "row",
         alignItems: "center",
+        backgroundColor: "#007bff",
+        height: HEADER_HEIGHT,
+        paddingHorizontal: 15,
       }}
     >
-      <Icon name={"search"} size={18} color={"#fff"} />
+      <TouchableOpacity>
+        <Image
+          source={require("../../assets/search.png")}
+          style={{ marginRight: 10 }}
+        />
+      </TouchableOpacity>
+
       <TextInput
         placeholder="Tìm kiếm"
-        placeholderTextColor="#fff"
+        placeholderTextColor="#ccc"
         style={{
-          width: "40%",
-          borderRadius: 20,
+          flex: 1,
           paddingHorizontal: 15,
-          height: 40,
-          marginRight: 20,
+          height: HEADER_HEIGHT * 0.6,
+          fontSize: 15,
         }}
+        onPress={() => navigation.navigate("SearchScreen")}
       />
-      <Icon name="qr-code" size={24} color={"#fff"} marginRight={10} />
-      <Icon
-        name="person-add-outline"
-        size={24}
-        color={"#fff"}
-        marginRight={10}
-      />
-      <Icon
-        name="notifications-outline"
-        size={24}
-        color={"#fff"}
-        marginRight={10}
-      />
-      <Icon name="settings-outline" size={24} color={"#fff"} marginRight={10} />
-      <Icon name="image-outline" size={24} color={"#fff"} marginRight={10} />
-      <Icon name={"add"} size={32} color={"#fff"} marginRight={10} />
+
+      <TouchableOpacity>
+        <Image
+          source={require("../../assets/qr.png")}
+          style={{ marginLeft: 10 }}
+        />
+      </TouchableOpacity>
+
+      <Menu>
+        <MenuTrigger>
+          <Icon
+            name="add"
+            size={HEADER_HEIGHT * 0.5}
+            color="white"
+            style={{ marginLeft: 10 }}
+          />
+        </MenuTrigger>
+        <MenuOptions
+          optionsContainerStyle={{
+            width: 240,
+            borderRadius: 10,
+            backgroundColor: "white",
+            padding: 10,
+          }}
+        >
+          <MenuOption onSelect={() => alert("Thêm bạn")}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 10,
+              }}
+            >
+              <Icon
+                name="person-add"
+                size={20}
+                color="black"
+                style={{ marginRight: 10 }}
+              />
+              <Text style={{ fontSize: 16 }}>Thêm bạn</Text>
+            </View>
+          </MenuOption>
+          <MenuOption onSelect={() => alert("Tạo nhóm")}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 10,
+              }}
+            >
+              <Icon
+                name="group-add"
+                size={20}
+                color="black"
+                style={{ marginRight: 10 }}
+              />
+              <Text style={{ fontSize: 16 }}>Tạo nhóm</Text>
+            </View>
+          </MenuOption>
+          <MenuOption onSelect={() => alert("Gửi danh bạ")}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 10,
+              }}
+            >
+              <Icon
+                name="contacts"
+                size={20}
+                color="black"
+                style={{ marginRight: 10 }}
+              />
+              <Text style={{ fontSize: 16 }}>Gửi danh bạ</Text>
+            </View>
+          </MenuOption>
+          <MenuOption onSelect={() => alert("Lịch Zalo")}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 10,
+              }}
+            >
+              <Icon
+                name="event"
+                size={20}
+                color="black"
+                style={{ marginRight: 10 }}
+              />
+              <Text style={{ fontSize: 16 }}>Lịch Zalo</Text>
+            </View>
+          </MenuOption>
+          <MenuOption onSelect={() => alert("Tạo cuộc gọi nhóm")}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 10,
+              }}
+            >
+              <Icon
+                name="call"
+                size={20}
+                color="black"
+                style={{ marginRight: 10 }}
+              />
+              <Text style={{ fontSize: 16 }}>Tạo cuộc gọi nhóm</Text>
+            </View>
+          </MenuOption>
+          <MenuOption onSelect={() => alert("Thiết bị đăng nhập")}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 10,
+              }}
+            >
+              <Icon
+                name="devices"
+                size={20}
+                color="black"
+                style={{ marginRight: 10 }}
+              />
+              <Text style={{ fontSize: 16 }}>Thiết bị đăng nhập</Text>
+            </View>
+          </MenuOption>
+        </MenuOptions>
+      </Menu>
     </View>
   );
 }

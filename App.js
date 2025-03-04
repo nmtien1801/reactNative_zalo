@@ -13,12 +13,14 @@ import {
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
-import Chat from "./src/page/ChatNghiem/Chat";
+import { MenuProvider } from "react-native-popup-menu";
 import ContactsTabs from "./src/page/contacts/ContactsTabs";
 import DiscoveryTabs from "./src/page/Discovery/DiscoveryTabs";
 import LogTabs from "./src/page/log/LogTabs";
 import PersonalTabs from "./src/page/personal/PersonalTabs";
 import SearchHeader from "./src/component/Header";
+import ChatTab from "./src/page/chat/ChatTab";
+
 
 const Tab = createBottomTabNavigator();
 
@@ -44,7 +46,7 @@ const MainTabs = () => (
         tabBarInactiveTintColor: "gray",
       })}
     >
-      <Tab.Screen name="Tin nhắn" component={Chat} />
+      <Tab.Screen name="Tin nhắn" component={ChatTab} />
       <Tab.Screen name="Danh bạ" component={ContactsTabs} />
       <Tab.Screen name="Khám phá" component={DiscoveryTabs} />
       <Tab.Screen name="Nhật ký" component={LogTabs} />
@@ -55,9 +57,11 @@ const MainTabs = () => (
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <StatusBar />
-      <MainTabs />
-    </NavigationContainer>
+    <MenuProvider>
+      <NavigationContainer>
+        <StatusBar />
+        <MainTabs />
+      </NavigationContainer>
+    </MenuProvider>
   );
 }
