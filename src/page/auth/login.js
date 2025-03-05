@@ -2,8 +2,14 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { Eye, EyeOff, RefreshCw } from "lucide-react-native";
 import { Button } from "react-native-paper";
+import { useDispatch, useSelector } from 'react-redux'
+import { handleLogin } from "../../redux/authSlice";
+import { useNavigation } from "@react-navigation/native";
 
 export default function LoginForm() {
+  const dispatch = useDispatch();
+  const navigation = useNavigation();
+
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     phoneNumber: "",
@@ -18,8 +24,11 @@ export default function LoginForm() {
     }));
   };
 
-  const handleSubmit = () => {
-    console.log("Form submitted:", formData);
+  const handleSubmit = async () => {
+    let res = await dispatch(handleLogin(formData));
+    if(res.payload.EC === 0){
+      navigation.navigate('MainTabs')
+    }
   };
 
   return (

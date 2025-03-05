@@ -86,7 +86,9 @@ const ChatTab = () => {
               </Text>
               <Text style={{ color: "gray" }}>{item.message}</Text>
             </View>
-            {item.time && <Text style={{ color: "gray" }}>{item.time}</Text>}
+            {item.time ? (
+              <Text style={{ color: "gray" }}>{item.time}</Text>
+            ) : null}
           </TouchableOpacity>
         )}
       />

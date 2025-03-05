@@ -1,15 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  FlatList,
-  StatusBar,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  ScrollView,
-} from "react-native";
+import { View } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -20,9 +10,13 @@ import LogTabs from "./src/page/log/LogTabs";
 import PersonalTabs from "./src/page/personal/PersonalTabs";
 import SearchHeader from "./src/component/Header";
 import ChatTab from "./src/page/chat/ChatTab";
-
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import LoginForm from "./src/page/auth/login";
+import { store } from "./src/redux/store";
+import { Provider } from "react-redux";
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
 const MainTabs = () => (
   <View style={{ flex: 1 }}>
@@ -57,11 +51,24 @@ const MainTabs = () => (
 
 export default function App() {
   return (
-    <MenuProvider>
-      <NavigationContainer>
-        <StatusBar />
-        <MainTabs />
-      </NavigationContainer>
-    </MenuProvider>
+    <Provider store={store}>
+      <MenuProvider>
+        <NavigationContainer>
+          <Stack.Navigator initialRouteName="Login">
+            <Stack.Screen
+              name="Login"
+              component={LoginForm}
+              options={{ header: () => {} }}
+            />
+
+            <Stack.Screen
+              name="MainTabs"
+              component={MainTabs}
+              options={{ header: () => {} }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </MenuProvider>
+    </Provider>
   );
 }
