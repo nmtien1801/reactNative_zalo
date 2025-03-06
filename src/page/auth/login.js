@@ -5,6 +5,7 @@ import { Button } from "react-native-paper";
 import { useDispatch, useSelector } from 'react-redux'
 import { handleLogin } from "../../redux/authSlice";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginForm() {
   const dispatch = useDispatch();
@@ -28,6 +29,8 @@ export default function LoginForm() {
     let res = await dispatch(handleLogin(formData));
     if(res.payload.EC === 0){
       navigation.navigate('MainTabs')
+      await AsyncStorage.setItem('access_Token', res.payload.DT.access_Token);
+      await AsyncStorage.setItem('refresh_Token', res.payload.DT.refresh_Token);
     }
   };
 

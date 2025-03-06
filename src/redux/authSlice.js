@@ -13,7 +13,7 @@ export const handleLogin = createAsyncThunk(
   "auth/handleLogin",
   async ({ phoneNumber, password }, thunkAPI) => {
     const response = await handleLoginApi(phoneNumber, password); // Đảm bảo hàm được gọi đúng cách
-    return response.data;
+    return response;
   }
 );
 
@@ -34,9 +34,6 @@ const authSlice = createSlice({
         if (action.payload.EC === 0) {
           state.isLogin = true;
         } else state.isLogin = false;
-
-        // state.token = action.payload.token;
-        // localStorage.setItem("learning_App", action.payload.DT.access_token); // Lưu token vào localStorage
       })
       .addCase(handleLogin.rejected, (state, action) => {});
   },
