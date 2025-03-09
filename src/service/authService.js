@@ -6,6 +6,11 @@ const handleLoginApi = (phoneNumber, password) => {
   return customizeAxios.post(`/login`, { phoneNumber, password });
 };
 
+const doGetAccountService = () => {
+  return customizeAxios.get("/account");
+};
+
 export {
   handleLoginApi,
+  doGetAccountService,
 };

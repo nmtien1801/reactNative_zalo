@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { handleLoginApi } from "../service/authService";
+import { handleLoginApi, doGetAccountService } from "../service/authService";
 
 const initialState = {
   user: {}, // user info nào login(hs - teacher)
-  isLogin: false, // kiểm tra xem đã login chưa -> chặn nếu chưa login
+  isLoggedIn: false, // kiểm tra xem đã login chưa -> chặn nếu chưa login
   isLoading: false,
   isError: false,
 };
@@ -13,6 +13,14 @@ export const handleLogin = createAsyncThunk(
   "auth/handleLogin",
   async ({ phoneNumber, password }, thunkAPI) => {
     const response = await handleLoginApi(phoneNumber, password); // Đảm bảo hàm được gọi đúng cách
+    return response;
+  }
+);
+
+export const doGetAccount = createAsyncThunk(
+  "auth/doGetAccount",
+  async (thunkAPI) => {
+    const response = await doGetAccountService();
     return response;
   }
 );
@@ -32,10 +40,21 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = action.payload.DT || {};
         if (action.payload.EC === 0) {
-          state.isLogin = true;
-        } else state.isLogin = false;
+          state.isLoggedIn = true;
+        } else state.isLoggedIn = false;
       })
       .addCase(handleLogin.rejected, (state, action) => {});
+
+    // doGetAccount
+    builder
+      .addCase(doGetAccount.pending, (state) => {})
+      .addCase(doGetAccount.fulfilled, (state, action) => {
+        if (action.payload.EC === 0) {
+          state.user = action.payload.DT || {};
+          state.isLoggedIn = true;
+        }
+      })
+      .addCase(doGetAccount.rejected, (state, action) => {});
   },
 });
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
@@ -14,6 +14,9 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginForm from "./src/page/auth/login";
 import { store } from "./src/redux/store";
 import { Provider } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { doGetAccount } from "./src/redux/authSlice";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -49,26 +52,48 @@ const MainTabs = () => (
   </View>
 );
 
-export default function App() {
-  return (
-    <Provider store={store}>
-      <MenuProvider>
-        <NavigationContainer>
-          <Stack.Navigator initialRouteName="Login">
-            <Stack.Screen
-              name="Login"
-              component={LoginForm}
-              options={{ header: () => {} }}
-            />
+const Project = () => {
+  const dispatch = useDispatch();
+  let isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
+  const user = useSelector((state) => state.auth.user);
 
+  const fetchDataAccount = async () => {
+    if (!user || !user?.access_Token) {
+      await dispatch(doGetAccount()); // Gọi API
+    }
+  };
+
+  useEffect(() => {
+    fetchDataAccount();
+  }, [dispatch, user?.access_Token]);
+
+  return (
+    <MenuProvider>
+      <NavigationContainer>
+        <Stack.Navigator>
+          {isLoggedIn ? (
             <Stack.Screen
               name="MainTabs"
               component={MainTabs}
-              options={{ header: () => {} }}
+              options={{ headerShown: false }}
             />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </MenuProvider>
+          ) : (
+            <Stack.Screen
+              name="Login"
+              component={LoginForm}
+              options={{ headerShown: false }}
+            />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </MenuProvider>
+  );
+};
+
+export default function App() {
+  return (
+    <Provider store={store}>
+      <Project />
     </Provider>
   );
 }
