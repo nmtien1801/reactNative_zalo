@@ -9,18 +9,22 @@ import {
 import { Eye, EyeOff, RefreshCw } from "lucide-react-native";
 import { Button } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
-import { handleLogin } from "../../redux/authSlice";
+import { register } from "../../redux/authSlice";
 import { useNavigation } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginForm() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [formData, setFormData] = useState({
+    username: "",
+    email: "",
     phoneNumber: "",
     password: "",
+    confirmPassword: "",
     captcha: "",
   });
 
@@ -32,11 +36,16 @@ export default function LoginForm() {
   };
 
   const handleSubmit = async () => {
-    let res = await dispatch(handleLogin(formData));
+    // Kiểm tra mật khẩu và mật khẩu nhập lại có khớp không
+    if (formData.password !== formData.confirmPassword) {
+      console.log("Lỗi", "Mật khẩu và mật khẩu nhập lại không khớp!");
+      return;
+    }
+
+    // Gửi thông tin đăng ký
+    let res = await dispatch(register(formData));
     if (res.payload.EC === 0) {
-      navigation.navigate("MainTabs");
-      await AsyncStorage.setItem("access_Token", res.payload.DT.access_Token);
-      await AsyncStorage.setItem("refresh_Token", res.payload.DT.refresh_Token);
+      navigation.navigate("Login"); // Điều hướng đến màn hình Login
     }
   };
 
@@ -44,7 +53,28 @@ export default function LoginForm() {
     <View style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Zalo</Text>
-        <Text style={styles.subtitle}>Đăng nhập với mật khẩu</Text>
+        <Text style={styles.subtitle}>Đăng ký với mật khẩu</Text>
+
+        {/* Username Input */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Tên người dùng"
+            value={formData.username}
+            onChangeText={(text) => handleChange("username", text)}
+          />
+        </View>
+
+        {/* Email Input */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={formData.email}
+            keyboardType="email-address"
+            onChangeText={(text) => handleChange("email", text)}
+          />
+        </View>
 
         {/* Phone Number Input */}
         <View style={styles.inputContainer}>
@@ -78,6 +108,27 @@ export default function LoginForm() {
           </TouchableOpacity>
         </View>
 
+        {/* Confirm Password Input */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Nhập lại mật khẩu"
+            secureTextEntry={!showConfirmPassword}
+            value={formData.confirmPassword}
+            onChangeText={(text) => handleChange("confirmPassword", text)}
+          />
+          <TouchableOpacity
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            style={styles.iconButton}
+          >
+            {showConfirmPassword ? (
+              <EyeOff size={20} color="#555" />
+            ) : (
+              <Eye size={20} color="#555" />
+            )}
+          </TouchableOpacity>
+        </View>
+
         {/* Captcha Input */}
         <View style={styles.inputContainer}>
           <TextInput
@@ -96,18 +147,12 @@ export default function LoginForm() {
 
         {/* Submit Button */}
         <Button mode="contained" style={styles.button} onPress={handleSubmit}>
-          Đăng nhập
+          Đăng ký
         </Button>
 
         {/* Links */}
-        <TouchableOpacity>
-          <Text style={styles.linkText}>Quên mật khẩu?</Text>
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Text style={styles.linkText}>Đăng nhập qua mã QR</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-          <Text style={styles.linkText}>Đăng ký</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+          <Text style={styles.link}>Đăng nhập</Text>
         </TouchableOpacity>
       </View>
     </View>

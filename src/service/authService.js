@@ -10,7 +10,11 @@ const doGetAccountService = () => {
   return customizeAxios.get("/account");
 };
 
+const registerService = (formData) => {
+  return customizeAxios.post("/register", formData);
+}
 export {
   handleLoginApi,
   doGetAccountService,
+  registerService,
 };

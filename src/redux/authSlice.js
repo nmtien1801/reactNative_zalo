@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { handleLoginApi, doGetAccountService } from "../service/authService";
+import { handleLoginApi, doGetAccountService , registerService} from "../service/authService";
 
 const initialState = {
   user: {}, // user info nào login(hs - teacher)
@@ -12,7 +12,7 @@ const initialState = {
 export const handleLogin = createAsyncThunk(
   "auth/handleLogin",
   async ({ phoneNumber, password }, thunkAPI) => {
-    const response = await handleLoginApi(phoneNumber, password); // Đảm bảo hàm được gọi đúng cách
+    const response = await handleLoginApi(phoneNumber, password); 
     return response;
   }
 );
@@ -21,6 +21,16 @@ export const doGetAccount = createAsyncThunk(
   "auth/doGetAccount",
   async (thunkAPI) => {
     const response = await doGetAccountService();
+    return response;
+  }
+);
+
+export const register = createAsyncThunk(
+  "auth/register",
+  async (formData, thunkAPI) => {
+    const response = await registerService({formData});
+    console.log("response", response);
+
     return response;
   }
 );
@@ -55,6 +65,12 @@ const authSlice = createSlice({
         }
       })
       .addCase(doGetAccount.rejected, (state, action) => {});
+
+    // register
+    builder
+      .addCase(register.pending, (state) => {})
+      .addCase(register.fulfilled, (state, action) => {})
+      .addCase(register.rejected, (state, action) => {});
   },
 });
 

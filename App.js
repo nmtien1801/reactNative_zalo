@@ -16,7 +16,7 @@ import { store } from "./src/redux/store";
 import { Provider } from "react-redux";
 import { useSelector, useDispatch } from "react-redux";
 import { doGetAccount } from "./src/redux/authSlice";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import RegisterForm from "./src/page/auth/register";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -78,11 +78,19 @@ const Project = () => {
               options={{ headerShown: false }}
             />
           ) : (
-            <Stack.Screen
-              name="Login"
-              component={LoginForm}
-              options={{ headerShown: false }}
-            />
+            <>
+              <Stack.Screen
+                name="Login"
+                component={LoginForm}
+                options={{ headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="Register"
+                component={RegisterForm}
+                options={{ headerShown: false }}
+              />
+            </>
           )}
         </Stack.Navigator>
       </NavigationContainer>
