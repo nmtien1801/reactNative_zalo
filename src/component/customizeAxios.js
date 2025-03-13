@@ -31,6 +31,32 @@ instance.interceptors.request.use(
   }
 );
 
+const refreshAccessToken = async () => {
+  try {
+    const refreshToken = await AsyncStorage.getItem("refresh_Token");
+    if (!refreshToken) throw new Error("No refresh token available");
+
+    const response = await axios.post(
+      `${baseUrl}/refreshToken`,
+      {
+        refresh_Token: refreshToken,
+      }
+    );
+
+    const access_Token = response.data.DT.newAccessToken;
+    const refresh_Token = response.data.DT.newRefreshToken;
+
+    // Cập nhật token mới vào AsyncStorage
+    await AsyncStorage.setItem("access_Token", access_Token);
+    await AsyncStorage.setItem("refresh_Token", refresh_Token);
+
+    return access_Token;
+  } catch (error) {
+    console.error("Refresh token failed:", error);
+    return null;
+  }
+};
+
 // search: How can you use axios interceptors?
 // Add a response interceptor
 instance.interceptors.response.use(
@@ -39,7 +65,7 @@ instance.interceptors.response.use(
     // Do something with response data
     return response && response.data ? response.data : response;
   },
-  function (error) {
+  async function (error) {
     // Any status codes that falls outside the range of 2xx cause this function to trigger
     // Do something with response error
     const status = error.response?.status || 500;
@@ -66,7 +92,15 @@ instance.interceptors.response.use(
 
       // bad request
       case 400: {
-        return Promise.reject(error);
+        const newToken = await refreshAccessToken();
+
+        if (newToken) {
+          error.config.headers["Authorization"] = `Bearer ${newToken}`;
+          return instance(error.config);
+        } else {
+          toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+          await AsyncStorage.removeItem("access_Token");
+        }
       }
 
       // not found get /post / delete /put
