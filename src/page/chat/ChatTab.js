@@ -70,6 +70,7 @@ const ChatTab = () => {
               marginBottom: 2,
               height: ITEM_HEIGHT,
             }}
+            onPress={() => navigation.navigate("InboxScreen", { item })}
           >
             <Image
               source={item.avatar}

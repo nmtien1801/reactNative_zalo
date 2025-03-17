@@ -17,6 +17,8 @@ import { Provider } from "react-redux";
 import { useSelector, useDispatch } from "react-redux";
 import { doGetAccount } from "./src/redux/authSlice";
 import RegisterForm from "./src/page/auth/register";
+import InboxScreen from "./src/page/chat/InboxScreen";
+import PersonOption from "./src/page/chat/PersonOption";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -72,11 +74,23 @@ const Project = () => {
       <NavigationContainer>
         <Stack.Navigator>
           {isLoggedIn ? (
-            <Stack.Screen
-              name="MainTabs"
-              component={MainTabs}
-              options={{ headerShown: false }}
-            />
+            <>
+              <Stack.Screen
+                name="MainTabs"
+                component={MainTabs}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="InboxScreen"
+                component={InboxScreen}
+                options={{ headerShown: false }}
+              />
+               <Stack.Screen
+                name="PersonOption"
+                component={PersonOption}
+                options={{ headerShown: false }}
+              />
+            </>
           ) : (
             <>
               <Stack.Screen
