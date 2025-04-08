@@ -19,6 +19,7 @@ import { doGetAccount } from "./src/redux/authSlice";
 import RegisterForm from "./src/page/auth/register";
 import InboxScreen from "./src/page/chat/InboxScreen";
 import PersonOption from "./src/page/chat/PersonOption";
+import ResetPassword from "./src/page/auth/ResetPassword";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -85,7 +86,7 @@ const Project = () => {
                 component={InboxScreen}
                 options={{ headerShown: false }}
               />
-               <Stack.Screen
+              <Stack.Screen
                 name="PersonOption"
                 component={PersonOption}
                 options={{ headerShown: false }}
@@ -102,6 +103,12 @@ const Project = () => {
               <Stack.Screen
                 name="Register"
                 component={RegisterForm}
+                options={{ headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="ResetPassword"
+                component={ResetPassword}
                 options={{ headerShown: false }}
               />
             </>

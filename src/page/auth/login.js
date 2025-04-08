@@ -101,7 +101,7 @@ export default function LoginForm() {
 
         {/* Links */}
         <TouchableOpacity>
-          <Text style={styles.linkText}>Quên mật khẩu?</Text>
+          <Text style={styles.linkText} onPress={() => navigation.navigate("ResetPassword")}>Quên mật khẩu?</Text>
         </TouchableOpacity>
         <TouchableOpacity>
           <Text style={styles.linkText}>Đăng nhập qua mã QR</Text>
