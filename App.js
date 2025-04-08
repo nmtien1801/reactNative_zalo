@@ -9,7 +9,6 @@ import DiscoveryTabs from "./src/page/Discovery/DiscoveryTabs";
 import LogTabs from "./src/page/log/LogTabs";
 import PersonalTabs from "./src/page/personal/PersonalTabs";
 import SearchHeader from "./src/component/Header";
-import ChatTab from "./src/page/chat/ChatTab";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginForm from "./src/page/auth/login";
 import { store } from "./src/redux/store";
@@ -17,8 +16,9 @@ import { Provider } from "react-redux";
 import { useSelector, useDispatch } from "react-redux";
 import { doGetAccount } from "./src/redux/authSlice";
 import RegisterForm from "./src/page/auth/register";
-import InboxScreen from "./src/page/chat/InboxScreen";
-import PersonOption from "./src/page/chat/PersonOption";
+// import InboxScreen from "./src/page/chat/InboxScreen";
+// import PersonOption from "./src/page/chat/PersonOption";
+import Chat from "./src/page/chat/Chat";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -81,13 +81,8 @@ const Project = () => {
                 options={{ headerShown: false }}
               />
               <Stack.Screen
-                name="InboxScreen"
-                component={InboxScreen}
-                options={{ headerShown: false }}
-              />
-               <Stack.Screen
-                name="PersonOption"
-                component={PersonOption}
+                name="Chat"
+                component={Chat}
                 options={{ headerShown: false }}
               />
             </>
