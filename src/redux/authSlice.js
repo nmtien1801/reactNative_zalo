@@ -5,6 +5,7 @@ import {
   registerService,
   sendCodeService,
   resetPasswordService,
+  changePasswordService,
 } from "../service/authService";
 
 const initialState = {
@@ -45,7 +46,7 @@ export const sendCode = createAsyncThunk(
   "auth/sendCode",
   async (email, thunkAPI) => {
     const response = await sendCodeService(email);
-    
+
     return response;
   }
 );
@@ -54,6 +55,18 @@ export const resetPassword = createAsyncThunk(
   "auth/resetPassword",
   async ({ email, code, password }, thunkAPI) => {
     const response = await resetPasswordService(email, code, password);
+    return response;
+  }
+);
+
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async ({ phone, currentPassword, newPassword }, thunkAPI) => {
+    const response = await changePasswordService(
+      phone,
+      currentPassword,
+      newPassword
+    );
     return response;
   }
 );
@@ -68,26 +81,42 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     // handleLogin
     builder
-      .addCase(handleLogin.pending, (state) => {})
-      .addCase(handleLogin.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload.DT || {};
-        if (action.payload.EC === 0) {
-          state.isLoggedIn = true;
-        } else state.isLoggedIn = false;
+      .addCase(handleLogin.pending, (state) => {
+        state.isLoading = true; // Bắt đầu loading
       })
-      .addCase(handleLogin.rejected, (state, action) => {});
-
-    // doGetAccount
-    builder
-      .addCase(doGetAccount.pending, (state) => {})
-      .addCase(doGetAccount.fulfilled, (state, action) => {
+      .addCase(handleLogin.fulfilled, (state, action) => {
         if (action.payload.EC === 0) {
           state.user = action.payload.DT || {};
           state.isLoggedIn = true;
+          state.isLoading = false; // Kết thúc loading
+        } else {
+          alert(action.payload.EM);
         }
       })
-      .addCase(doGetAccount.rejected, (state, action) => {});
+      .addCase(handleLogin.rejected, (state, action) => {
+        state.isLoggedIn = false;
+        state.isLoading = false; // Kết thúc loading
+        alert("Đăng nhập không thành công");
+      });
+
+    // doGetAccount
+    builder
+      .addCase(doGetAccount.pending, (state) => {
+        state.isLoading = true; // Bắt đầu loading
+      })
+      .addCase(doGetAccount.fulfilled, (state, action) => {
+        if (action.payload.EC === 0) {
+          state.user = action.payload.DT || {};
+          console.log("state.user: ", action.payload);
+
+          state.isLoggedIn = true;
+          state.isLoading = false; // Kết thúc loading
+        }
+      })
+      .addCase(doGetAccount.rejected, (state, action) => {
+        state.isLoggedIn = false;
+        state.isLoading = false; // Kết thúc loading
+      });
 
     // register
     builder
@@ -106,6 +135,12 @@ const authSlice = createSlice({
       .addCase(resetPassword.pending, (state) => {})
       .addCase(resetPassword.fulfilled, (state, action) => {})
       .addCase(resetPassword.rejected, (state, action) => {});
+
+    // changePassword
+    builder
+      .addCase(changePassword.pending, (state) => {})
+      .addCase(changePassword.fulfilled, (state, action) => {})
+      .addCase(changePassword.rejected, (state, action) => {});
   },
 });
 

@@ -19,6 +19,7 @@ import RegisterForm from "./src/page/auth/register";
 import InboxScreen from "./src/page/chat/InboxScreen";
 import PersonOption from "./src/page/chat/PersonOption";
 import ResetPassword from "./src/page/auth/ResetPassword";
+import ChangePassword from "./src/component/changePassword"
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -72,8 +73,8 @@ const Project = () => {
     <MenuProvider>
       <NavigationContainer>
         <Stack.Navigator>
-          {/* {isLoggedIn ? (
-            <> */}
+          {isLoggedIn ? (
+            <>
               <Stack.Screen
                 name="MainTabs"
                 component={MainTabs}
@@ -89,9 +90,14 @@ const Project = () => {
                 component={PersonOption}
                 options={{ headerShown: false }}
               />
-            {/* </>
+              <Stack.Screen
+                name="ChangePassword"
+                component={ChangePassword}
+                // options={{ headerShown: false }}
+              />
+            </>
           ) : (
-            <> */}
+            <>
               <Stack.Screen
                 name="Login"
                 component={LoginForm}
@@ -109,8 +115,8 @@ const Project = () => {
                 component={ResetPassword}
                 options={{ headerShown: false }}
               />
-            {/* </>
-          )} */}
+            </>
+          )}
         </Stack.Navigator>
       </NavigationContainer>
     </MenuProvider>
