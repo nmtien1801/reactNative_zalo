@@ -20,6 +20,8 @@ import InboxScreen from "./src/page/chat/InboxScreen";
 import PersonOption from "./src/page/chat/PersonOption";
 import ResetPassword from "./src/page/auth/ResetPassword";
 import ChangePassword from "./src/component/changePassword"
+import UserInfoScreen from "./src/page/accountSetting/UserInfoScreen";
+import { navigationRef } from "./src/component/NavigationService";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -71,7 +73,8 @@ const Project = () => {
 
   return (
     <MenuProvider>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
+        
         <Stack.Navigator>
           {isLoggedIn ? (
             <>
@@ -85,6 +88,12 @@ const Project = () => {
                 component={InboxScreen}
                 options={{ headerShown: false }}
               />
+
+              <Stack.Screen
+                name="UserInfoScreen"
+                component={UserInfoScreen}
+                options={{ headerShown: false }}
+              />
               <Stack.Screen
                 name="PersonOption"
                 component={PersonOption}
@@ -93,8 +102,10 @@ const Project = () => {
               <Stack.Screen
                 name="ChangePassword"
                 component={ChangePassword}
-                // options={{ headerShown: false }}
+              // options={{ headerShown: false }}
               />
+               <Stack.Screen name="PersonalTabs" component={PersonalTabs} />
+       
             </>
           ) : (
             <>

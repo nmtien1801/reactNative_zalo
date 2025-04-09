@@ -3,6 +3,8 @@ import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from '@react-navigation/native';
 //SEARCH: axios npm github
+import { navigationRef } from "../component/NavigationService";
+import { navigate } from "../component/NavigationService";
 
 const baseUrl =
   Platform.OS === "android"
@@ -83,8 +85,7 @@ instance.interceptors.response.use(
     const status = error.response?.status || 500;
     switch (status) {
       case 401: {
-        const navigation = useNavigation();
-        const currentRoute = navigation.getState().routes[navigation.getState().index].name;
+        const currentRoute = navigationRef.getCurrentRoute()?.name;
 
         if (['Login', 'Register', 'ResetPassword'].includes(currentRoute)) {
           console.warn("401 on auth page, skip refresh");
@@ -124,7 +125,7 @@ instance.interceptors.response.use(
           // handle logout
           AsyncStorage.removeItem('access_Token');
           AsyncStorage.removeItem('refresh_Token');
-          navigation.navigate('Login');
+          navigate('Login');
           return Promise.reject(err);
         } finally {
           isRefreshing = false;

@@ -36,11 +36,24 @@ const changePasswordService = (phone, currentPassword, newPassword) => {
   });
 };
 
+const updateAvatarService = (formData) => {
+  return customizeAxios.put("/user/avatar", formData, {
+    transformRequest: (data, headers) => {
+      // Xóa Content-Type để axios tự động thêm boundary
+      delete headers.common['Content-Type'];
+      return data;
+    },
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    }
+  });
+};
 export {
   handleLoginApi,
   doGetAccountService,
   registerService,
   sendCodeService,
   resetPasswordService,
-  changePasswordService
+  changePasswordService,
+  updateAvatarService
 };

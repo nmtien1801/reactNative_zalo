@@ -71,10 +71,20 @@ export const changePassword = createAsyncThunk(
   }
 );
 
+
+
 // đây là reducer
 const authSlice = createSlice({
   name: "auth",
   initialState,
+
+  reducers: {
+    updateAvatar: (state, action) => {
+      if (state.user) {
+        state.user.avatar = action.payload; // Cập nhật avatar trong Redux store
+      }
+    }
+  },
 
   // dùng api mới sử dụng extraReducers
   // 3 trạng thái của api: pending, fulfilled, rejected
@@ -147,3 +157,4 @@ const authSlice = createSlice({
 export const {} = authSlice.actions; // đây là action -> chỉ dùng khi trong reducer có reducers:{}
 
 export default authSlice.reducer;
+export const { updateAvatar } = authSlice.actions;
