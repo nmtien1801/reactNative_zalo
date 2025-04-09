@@ -31,27 +31,12 @@ export default function LoginForm() {
     }));
   };
 
-  // const handleSubmit = async () => {
-  //   let res = await dispatch(handleLogin(formData));
-  //   if (res.payload.EC === 0) {
-  //     navigation.navigate("MainTabs");
-  //     await AsyncStorage.setItem("access_Token", res.payload.DT.access_Token);
-  //     await AsyncStorage.setItem("refresh_Token", res.payload.DT.refresh_Token);
-  //   }
-  // };
-
   const handleSubmit = async () => {
-    console.log("handleSubmit called"); // Debug log
-    try {
-      let res = await dispatch(handleLogin(formData));
-      console.log("Response:", res); // Debug log
-      if (res.payload.EC === 0) {
-        navigation.navigate("MainTabs");
-        await AsyncStorage.setItem("access_Token", res.payload.DT.access_Token);
-        await AsyncStorage.setItem("refresh_Token", res.payload.DT.refresh_Token);
-      }
-    } catch (error) {
-      console.error("Error in handleSubmit:", error); // Debug log
+    let res = await dispatch(handleLogin(formData));
+    if (res.payload.EC === 0) {
+      navigation.navigate("MainTabs");
+      await AsyncStorage.setItem("access_Token", res.payload.DT.access_Token);
+      await AsyncStorage.setItem("refresh_Token", res.payload.DT.refresh_Token);
     }
   };
 
@@ -116,7 +101,7 @@ export default function LoginForm() {
 
         {/* Links */}
         <TouchableOpacity>
-          <Text style={styles.linkText}>Quên mật khẩu?</Text>
+          <Text style={styles.linkText} onPress={() => navigation.navigate("ResetPassword")}>Quên mật khẩu?</Text>
         </TouchableOpacity>
         <TouchableOpacity>
           <Text style={styles.linkText}>Đăng nhập qua mã QR</Text>

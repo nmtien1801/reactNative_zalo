@@ -8,7 +8,7 @@ import ContactsTabs from "./src/page/contacts/ContactsTabs";
 import DiscoveryTabs from "./src/page/Discovery/DiscoveryTabs";
 import LogTabs from "./src/page/log/LogTabs";
 import PersonalTabs from "./src/page/personal/PersonalTabs";
-import SearchHeader from "./src/component/Header";
+import ChatTab from "./src/page/chat/ChatTab";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginForm from "./src/page/auth/login";
 import { store } from "./src/redux/store";
@@ -16,16 +16,16 @@ import { Provider } from "react-redux";
 import { useSelector, useDispatch } from "react-redux";
 import { doGetAccount } from "./src/redux/authSlice";
 import RegisterForm from "./src/page/auth/register";
-// import InboxScreen from "./src/page/chat/InboxScreen";
-// import PersonOption from "./src/page/chat/PersonOption";
-import Chat from "./src/page/chat/Chat";
+import InboxScreen from "./src/page/chat/InboxScreen";
+import PersonOption from "./src/page/chat/PersonOption";
+import ResetPassword from "./src/page/auth/ResetPassword";
+import ChangePassword from "./src/component/changePassword"
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 const MainTabs = () => (
   <View style={{ flex: 1 }}>
-    <SearchHeader />
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
@@ -81,9 +81,19 @@ const Project = () => {
                 options={{ headerShown: false }}
               />
               <Stack.Screen
-                name="Chat"
-                component={Chat}
+                name="InboxScreen"
+                component={InboxScreen}
                 options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="PersonOption"
+                component={PersonOption}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ChangePassword"
+                component={ChangePassword}
+                // options={{ headerShown: false }}
               />
             </>
           ) : (
@@ -97,6 +107,12 @@ const Project = () => {
               <Stack.Screen
                 name="Register"
                 component={RegisterForm}
+                options={{ headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="ResetPassword"
+                component={ResetPassword}
                 options={{ headerShown: false }}
               />
             </>

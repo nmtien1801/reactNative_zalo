@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import Icon from "react-native-vector-icons/Ionicons";
+import SearchHeader from "../../component/Header";
 
 const TopTab = createMaterialTopTabNavigator();
 
@@ -347,20 +348,22 @@ export default function ContactsTabs() {
     />
   );
 
-  
-
   return (
-    <TopTab.Navigator
-      screenOptions={{
-        tabBarActiveTintColor: "#2196F3",
-        tabBarInactiveTintColor: "gray",
-        tabBarIndicatorStyle: { backgroundColor: "#2196F3" },
-      }}
-    >
-      <TopTab.Screen name="Bạn bè" component={FriendsScreen} />
-      <TopTab.Screen name="Nhóm" component={GroupsScreen} />
-      <TopTab.Screen name="QA" component={QAScreen} />
-    </TopTab.Navigator>
+    <View>
+      <SearchHeader option={'contact'}/>
+
+      <TopTab.Navigator
+        screenOptions={{
+          tabBarActiveTintColor: "#2196F3",
+          tabBarInactiveTintColor: "gray",
+          tabBarIndicatorStyle: { backgroundColor: "#2196F3" },
+        }}
+      >
+        <TopTab.Screen name="Bạn bè" component={FriendsScreen} />
+        <TopTab.Screen name="Nhóm" component={GroupsScreen} />
+        <TopTab.Screen name="QA" component={QAScreen} />
+      </TopTab.Navigator>
+    </View>
   );
 }
 
