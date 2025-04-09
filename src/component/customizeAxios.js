@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Platform } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from '@react-navigation/native';
 //SEARCH: axios npm github
 
 const baseUrl =
@@ -14,9 +15,13 @@ const instance = axios.create({
   withCredentials: true, // để FE có thể nhận cookie từ BE
 });
 
+// Cài đặt header mặc định
+instance.defaults.headers.common["Authorization"] = `Bearer ${AsyncStorage.getItem("access_Token")}`;
+
+// Interceptor cho request
 const getToken = async () => {
   return await AsyncStorage.getItem("access_Token");
-}
+};
 
 instance.interceptors.request.use(
   async (config) => {
@@ -36,12 +41,9 @@ const refreshAccessToken = async () => {
     const refreshToken = await AsyncStorage.getItem("refresh_Token");
     if (!refreshToken) throw new Error("No refresh token available");
 
-    const response = await axios.post(
-      `${baseUrl}/refreshToken`,
-      {
-        refresh_Token: refreshToken,
-      }
-    );
+    const response = await axios.post(`${baseUrl}/refreshToken`, {
+      refresh_Token: refreshToken,
+    });
 
     const access_Token = response.data.DT.newAccessToken;
     const refresh_Token = response.data.DT.newRefreshToken;
@@ -53,54 +55,90 @@ const refreshAccessToken = async () => {
     return access_Token;
   } catch (error) {
     console.error("Refresh token failed:", error);
+    AsyncStorage.removeItem("access_Token");
+    AsyncStorage.removeItem("refresh_Token");
     return null;
   }
 };
 
-// search: How can you use axios interceptors?
-// Add a response interceptor
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
+let isRefreshing = false;
+let failedQueue = [];
+
 instance.interceptors.response.use(
-  function (response) {
-    // Any status code that lie within the range of 2xx cause this function to trigger
-    // Do something with response data
-    return response && response.data ? response.data : response;
-  },
-  async function (error) {
-    // Any status codes that falls outside the range of 2xx cause this function to trigger
-    // Do something with response error
+  (response) => (response && response.data ? response.data : response),
+  async (error) => {
+    const originalRequest = error.config;
     const status = error.response?.status || 500;
     switch (status) {
-      // authentication (token related issues)
       case 401: {
-        // check quyền từ context chuyển qua
-        if (
-          window.location.pathname !== "/" &&
-          window.location.pathname !== "/login" &&
-          window.location.pathname !== "/register"
-        ) {
-          console.log(">>>check error 401: ", error.response.data); // SEARCH: axios get error body
-          // window.location.href("/login");
+        const navigation = useNavigation();
+        const currentRoute = navigation.getState().routes[navigation.getState().index].name;
+
+        if (['Login', 'Register', 'ResetPassword'].includes(currentRoute)) {
+          console.warn("401 on auth page, skip refresh");
+          return Promise.reject(error);
         }
 
-        return error.response.data; //getUserAccount response data(BE) nhưng bị chặn bên res(FE) dù đúng hay sai khi fetch account
+        if (!originalRequest._retry) {
+          if (isRefreshing) {
+            return new Promise((resolve, reject) => {
+              failedQueue.push({ resolve, reject });
+            })
+              .then(token => {
+                originalRequest.headers['Authorization'] = 'Bearer ' + token;
+                return instance(originalRequest);
+              })
+              .catch(err => Promise.reject(err));
+          }
+        }
+
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        try {
+          let newAccessToken = await refreshAccessToken();
+
+          if (!newAccessToken) {
+            navigation.navigate('Login');
+            return Promise.reject(error);
+          }
+
+          instance.defaults.headers['Authorization'] = 'Bearer ' + newAccessToken;
+          processQueue(null, newAccessToken);
+
+          return instance(originalRequest);
+        } catch (err) {
+          processQueue(err, null);
+          // handle logout
+          AsyncStorage.removeItem('access_Token');
+          AsyncStorage.removeItem('refresh_Token');
+          navigation.navigate('Login');
+          return Promise.reject(err);
+        } finally {
+          isRefreshing = false;
+        }
+      }
+
+      // bad request
+      case 400: {
+        return error.response.data; // Bad request
       }
 
       // forbidden (permission related issues)
       case 403: {
         return Promise.reject(error);
-      }
-
-      // bad request
-      case 400: {
-        const newToken = await refreshAccessToken();
-
-        if (newToken) {
-          error.config.headers["Authorization"] = `Bearer ${newToken}`;
-          return instance(error.config);
-        } else {
-          toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
-          await AsyncStorage.removeItem("access_Token");
-        }
       }
 
       // not found get /post / delete /put

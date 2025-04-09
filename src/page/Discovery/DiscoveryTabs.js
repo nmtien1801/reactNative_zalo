@@ -9,10 +9,15 @@ import {
   StyleSheet,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import SearchHeader from "../../component/Header";
 
 export default function DiscoveryTabs() {
   const discovery = [
-    { id: "1", name: "Game Center", avatar: require("../../../assets/favicon.png") },
+    {
+      id: "1",
+      name: "Game Center",
+      avatar: require("../../../assets/favicon.png"),
+    },
     {
       id: "2",
       name: "Tiện ích đời sống",
@@ -23,8 +28,16 @@ export default function DiscoveryTabs() {
       name: "Tiện ích tài chính",
       avatar: require("../../../assets/favicon.png"),
     },
-    { id: "4", name: "Dịch vụ công", avatar: require("../../../assets/favicon.png") },
-    { id: "5", name: "Mini App", avatar: require("../../../assets/favicon.png") },
+    {
+      id: "4",
+      name: "Dịch vụ công",
+      avatar: require("../../../assets/favicon.png"),
+    },
+    {
+      id: "5",
+      name: "Mini App",
+      avatar: require("../../../assets/favicon.png"),
+    },
   ];
 
   const DiscoveryItem = ({ discovery }) => (
@@ -56,20 +69,24 @@ export default function DiscoveryTabs() {
   );
 
   return (
-    <FlatList
-      ListHeaderComponent={() => (
-        <>
-          {/* <TouchableOpacity style={{ flexDirection: "row", padding: 10, alignItems: "center", borderBottomWidth: 1, borderColor: "#ddd" }}>
-              <Icon name="radio-outline" size={50} color="#2196F3" style={{ marginRight: 10 }} />
-              <Text style={{ fontSize: 16 }}>Tìm thêm Offical Account</Text>
-            </TouchableOpacity> */}
-        </>
-      )}
-      style={{ flex: 1, backgroundColor: "#fff" }}
-      data={discovery}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <DiscoveryItem discovery={item} />}
-    />
+    <View>
+      <SearchHeader option={'discovery'}/>
+
+      <FlatList
+        ListHeaderComponent={() => (
+          <>
+            {/* <TouchableOpacity style={{ flexDirection: "row", padding: 10, alignItems: "center", borderBottomWidth: 1, borderColor: "#ddd" }}>
+                       <Icon name="radio-outline" size={50} color="#2196F3" style={{ marginRight: 10 }} />
+                       <Text style={{ fontSize: 16 }}>Tìm thêm Offical Account</Text>
+                     </TouchableOpacity> */}
+          </>
+        )}
+        style={{ flex: 1, backgroundColor: "#fff" }}
+        data={discovery}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <DiscoveryItem discovery={item} />}
+      />
+    </View>
   );
 }
 
