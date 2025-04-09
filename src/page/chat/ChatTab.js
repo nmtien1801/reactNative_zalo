@@ -9,6 +9,7 @@ import {
   Dimensions,
   SafeAreaView,
 } from "react-native";
+import SearchHeader from "../../component/Header";
 
 import { useNavigation } from "@react-navigation/native";
 const { width, height } = Dimensions.get("window");
@@ -54,8 +55,9 @@ const ChatTab = () => {
   const navigation = useNavigation();
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: "#f5f5f5", marginTop: 30 }}
+      style={{ flex: 1, backgroundColor: "#f5f5f5" }}
     >
+       <SearchHeader option={'chatTab'}/>
       {/* Chat List */}
       <FlatList
         data={messages}

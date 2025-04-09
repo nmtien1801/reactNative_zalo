@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import SearchHeader from "../../component/Header";
 
 export default function PersonalTabs() {
   const personal = [
@@ -68,45 +69,49 @@ export default function PersonalTabs() {
   );
 
   return (
-    <FlatList
-      ListHeaderComponent={() => (
-        <>
-          <TouchableOpacity
-            style={{
-              flexDirection: "row",
-              padding: 10,
-              alignItems: "center",
-              borderBottomWidth: 1,
-              borderColor: "#ddd",
-              justifyContent: "space-between",
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Image
-                source={require("../../../assets/favicon.png")}
-                style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: 30,
-                  marginRight: 10,
-                }}
+    <View>
+      <SearchHeader option={'person'}/>
+
+      <FlatList
+        ListHeaderComponent={() => (
+          <>
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                padding: 10,
+                alignItems: "center",
+                borderBottomWidth: 1,
+                borderColor: "#ddd",
+                justifyContent: "space-between",
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Image
+                  source={require("../../../assets/favicon.png")}
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 30,
+                    marginRight: 10,
+                  }}
+                />
+                <Text style={{ fontSize: 16 }}>Lộc lá</Text>
+              </View>
+              <Icon
+                name="swap-horizontal-outline"
+                size={24}
+                color="#2196F3"
+                style={{ marginRight: 10 }}
               />
-              <Text style={{ fontSize: 16 }}>Lộc lá</Text>
-            </View>
-            <Icon
-              name="swap-horizontal-outline"
-              size={24}
-              color="#2196F3"
-              style={{ marginRight: 10 }}
-            />
-          </TouchableOpacity>
-        </>
-      )}
-      style={{ flex: 1, backgroundColor: "#fff" }}
-      data={personal}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <PersonalItem personal={item} />}
-    />
+            </TouchableOpacity>
+          </>
+        )}
+        style={{ flex: 1, backgroundColor: "#fff" }}
+        data={personal}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <PersonalItem personal={item} />}
+      />
+    </View>
   );
 }
 

@@ -8,7 +8,6 @@ import ContactsTabs from "./src/page/contacts/ContactsTabs";
 import DiscoveryTabs from "./src/page/Discovery/DiscoveryTabs";
 import LogTabs from "./src/page/log/LogTabs";
 import PersonalTabs from "./src/page/personal/PersonalTabs";
-import SearchHeader from "./src/component/Header";
 import ChatTab from "./src/page/chat/ChatTab";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginForm from "./src/page/auth/login";
@@ -26,7 +25,6 @@ const Stack = createNativeStackNavigator();
 
 const MainTabs = () => (
   <View style={{ flex: 1 }}>
-    <SearchHeader />
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
@@ -74,8 +72,8 @@ const Project = () => {
     <MenuProvider>
       <NavigationContainer>
         <Stack.Navigator>
-          {isLoggedIn ? (
-            <>
+          {/* {isLoggedIn ? (
+            <> */}
               <Stack.Screen
                 name="MainTabs"
                 component={MainTabs}
@@ -91,9 +89,9 @@ const Project = () => {
                 component={PersonOption}
                 options={{ headerShown: false }}
               />
-            </>
+            {/* </>
           ) : (
-            <>
+            <> */}
               <Stack.Screen
                 name="Login"
                 component={LoginForm}
@@ -111,8 +109,8 @@ const Project = () => {
                 component={ResetPassword}
                 options={{ headerShown: false }}
               />
-            </>
-          )}
+            {/* </>
+          )} */}
         </Stack.Navigator>
       </NavigationContainer>
     </MenuProvider>
