@@ -7,7 +7,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Eye, EyeOff, RefreshCw } from "lucide-react-native";
-import { Button } from "react-native-paper";
+import { Avatar, Button } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
 import { register } from "../../redux/authSlice";
 import { useNavigation } from "@react-navigation/native";
@@ -26,6 +26,10 @@ export default function LoginForm() {
     password: "",
     confirmPassword: "",
     captcha: "",
+    gender:"",
+    dob: '',
+    avatar: '',
+    code:''
   });
 
   const handleChange = (name, value) => {
@@ -41,6 +45,7 @@ export default function LoginForm() {
       console.log("Lỗi", "Mật khẩu và mật khẩu nhập lại không khớp!");
       return;
     }
+console.log('sss ',formData);
 
     // Gửi thông tin đăng ký
     let res = await dispatch(register(formData));
@@ -143,6 +148,26 @@ export default function LoginForm() {
           >
             <RefreshCw size={20} color="#555" />
           </TouchableOpacity>
+        </View>
+
+         {/* gender Input */}
+         <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Gender"
+            value={formData.gender}
+            onChangeText={(text) => handleChange("gender", text)}
+          />
+        </View>
+
+        {/* dob Input */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Dob"
+            value={formData.dob}
+            onChangeText={(text) => handleChange("dob", text)}
+          />
         </View>
 
         {/* Submit Button */}

@@ -7,6 +7,7 @@ import {
   resetPasswordService,
   changePasswordService,
 } from "../service/authService";
+import { uploadAvatarProfileService } from "../service/profileService";
 
 const initialState = {
   user: {}, // user info nào login(hs - teacher)
@@ -36,7 +37,7 @@ export const register = createAsyncThunk(
   "auth/register",
   async (formData, thunkAPI) => {
     const response = await registerService({ formData });
-    console.log("response", response);
+    console.log("sss", response);
 
     return response;
   }
@@ -67,6 +68,17 @@ export const changePassword = createAsyncThunk(
       currentPassword,
       newPassword
     );
+    return response;
+  }
+);
+
+export const uploadAvatarProfile = createAsyncThunk(
+  "auth/uploadAvatarProfile",
+  async ({ phone, avatar }, thunkAPI) => {
+    
+    let response = await uploadAvatarProfileService(phone, avatar);
+
+
     return response;
   }
 );
@@ -141,6 +153,18 @@ const authSlice = createSlice({
       .addCase(changePassword.pending, (state) => {})
       .addCase(changePassword.fulfilled, (state, action) => {})
       .addCase(changePassword.rejected, (state, action) => {});
+
+    //uploadAvatarProfile
+    builder
+      .addCase(uploadAvatarProfile.pending, (state) => {})
+      .addCase(uploadAvatarProfile.fulfilled, (state, action) => {
+        if (action.payload.EC === 0) {
+          console.log('action: ', action);
+          
+          state.user.avatar = action.payload.DT || {};
+        }
+      })
+      .addCase(uploadAvatarProfile.rejected, (state, action) => {});
   },
 });
 

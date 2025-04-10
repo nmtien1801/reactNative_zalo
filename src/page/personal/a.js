@@ -16,15 +16,15 @@ import { useSelector, useDispatch } from "react-redux";
 import { launchImageLibrary } from "react-native-image-picker"; // Import đúng cách
 import { FontAwesome } from "@expo/vector-icons";
 
-const SERVER_URL = "http://localhost:8080/api/upload"; // đổi thành IP LAN nếu chạy trên thiết bị thật
+const SERVER_URL = 'http://localhost:8080/api/upload'; // đổi thành IP LAN nếu chạy trên thiết bị thật
 
 const createFormData = (photo) => {
-  const data = new FormData();
-
-  data.append("avatar", photo.uri);
-
-  return data;
-};
+    const data = new FormData();
+  
+    data.append('avatar', photo.uri);
+  
+    return data;
+  };
 export default function PersonalTabs() {
   const personal = [
     {
@@ -70,70 +70,59 @@ export default function PersonalTabs() {
   const [photo, setPhoto] = useState(null);
   const [uploadedUrl, setUploadedUrl] = useState(null);
 
-  useEffect(() => {
-    if (user?.avatar) {
-      setUploadedUrl(user.avatar);
-    }
-  }, [user?.avatar]);
+  // useEffect(() => {
+  //   if (user?.avatar) {
+  //     setAvatarUrl(user.avatar);
+  //   }
+  // }, [user?.avatar]);
 
   // Hàm chọn ảnh từ thư viện hoặc camera
   const pickImage = async () => {
     launchImageLibrary(
       { mediaType: "photo", includeBase64: false },
-      async (response) => {
+      (response) => {
         if (response.didCancel) {
           console.log("User cancelled image picker");
         } else if (response.errorMessage) {
           console.log("ImagePicker Error: ", response.errorMessage);
         } else if (response.assets && response.assets.length > 0) {
           setPhoto(response.assets[0]);
-          // handleUploadPhoto();
+        
         }
       }
     );
+    await handleUploadPhoto();
   };
-console.log('phote ',photo);
-
-  useEffect(() => {
-    handleUploadPhoto();
-  }, [photo]);
 
   const handleUploadPhoto = async () => {
-    if (!photo) {
-      Alert.alert("Chưa chọn ảnh");
-      return;
-    }
-
-    try {
-      const formData = createFormData(photo);
-
-      const res = await fetch(SERVER_URL, {
-        method: "POST",
-        body: formData,
-      });
-
-      // const res = await dispatch(uploadAvatar(formData)).unwrap();
-
-      const json = await res.json();
-      console.log("Upload thành công:", json);
-      if (json) {
-        setUploadedUrl(json.DT); // link ảnh server trả về
-        let a = await dispatch(
-          uploadAvatarProfile({
-            phone: user.phone,
-            avatar: json.DT,
-          })
-        );
-        console.log("a sac", a);
-
-        Alert.alert("Upload thành công!", `Link: ${json.url}`);
+      if (!photo) {
+        Alert.alert('Chưa chọn ảnh');
+        return;
       }
-    } catch (error) {
-      console.error("Upload thất bại:", error);
-      Alert.alert("Lỗi upload", error.message);
-    }
-  };
-  console.log(user);
+  
+      try {
+        const formData = createFormData(photo);
+  
+        const res = await fetch(SERVER_URL, {
+          method: 'POST',
+          body: formData,
+          
+        });
+  
+        // const res = await dispatch(uploadAvatar(formData)).unwrap();
+  
+        const json = await res.json();
+        console.log('Upload thành công:', json);
+  
+        setUploadedUrl(json.DT); // link ảnh server trả về
+        await uploadAvatarProfile(user.phone, json.DT);
+        Alert.alert('Upload thành công!', `Link: ${json.url}`);
+      } catch (error) {
+        console.error('Upload thất bại:', error);
+        Alert.alert('Lỗi upload', error.message);
+      }
+    };
+
 
   return (
     <View style={styles.container}>
