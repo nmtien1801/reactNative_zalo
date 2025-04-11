@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
 import { Eye, EyeOff, RefreshCw } from "lucide-react-native";
 import { Avatar, Button } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
-import { register } from "../../redux/authSlice";
+import { register, verifyEmail } from "../../redux/authSlice";
 import { useNavigation } from "@react-navigation/native";
 
 export default function LoginForm() {
@@ -18,6 +18,9 @@ export default function LoginForm() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [countdown, setCountdown] = useState(0); // đếm ngược 60s
+  const [code, setCode] = useState({}); // mã xác thực trong 60s
 
   const [formData, setFormData] = useState({
     username: "",
@@ -26,10 +29,10 @@ export default function LoginForm() {
     password: "",
     confirmPassword: "",
     captcha: "",
-    gender:"",
-    dob: '',
-    avatar: '',
-    code:''
+    gender: "",
+    dob: "",
+    avatar: "",
+    code: "",
   });
 
   const handleChange = (name, value) => {
@@ -39,19 +42,82 @@ export default function LoginForm() {
     }));
   };
 
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [countdown]);
+
   const handleSubmit = async () => {
-    // Kiểm tra mật khẩu và mật khẩu nhập lại có khớp không
-    if (formData.password !== formData.confirmPassword) {
-      console.log("Lỗi", "Mật khẩu và mật khẩu nhập lại không khớp!");
+    setErrorMessage("");
+
+    // kiểm tra username
+    if (!formData.username) {
+      setErrorMessage("username không được để trống");
       return;
     }
-console.log('sss ',formData);
 
-    // Gửi thông tin đăng ký
-    let res = await dispatch(register(formData));
-    if (res.payload.EC === 0) {
-      navigation.navigate("Login"); // Điều hướng đến màn hình Login
+    // kiểm tra email
+    if (!formData.email) {
+      setErrorMessage("Email không được để trống");
+      return;
     }
+
+    // kiểm tra tài khoản 10 ký tự bất kì
+    if (!formData.phoneNumber || formData.phoneNumber.length !== 10) {
+      setErrorMessage("Số tài khoản phải bao gồm đúng 10 ký tự!");
+      return;
+    }
+
+    // kiểm tra password
+    if (!formData.password) {
+      setErrorMessage("password không được để trống");
+      return;
+    }
+
+    // Kiểm tra mật khẩu và mật khẩu nhập lại có khớp không
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMessage("Mật khẩu và mật khẩu nhập lại không khớp!");
+
+      return;
+    }
+
+    // kiểm tra captcha
+    if (!formData.captcha) {
+      setErrorMessage("captcha không được để trống");
+      return;
+    }
+
+    // kiểm tra code verify email
+    let currentTime = Date.now();
+    if (currentTime - code.timestamp > 60000) {
+      setErrorMessage("❌ Mã đã hết hạn sau 60s");
+    } else if (+formData.captcha !== +code.code) {
+      setErrorMessage("❌ Mã không đúng");
+    } else {
+      // Gửi thông tin đăng ký đi
+      let res = await dispatch(register(formData));
+      if (res.payload.EC === 0) {
+        navigation.navigate("Login"); // Điều hướng đến màn hình Login
+      } else {
+        setErrorMessage(res.payload.EM);
+      }
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    // Gửi mã xác minh qua email
+    let res = await dispatch(verifyEmail(formData.email));
+    if (res.payload.EC === 0) {
+      setCode(res.payload.DT);
+    }
+
+    // Bắt đầu đếm ngược
+    setCountdown(60);
   };
 
   return (
@@ -85,8 +151,7 @@ console.log('sss ',formData);
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Số điện thoại"
-            keyboardType="phone-pad"
+            placeholder="Số tài khoản"
             value={formData.phoneNumber}
             onChangeText={(text) => handleChange("phoneNumber", text)}
           />
@@ -143,15 +208,20 @@ console.log('sss ',formData);
             onChangeText={(text) => handleChange("captcha", text)}
           />
           <TouchableOpacity
-            onPress={() => console.log("Refresh captcha")}
-            style={styles.iconButton}
+            onPress={handleVerifyEmail}
+            disabled={countdown > 0}
+            style={[styles.iconButton, countdown > 0 && styles.disabledButton]}
           >
-            <RefreshCw size={20} color="#555" />
+            {countdown > 0 ? (
+              <Text style={styles.text60}>{countdown}s</Text>
+            ) : (
+              <RefreshCw color="#333" size={20} />
+            )}
           </TouchableOpacity>
         </View>
 
-         {/* gender Input */}
-         <View style={styles.inputContainer}>
+        {/* gender Input */}
+        <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
             placeholder="Gender"
@@ -169,6 +239,12 @@ console.log('sss ',formData);
             onChangeText={(text) => handleChange("dob", text)}
           />
         </View>
+
+        {errorMessage !== "" && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          </View>
+        )}
 
         {/* Submit Button */}
         <Button mode="contained" style={styles.button} onPress={handleSubmit}>
@@ -242,5 +318,18 @@ const styles = StyleSheet.create({
     color: "#2962ff",
     marginTop: 8,
     fontSize: 14,
+  },
+  text60: {
+    color: "#333",
+    fontSize: 16,
+  },
+  errorContainer: {
+    marginBottom: 12,
+    alignItems: "center",
+  },
+  errorText: {
+    color: "red",
+    fontSize: 14,
+    textAlign: "center",
   },
 });

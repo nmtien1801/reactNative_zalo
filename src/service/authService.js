@@ -12,7 +12,7 @@ const doGetAccountService = () => {
 
 const registerService = (formData) => {
   return customizeAxios.post("/register", formData);
-}
+};
 
 const sendCodeService = (email) => {
   return customizeAxios.post("/send-code", {
@@ -36,11 +36,16 @@ const changePasswordService = (phone, currentPassword, newPassword) => {
   });
 };
 
+const verifyEmailService = (email) => {
+  return customizeAxios.post("/verifyEmail", { email });
+};
+
 export {
   handleLoginApi,
   doGetAccountService,
   registerService,
   sendCodeService,
   resetPasswordService,
-  changePasswordService
+  changePasswordService,
+  verifyEmailService,
 };

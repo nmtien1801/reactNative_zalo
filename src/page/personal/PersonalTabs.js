@@ -16,8 +16,6 @@ import { useSelector, useDispatch } from "react-redux";
 import { launchImageLibrary } from "react-native-image-picker"; // Import đúng cách
 import { FontAwesome } from "@expo/vector-icons";
 
-const SERVER_URL = "http://localhost:8080/api/upload"; // đổi thành IP LAN nếu chạy trên thiết bị thật
-
 const createFormData = (photo) => {
   const data = new FormData();
 
@@ -66,7 +64,6 @@ export default function PersonalTabs() {
 
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
-  const [avatarUrl, setAvatarUrl] = useState("");
   const [photo, setPhoto] = useState(null);
   const [uploadedUrl, setUploadedUrl] = useState(null);
 
@@ -87,12 +84,10 @@ export default function PersonalTabs() {
           console.log("ImagePicker Error: ", response.errorMessage);
         } else if (response.assets && response.assets.length > 0) {
           setPhoto(response.assets[0]);
-          // handleUploadPhoto();
         }
       }
     );
   };
-console.log('phote ',photo);
 
   useEffect(() => {
     handleUploadPhoto();
@@ -106,27 +101,18 @@ console.log('phote ',photo);
 
     try {
       const formData = createFormData(photo);
+      const res = await dispatch(uploadAvatar(formData)).unwrap();
 
-      const res = await fetch(SERVER_URL, {
-        method: "POST",
-        body: formData,
-      });
-
-      // const res = await dispatch(uploadAvatar(formData)).unwrap();
-
-      const json = await res.json();
-      console.log("Upload thành công:", json);
-      if (json) {
-        setUploadedUrl(json.DT); // link ảnh server trả về
+      console.log("Upload thành công:", res);
+      if (res.EC === 0) {
+        setUploadedUrl(res.DT); // link ảnh server trả về
         let a = await dispatch(
-          uploadAvatarProfile({
-            phone: user.phone,
-            avatar: json.DT,
-          })
+          uploadAvatarProfile({ phone: user.phone, avatar: res.DT })
         );
         console.log("a sac", a);
-
-        Alert.alert("Upload thành công!", `Link: ${json.url}`);
+        if (a.payload.EC === 0) {
+          Alert.alert("Upload thành công!", `Link: ${res.DT}`);
+        }
       }
     } catch (error) {
       console.error("Upload thất bại:", error);

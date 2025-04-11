@@ -6,6 +6,7 @@ import {
   sendCodeService,
   resetPasswordService,
   changePasswordService,
+  verifyEmailService,
 } from "../service/authService";
 import { uploadAvatarProfileService } from "../service/profileService";
 
@@ -75,10 +76,16 @@ export const changePassword = createAsyncThunk(
 export const uploadAvatarProfile = createAsyncThunk(
   "auth/uploadAvatarProfile",
   async ({ phone, avatar }, thunkAPI) => {
-    
     let response = await uploadAvatarProfileService(phone, avatar);
 
+    return response;
+  }
+);
 
+export const verifyEmail = createAsyncThunk(
+  "auth/verifyEmail",
+  async (email, thunkAPI) => {
+    const response = await verifyEmailService(email);
     return response;
   }
 );
@@ -159,12 +166,18 @@ const authSlice = createSlice({
       .addCase(uploadAvatarProfile.pending, (state) => {})
       .addCase(uploadAvatarProfile.fulfilled, (state, action) => {
         if (action.payload.EC === 0) {
-          console.log('action: ', action);
-          
+          console.log("action: ", action);
+
           state.user.avatar = action.payload.DT || {};
         }
       })
       .addCase(uploadAvatarProfile.rejected, (state, action) => {});
+
+    //verifyEmail
+    builder
+      .addCase(verifyEmail.pending, (state) => {})
+      .addCase(verifyEmail.fulfilled, (state, action) => {})
+      .addCase(verifyEmail.rejected, (state, action) => {});
   },
 });
 

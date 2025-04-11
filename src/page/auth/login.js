@@ -50,8 +50,7 @@ export default function LoginForm() {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Số điện thoại"
-            keyboardType="phone-pad"
+            placeholder="Số tài khoản"
             value={formData.phoneNumber}
             onChangeText={(text) => handleChange("phoneNumber", text)}
           />

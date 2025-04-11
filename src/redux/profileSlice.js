@@ -6,7 +6,7 @@ const initialState = {};
 export const uploadAvatar = createAsyncThunk(
   "profile/uploadAvatar",
 async (formData, thunkAPI) => {
-    let response = await uploadAvatarService({formData});
+    let response = await uploadAvatarService(formData);
 
     return response;
   }
