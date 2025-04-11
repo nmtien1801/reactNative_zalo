@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const baseUrl =
   Platform.OS === "android"
-    ? "http://192.168.1.3:8080/api" // URL cho Android và iOS
+    ? "http://192.168.1.5:8080/api" // URL cho Android và iOS
     : "http://localhost:8080/api"; // URL cho web hoặc môi trường khác
 
 // Set config defaults when creating the instance

@@ -7,7 +7,6 @@ import {
   StyleSheet,
 } from "react-native";
 import { Eye, EyeOff, RefreshCw } from "lucide-react-native";
-import { Avatar, Button } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
 import { register, verifyEmail } from "../../redux/authSlice";
 import { useNavigation } from "@react-navigation/native";
@@ -247,9 +246,9 @@ export default function LoginForm() {
         )}
 
         {/* Submit Button */}
-        <Button mode="contained" style={styles.button} onPress={handleSubmit}>
-          Đăng ký
-        </Button>
+        <TouchableOpacity mode="contained" style={styles.button} onPress={handleSubmit}>
+          <Text style={{color:'white'}}>Đăng ký</Text>
+        </TouchableOpacity>
 
         {/* Links */}
         <TouchableOpacity onPress={() => navigation.navigate("Login")}>
@@ -275,9 +274,6 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 10,
     elevation: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
     alignItems: "center",
   },
   title: {
@@ -313,6 +309,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginVertical: 10,
     backgroundColor: "#2962ff",
+    alignItems: 'center',       // Căn giữa ngang
+    justifyContent: 'center',   // Căn giữa dọc
   },
   linkText: {
     color: "#2962ff",

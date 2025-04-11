@@ -7,7 +7,6 @@ import {
   StyleSheet,
 } from "react-native";
 import { Eye, EyeOff, RefreshCw } from "lucide-react-native";
-import { Button } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
 import { handleLogin } from "../../redux/authSlice";
 import { useNavigation } from "@react-navigation/native";
@@ -94,13 +93,22 @@ export default function LoginForm() {
         </View>
 
         {/* Submit Button */}
-        <Button mode="contained" style={styles.button} onPress={handleSubmit}>
-          Đăng nhập
-        </Button>
+        <TouchableOpacity
+          mode="contained"
+          style={styles.button}
+          onPress={handleSubmit}
+        >
+          <Text style={{color:'white'}}>Đăng nhập</Text>
+        </TouchableOpacity>
 
         {/* Links */}
         <TouchableOpacity>
-          <Text style={styles.linkText} onPress={() => navigation.navigate("ResetPassword")}>Quên mật khẩu?</Text>
+          <Text
+            style={styles.linkText}
+            onPress={() => navigation.navigate("ResetPassword")}
+          >
+            Quên mật khẩu?
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity>
           <Text style={styles.linkText}>Đăng nhập qua mã QR</Text>
@@ -128,9 +136,6 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 10,
     elevation: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
     alignItems: "center",
   },
   title: {
@@ -166,6 +171,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginVertical: 10,
     backgroundColor: "#2962ff",
+    alignItems: 'center',       // Căn giữa ngang
+    justifyContent: 'center',   // Căn giữa dọc
   },
   linkText: {
     color: "#2962ff",
