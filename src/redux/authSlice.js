@@ -7,8 +7,10 @@ import {
   resetPasswordService,
   changePasswordService,
   verifyEmailService,
+  logoutUserService,
 } from "../service/authService";
 import { uploadAvatarProfileService } from "../service/profileService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const initialState = {
   user: {}, // user info nào login(hs - teacher)
@@ -86,6 +88,14 @@ export const verifyEmail = createAsyncThunk(
   "auth/verifyEmail",
   async (email, thunkAPI) => {
     const response = await verifyEmailService(email);
+    return response;
+  }
+);
+
+export const logoutUser = createAsyncThunk(
+  "auth/logoutUser",
+  async (thunkAPI) => {
+    const response = await logoutUserService();
     return response;
   }
 );
@@ -178,6 +188,19 @@ const authSlice = createSlice({
       .addCase(verifyEmail.pending, (state) => {})
       .addCase(verifyEmail.fulfilled, (state, action) => {})
       .addCase(verifyEmail.rejected, (state, action) => {});
+
+    // logoutUser
+    builder
+      .addCase(logoutUser.pending, (state) => {})
+      .addCase(logoutUser.fulfilled, (state, action) => {
+        if(action.payload.EC === 2){
+          state.user = {},
+          state.isLoggedIn = false
+          AsyncStorage.removeItem("access_Token")
+          AsyncStorage.removeItem("refresh_Token")
+        }
+      })
+      .addCase(logoutUser.rejected, (state, action) => {});
   },
 });
 

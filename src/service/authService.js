@@ -40,6 +40,10 @@ const verifyEmailService = (email) => {
   return customizeAxios.post("/verifyEmail", { email });
 };
 
+const logoutUserService = () => {
+  return customizeAxios.post("/logout");
+};
+
 export {
   handleLoginApi,
   doGetAccountService,
@@ -48,4 +52,5 @@ export {
   resetPasswordService,
   changePasswordService,
   verifyEmailService,
+  logoutUserService
 };

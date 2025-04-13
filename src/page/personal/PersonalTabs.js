@@ -27,27 +27,12 @@ export default function PersonalTabs() {
   const personal = [
     {
       id: "1",
-      name: "Game Center",
-      avatar: require("../../../assets/favicon.png"),
+      name: "Cloud của tôi",
+      avatar: require("../../../assets/cloud.jpg"),
     },
     {
       id: "2",
-      name: "Tiện ích đời sống",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "3",
-      name: "Tiện ích tài chính",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "4",
-      name: "Dịch vụ công",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "5",
-      name: "Mini App",
+      name: "Tài khoản và bảo mật",
       avatar: require("../../../assets/favicon.png"),
     },
   ];
