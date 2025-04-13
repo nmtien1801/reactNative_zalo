@@ -12,32 +12,25 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { useNavigation } from "@react-navigation/native";
+import { loadMessages } from "../../redux/chatSlice";
+import { useSelector, useDispatch } from "react-redux";
 
-const InboxScreen = () => {
+const InboxScreen = ({ route }) => {
+  let receiver = route.params?.item; // click conversation
+  let socketRef = route.params?.socketRef;
+  let onlineUsers = route.params?.onlineUsers
+  const dispatch = useDispatch();
   const navigation = useNavigation();
-  const [messages, setMessages] = useState([
-    { message: "Ông ôn gì chưa chỉ tui với.", time: "19:19", sender: "user" },
-    { message: "Tôi cũng như ông thôi", time: "20:19", sender: "friend" },
-    { message: "Hỏi ông Khang ý", time: "20:19", sender: "friend" },
-    { message: "Chắc chắn 10 điểm", time: "20:19", sender: "friend" },
-    {
-      message: "Ông chụp giúp tui cái bài yêu cầu về đồ thị trạng thái với lực.",
-      time: "16:05",
-      sender: "user",
-    },
-    {
-      message: "Tối nhờ ông Khang giải hết cái đề thầy gửi",
-      time: "17:25",
-      sender: "friend",
-    },
-    { message: "Chứ giờ tôi chưa ôn bài :)))", time: "17:25", sender: "friend" },
-    { message: "Oke ông", time: "17:55", sender: "user" },
-    { message: "Oke ông", time: "17:55", sender: "user" },
-    { message: "Oke ông", time: "17:55", sender: "user" },
-  ]);
+  const flatListRef = useRef(null);
+  const user = useSelector((state) => state.auth.user);
   const [input, setInput] = useState("");
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [roomData, setRoomData] = useState({
+    room: null,
+    receiver: null,
+  });
+  const [allMsg, setAllMsg] = useState([]);
 
   const sections = [
     {
@@ -63,21 +56,113 @@ const InboxScreen = () => {
     },
   ];
 
-  const sendMessage = () => {
-    if (input.trim() !== "") {
-      setMessages([...messages, { message: input, time: "Now", sender: "user" }]);
-      console.log(messages);
+  // handleTypeChat
+  useEffect(() => {
+    let receiverOnline; // lấy socketId của người nhận từ danh sách onlineUsers
+    if (receiver.type === 1) {
+      handleLoadMessages(receiver._id, receiver.type);
+      receiverOnline = onlineUsers.find((u) => u.userId === receiver._id);
+
+      setRoomData({
+        ...roomData,
+        room: "single",
+        receiver: {
+          ...receiver,
+          socketId: receiverOnline ? receiverOnline.socketId : null,
+        },
+      });
+    } else if (receiver.type === 2) {
+      handleLoadMessages(receiver._id, receiver.type);
+
+      receiverOnline = onlineUsers.find((u) =>
+        receiver.members.includes(u.userId)
+      );
+
+      setRoomData({
+        ...roomData,
+        room: "group",
+        receiver: {
+          ...receiver,
+          socketId: receiverOnline ? receiverOnline.socketId : null,
+        },
+      });
+    } else {
+      handleLoadMessages(receiver._id, receiver.type);
       
-      setInput("");
+      receiverOnline = onlineUsers.find((u) => u.userId === receiver._id);
+      setRoomData({
+        ...roomData,
+        room: "cloud",
+        receiver: {
+          ...receiver,
+          socketId: receiverOnline ? receiverOnline.socketId : null,
+        },
+      });
+    }
+  }, []);
+
+  const handleLoadMessages = async (receiver, type) => {
+    const res = await dispatch(
+      loadMessages({ sender: user._id, receiver: receiver, type: type })
+    );
+
+    if (res.payload.EC === 0) {
+      setAllMsg(res.payload.DT);
     }
   };
-  const flatListRef = useRef(null);
 
-  useEffect(() => {
-    if (flatListRef.current) {
-      flatListRef.current.scrollToEnd({ animated: true });
+  const sendMessage = () => {
+    if (socketRef.current) {
+      let sender = { ...user };
+      sender.socketId = socketRef.current.id;
+
+      // Lấy socketId của receiver từ danh sách onlineUsers
+      const receiverOnline = onlineUsers.find(
+        (u) => u.userId === roomData.receiver?._id
+      );
+
+      const data = {
+        msg: input,
+        receiver: {
+          ...roomData.receiver,
+          socketId: receiverOnline ? receiverOnline.socketId : null,
+        },
+        sender,
+      };
+      console.log("data: ", data);
+
+      socketRef.current.emit("SEND_MSG", data);
     }
-  }, [messages]);
+
+    setInput("");
+  };
+
+  const convertTime = (time) => {
+    const date = new Date(time);
+    return date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "Asia/Ho_Chi_Minh",
+    });
+  };
+
+  // action socket
+  useEffect(() => {
+    if (socketRef.current) {
+      socketRef.current.on("RECEIVED_MSG", (data) => {
+        console.log("form another users ", data);
+        
+        setAllMsg((prevState) => [...prevState, data]);
+      });
+
+      socketRef.current.on("DELETED_MSG", (data) => {
+        setAllMsg((prevState) =>
+          prevState.filter((item) => item._id != data.msg._id)
+        );
+      });
+    }
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -92,8 +177,12 @@ const InboxScreen = () => {
           </TouchableOpacity>
 
           <View style={{ marginLeft: 10 }}>
-            <Text style={styles.headerText}>Nguyễn Thế Lực</Text>
-            <Text style={styles.activeText}>Hoạt động 18 phút trước</Text>
+            <Text style={styles.headerText}>{receiver.username}</Text>
+            <Text style={styles.activeText}>
+              {receiver.type === 3
+                ? "Lưu và đồng bộ dữ liệu giữa các thiết bị"
+                : "Hoạt động 18 phút trước"}
+            </Text>
           </View>
         </View>
 
@@ -104,7 +193,7 @@ const InboxScreen = () => {
           <TouchableOpacity>
             <Ionicons name="videocam" size={24} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate("PersonOption")}>
+          <TouchableOpacity onPress={() => navigation.navigate("PersonOption", { receiver, socketRef, onlineUsers })}>
             <Ionicons name="menu" size={24} color="white" />
           </TouchableOpacity>
         </View>
@@ -112,8 +201,8 @@ const InboxScreen = () => {
 
       <FlatList
         ref={flatListRef}
-        data={messages}
-        keyExtractor={(item, index) => index.toString()}
+        data={allMsg}
+        keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <TouchableOpacity
             onLongPress={() => {
@@ -124,23 +213,28 @@ const InboxScreen = () => {
             <View
               style={[
                 styles.message,
-                item.sender === "user"
+                item.sender._id === user._id
                   ? styles.userMessage
                   : styles.friendMessage,
               ]}
             >
-              <Text style={styles.messageText}>{item.message}</Text>
-              <Text style={styles.messageTime}>{item.time}</Text>
+              <Text style={styles.messageText}>{item.msg || ""}</Text>
+              <Text style={styles.messageTime}>
+                {convertTime(item.createdAt)}
+              </Text>
             </View>
           </TouchableOpacity>
         )}
         contentContainerStyle={styles.messagesContainer}
+        onContentSizeChange={() => {
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100); // thử 100ms hoặc tăng lên 200ms nếu cần
+        }}
       />
 
       {/* Input Box */}
-
       <View style={styles.inputContainer}>
-        {/* Icon mặt cười */}
         <TouchableOpacity
           style={{ flexDirection: "row", alignItems: "center" }}
         >
@@ -152,8 +246,6 @@ const InboxScreen = () => {
             style={{ marginLeft: -19 }}
           />
         </TouchableOpacity>
-
-        {/* Ô nhập tin nhắn */}
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.input}
@@ -163,9 +255,7 @@ const InboxScreen = () => {
             onChangeText={(text) => setInput(text)}
           />
         </View>
-
-        {/* Ẩn ba icon nếu có chữ */}
-        {!input.trim() && (
+        {!input.trim() ? (
           <View style={{ flexDirection: "row" }}>
             <TouchableOpacity style={styles.iconWrapper}>
               <FontAwesome5 name="ellipsis-h" size={20} color="gray" />
@@ -177,10 +267,7 @@ const InboxScreen = () => {
               <FontAwesome5 name="image" size={22} color="gray" />
             </TouchableOpacity>
           </View>
-        )}
-
-        {/* Icon gửi, chỉ hiển thị khi có chữ */}
-        {input.trim() && (
+        ) : (
           <TouchableOpacity style={styles.iconWrapper} onPress={sendMessage}>
             <FontAwesome5 name="paper-plane" size={22} color="blue" />
           </TouchableOpacity>
@@ -201,8 +288,10 @@ const InboxScreen = () => {
             {/* Tin nhắn được chọn */}
             {selectedMessage && (
               <View style={styles.highlightedMessage}>
-                <Text style={styles.messageText}>{selectedMessage.message}</Text>
-                <Text style={styles.messageTime}>{selectedMessage.time}</Text>
+                <Text style={styles.messageText}>{selectedMessage.msg}</Text>
+                <Text style={styles.messageTime}>
+                  {convertTime(selectedMessage.createdAt)}
+                </Text>
               </View>
             )}
 
