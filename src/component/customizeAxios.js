@@ -4,10 +4,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from '@react-navigation/native';
 //SEARCH: axios npm github
 
+const URL_ANDROID = "http://192.168.1.5:8080/api"
+URL_WEB="http://localhost:8080/api"
+
 const baseUrl =
   Platform.OS === "android"
-    ? "http://192.168.1.5:8080/api" // URL cho Android và iOS
-    : "http://localhost:8080/api"; // URL cho web hoặc môi trường khác
+    ? URL_ANDROID // URL cho Android và iOS
+    : URL_WEB; // URL cho web hoặc môi trường khác
 
 // Set config defaults when creating the instance
 const instance = axios.create({

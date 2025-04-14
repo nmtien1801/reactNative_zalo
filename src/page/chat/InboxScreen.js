@@ -20,6 +20,7 @@ import { loadMessages } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import * as DocumentPicker from "expo-document-picker";
+import { Platform } from "react-native";
 
 const InboxScreen = ({ route }) => {
   let receiver = route.params?.item; // click conversation
@@ -40,14 +41,7 @@ const InboxScreen = ({ route }) => {
   });
   const [allMsg, setAllMsg] = useState([]);
   const [showPicker, setShowPicker] = useState(false);
-  const [selectedIcon, setSelectedIcon] = useState(null);
-  const ICONS = [
-    "smile",
-    "heart",
-    "thumbs-up",
-    "laugh",
-    "sad-tear",
-  ];
+  const ICONS = ["smile", "heart", "thumbs-up", "laugh", "sad-tear"];
 
   const IconPicker = ({ visible, onClose, onPick }) => (
     <Modal visible={visible} transparent animationType="fade">
@@ -201,9 +195,18 @@ const InboxScreen = ({ route }) => {
 
   const createFormData = (photo) => {
     const data = new FormData();
-    data.append("avatar", photo[0].uri);
-    data.append("fileName", photo[0].name);
-    data.append("mimeType", photo[0].mimeType);
+    if (Platform.OS === "android" || Platform.OS === "ios") {
+      data.append("avatar", {
+        uri: photo[0].uri,
+        name: photo[0].name || "photo.jpg",
+        type: photo[0].mimeType || "image/jpeg",
+      });
+    } else {
+      data.append("avatar", photo[0].uri);
+      data.append("fileName", photo[0].name);
+      data.append("mimeType", photo[0].mimeType);
+    }
+
     return data;
   };
 
@@ -212,7 +215,7 @@ const InboxScreen = ({ route }) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: "*/*", // hoặc 'image/*', 'video/*', 'application/pdf'
-        multiple: false,
+        multiple: true,
         copyToCacheDirectory: true,
       });
 
@@ -261,17 +264,17 @@ const InboxScreen = ({ route }) => {
     }
   };
 
-  const handleSelectIcon = (iconName) =>{
+  const handleSelectIcon = (iconName) => {
     const iconMap = {
-      smile: '😄',
-      heart: '❤️',
-      'thumbs-up': '👍',
-      'sad-tear': '😢',
-      laugh: '😂',
+      smile: "😄",
+      heart: "❤️",
+      "thumbs-up": "👍",
+      "sad-tear": "😢",
+      laugh: "😂",
     };
-    const emoji = iconMap[iconName] || '';
+    const emoji = iconMap[iconName] || "";
     setInput((prev) => prev + emoji);
-  }
+  };
   // action socket
   useEffect(() => {
     if (socketRef.current) {

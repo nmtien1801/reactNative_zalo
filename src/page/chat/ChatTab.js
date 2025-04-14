@@ -63,9 +63,10 @@ const ChatTab = () => {
     }
   }, [conversationRedux]);
 
-  // connect docket
+  // connect docket -> cmd(IPv4 Address): ipconfig
+  const IPv4 = "192.168.1.5"
   useEffect(() => {
-    const socket = io.connect("http://localhost:8080");
+    const socket = io.connect(`http://${IPv4}:8080`);
 
     socketRef.current = socket;
     socket.on("connect", () => setIsConnect(true));
