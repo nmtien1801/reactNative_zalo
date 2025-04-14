@@ -10,17 +10,16 @@ import {
   Alert,
   Modal,
   Image,
-  Video,
 } from "react-native";
+import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { useNavigation } from "@react-navigation/native";
 import { loadMessages } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatar } from "../../redux/profileSlice.js";
-import { uploadAvatarProfile } from "../../redux/authSlice.js";
-import { launchImageLibrary } from "react-native-image-picker";
 // import DocumentPicker from 'react-native-document-picker';
+import * as DocumentPicker from "expo-document-picker";
 
 const InboxScreen = ({ route }) => {
   let receiver = route.params?.item; // click conversation
@@ -34,7 +33,7 @@ const InboxScreen = ({ route }) => {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [photo, setPhoto] = useState(null);
-  const [uploadedUrl, setUploadedUrl] = useState(null);
+  const video = useRef(null); // quản lý video
   const [roomData, setRoomData] = useState({
     room: null,
     receiver: null,
@@ -159,26 +158,25 @@ const InboxScreen = ({ route }) => {
 
   const createFormData = (photo) => {
     const data = new FormData();
-
-    data.append("avatar", photo.uri);
-
+    data.append("avatar", photo[0].uri);
+    data.append("fileName", photo[0].name);
+    data.append("mimeType", photo[0].mimeType);
     return data;
   };
 
   // Hàm chọn ảnh - video từ thư viện hoặc camera
   const pickMedia = async () => {
-    launchImageLibrary(
-      { mediaType: "photo", includeBase64: false },
-      async (response) => {
-        if (response.didCancel) {
-          console.log("User cancelled image picker");
-        } else if (response.errorMessage) {
-          console.log("ImagePicker Error: ", response.errorMessage);
-        } else if (response.assets && response.assets.length > 0) {
-          setPhoto(response.assets[0]);
-        }
-      }
-    );
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "*/*", // hoặc 'image/*', 'video/*', 'application/pdf'
+        multiple: false,
+        copyToCacheDirectory: true,
+      });
+
+      setPhoto(result.assets);
+    } catch (err) {
+      console.log("Error picking file:", err);
+    }
   };
 
   useEffect(() => {
@@ -208,20 +206,26 @@ const InboxScreen = ({ route }) => {
 
   const handleUploadPhoto = async () => {
     if (!photo && !document) {
-      Alert.alert("Chưa chọn ảnh");
+      Alert.alert("Chưa chọn ảnh or video");
       return;
     }
 
     try {
-      console.log("photo: ", photo);
-
       const formData = createFormData(photo);
-
       const res = await dispatch(uploadAvatar(formData)).unwrap();
 
       console.log("Upload thành công:", res);
       if (res.EC === 0) {
-        sendMessage(res.DT, 2);
+        const mimeType = photo[0].mimeType;
+        let type;
+        if (mimeType.split("/")[0] === "video") {
+          type = 3; // video
+        } else if (mimeType.split("/")[0] === "image") {
+          type = 2; // image
+        } else {
+          type = 1; // text
+        }
+        sendMessage(res.DT, type);
       }
     } catch (error) {
       console.error("Upload thất bại:", error);
@@ -322,9 +326,15 @@ const InboxScreen = ({ route }) => {
               ) : item.type === "3" ? (
                 <Video
                   source={{ uri: item.msg }}
-                  style={{ width: 250, height: 200 }}
-                  controls={true}
+                  style={{
+                    width: 250,
+                    height: 200,
+                    borderRadius: 10,
+                    backgroundColor: "black",
+                  }}
+                  useNativeControls={true}
                   resizeMode="contain"
+                  isLooping={false}
                 />
               ) : item.type === "4" ? (
                 <TouchableOpacity onPress={() => Linking.openURL(item.msg)}>
