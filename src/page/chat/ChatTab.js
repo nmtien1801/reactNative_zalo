@@ -78,8 +78,6 @@ const ChatTab = () => {
       socketRef.current.emit("register", user._id);
 
       socketRef.current.on("user-list", (usersList) => {
-        console.log("onlineUsers ", usersList);
-
         setOnlineUsers(usersList); // Lưu danh sách user online
       });
 
@@ -105,7 +103,11 @@ const ChatTab = () => {
               height: ITEM_HEIGHT,
             }}
             onPress={() =>
-              navigation.navigate("InboxScreen", { item, socketRef, onlineUsers })
+              navigation.navigate("InboxScreen", {
+                item,
+                socketRef,
+                onlineUsers,
+              })
             }
           >
             <Image

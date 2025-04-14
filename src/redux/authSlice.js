@@ -136,7 +136,6 @@ const authSlice = createSlice({
       .addCase(doGetAccount.fulfilled, (state, action) => {
         if (action.payload.EC === 0) {
           state.user = action.payload.DT || {};
-          console.log("state.user: ", action.payload);
 
           state.isLoggedIn = true;
           state.isLoading = false; // Kết thúc loading

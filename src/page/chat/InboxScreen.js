@@ -7,18 +7,25 @@ import {
   FlatList,
   StyleSheet,
   SafeAreaView,
+  Alert,
   Modal,
+  Image,
+  Video,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { useNavigation } from "@react-navigation/native";
 import { loadMessages } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
+import { uploadAvatar } from "../../redux/profileSlice.js";
+import { uploadAvatarProfile } from "../../redux/authSlice.js";
+import { launchImageLibrary } from "react-native-image-picker";
+// import DocumentPicker from 'react-native-document-picker';
 
 const InboxScreen = ({ route }) => {
   let receiver = route.params?.item; // click conversation
   let socketRef = route.params?.socketRef;
-  let onlineUsers = route.params?.onlineUsers
+  let onlineUsers = route.params?.onlineUsers;
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const flatListRef = useRef(null);
@@ -26,6 +33,8 @@ const InboxScreen = ({ route }) => {
   const [input, setInput] = useState("");
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [photo, setPhoto] = useState(null);
+  const [uploadedUrl, setUploadedUrl] = useState(null);
   const [roomData, setRoomData] = useState({
     room: null,
     receiver: null,
@@ -88,7 +97,7 @@ const InboxScreen = ({ route }) => {
       });
     } else {
       handleLoadMessages(receiver._id, receiver.type);
-      
+
       receiverOnline = onlineUsers.find((u) => u.userId === receiver._id);
       setRoomData({
         ...roomData,
@@ -111,7 +120,7 @@ const InboxScreen = ({ route }) => {
     }
   };
 
-  const sendMessage = () => {
+  const sendMessage = (msg, type) => {
     if (socketRef.current) {
       let sender = { ...user };
       sender.socketId = socketRef.current.id;
@@ -122,12 +131,13 @@ const InboxScreen = ({ route }) => {
       );
 
       const data = {
-        msg: input,
+        msg: msg,
         receiver: {
           ...roomData.receiver,
           socketId: receiverOnline ? receiverOnline.socketId : null,
         },
         sender,
+        type: type, // 1 - text , 2 - image, 3 - video, 4 - file, 5 - icon
       };
       console.log("data: ", data);
 
@@ -147,12 +157,84 @@ const InboxScreen = ({ route }) => {
     });
   };
 
+  const createFormData = (photo) => {
+    const data = new FormData();
+
+    data.append("avatar", photo.uri);
+
+    return data;
+  };
+
+  // Hàm chọn ảnh - video từ thư viện hoặc camera
+  const pickMedia = async () => {
+    launchImageLibrary(
+      { mediaType: "photo", includeBase64: false },
+      async (response) => {
+        if (response.didCancel) {
+          console.log("User cancelled image picker");
+        } else if (response.errorMessage) {
+          console.log("ImagePicker Error: ", response.errorMessage);
+        } else if (response.assets && response.assets.length > 0) {
+          setPhoto(response.assets[0]);
+        }
+      }
+    );
+  };
+
+  useEffect(() => {
+    if (photo) {
+      handleUploadPhoto();
+    }
+  }, [photo]);
+
+  // upload file
+  // const pickDocument = async () => {
+  //   try {
+  //     const res = await DocumentPicker.pickSingle({
+  //       type: [DocumentPicker.types.allFiles],
+  //     });
+
+  //     // Bạn có thể gửi file ở đây
+  //     console.log('File picked:', res);
+  //     setDocument(res); // bạn tạo thêm state `document`
+  //   } catch (err) {
+  //     if (DocumentPicker.isCancel(err)) {
+  //       console.log('User cancelled document picker');
+  //     } else {
+  //       console.error('DocumentPicker Error: ', err);
+  //     }
+  //   }
+  // };
+
+  const handleUploadPhoto = async () => {
+    if (!photo && !document) {
+      Alert.alert("Chưa chọn ảnh");
+      return;
+    }
+
+    try {
+      console.log("photo: ", photo);
+
+      const formData = createFormData(photo);
+
+      const res = await dispatch(uploadAvatar(formData)).unwrap();
+
+      console.log("Upload thành công:", res);
+      if (res.EC === 0) {
+        sendMessage(res.DT, 2);
+      }
+    } catch (error) {
+      console.error("Upload thất bại:", error);
+      Alert.alert("Lỗi upload", error.message);
+    }
+  };
+
   // action socket
   useEffect(() => {
     if (socketRef.current) {
       socketRef.current.on("RECEIVED_MSG", (data) => {
         console.log("form another users ", data);
-        
+
         setAllMsg((prevState) => [...prevState, data]);
       });
 
@@ -193,7 +275,15 @@ const InboxScreen = ({ route }) => {
           <TouchableOpacity>
             <Ionicons name="videocam" size={24} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate("PersonOption", { receiver, socketRef, onlineUsers })}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("PersonOption", {
+                receiver,
+                socketRef,
+                onlineUsers,
+              })
+            }
+          >
             <Ionicons name="menu" size={24} color="white" />
           </TouchableOpacity>
         </View>
@@ -218,7 +308,41 @@ const InboxScreen = ({ route }) => {
                   : styles.friendMessage,
               ]}
             >
-              <Text style={styles.messageText}>{item.msg || ""}</Text>
+              {item.type === "2" ? (
+                <Image
+                  source={{ uri: item.msg }}
+                  style={{
+                    width: 200,
+                    height: 200,
+                    borderRadius: 10,
+                    backgroundColor: "transparent",
+                  }}
+                  resizeMode="cover"
+                />
+              ) : item.type === "3" ? (
+                <Video
+                  source={{ uri: item.msg }}
+                  style={{ width: 250, height: 200 }}
+                  controls={true}
+                  resizeMode="contain"
+                />
+              ) : item.type === "4" ? (
+                <TouchableOpacity onPress={() => Linking.openURL(item.msg)}>
+                  <Text style={{ color: "blue" }}>
+                    📎 {item.fileName || "Tệp đính kèm"}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <Text
+                  style={
+                    item.sender._id === user._id
+                      ? styles.messageTextUser
+                      : styles.messageTextFriend
+                  }
+                >
+                  {item.msg || ""}
+                </Text>
+              )}
               <Text style={styles.messageTime}>
                 {convertTime(item.createdAt)}
               </Text>
@@ -263,12 +387,15 @@ const InboxScreen = ({ route }) => {
             <TouchableOpacity style={styles.iconWrapper}>
               <FontAwesome5 name="microphone" size={22} color="gray" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconWrapper}>
+            <TouchableOpacity style={styles.iconWrapper} onPress={pickMedia}>
               <FontAwesome5 name="image" size={22} color="gray" />
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity style={styles.iconWrapper} onPress={sendMessage}>
+          <TouchableOpacity
+            style={styles.iconWrapper}
+            onPress={() => sendMessage(input, 1)}
+          >
             <FontAwesome5 name="paper-plane" size={22} color="blue" />
           </TouchableOpacity>
         )}
@@ -381,14 +508,24 @@ const styles = StyleSheet.create({
   },
   userMessage: {
     alignSelf: "flex-end",
-    backgroundColor: "#007bff",
   },
   friendMessage: {
     alignSelf: "flex-start",
-    backgroundColor: "#fff",
   },
   messageText: {
     color: "black",
+  },
+  messageTextUser: {
+    color: "white",
+    backgroundColor: "#007bff",
+    padding: 8,
+    borderRadius: 10,
+  },
+  messageTextFriend: {
+    color: "black",
+    backgroundColor: "#fff",
+    padding: 8,
+    borderRadius: 10,
   },
   messageTime: {
     fontSize: 10,
