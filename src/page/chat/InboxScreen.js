@@ -10,6 +10,7 @@ import {
   Alert,
   Modal,
   Image,
+  Linking,
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,7 +19,6 @@ import { useNavigation } from "@react-navigation/native";
 import { loadMessages } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatar } from "../../redux/profileSlice.js";
-// import DocumentPicker from 'react-native-document-picker';
 import * as DocumentPicker from "expo-document-picker";
 
 const InboxScreen = ({ route }) => {
@@ -39,7 +39,50 @@ const InboxScreen = ({ route }) => {
     receiver: null,
   });
   const [allMsg, setAllMsg] = useState([]);
+  const [showPicker, setShowPicker] = useState(false);
+  const [selectedIcon, setSelectedIcon] = useState(null);
+  const ICONS = [
+    "smile",
+    "heart",
+    "thumbs-up",
+    "laugh",
+    "sad-tear",
+  ];
 
+  const IconPicker = ({ visible, onClose, onPick }) => (
+    <Modal visible={visible} transparent animationType="fade">
+      <TouchableOpacity
+        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.3)" }}
+        onPress={onClose}
+        activeOpacity={1}
+      >
+        <View
+          style={{
+            backgroundColor: "#fff",
+            padding: 10,
+            margin: 50,
+            borderRadius: 10,
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "center",
+          }}
+        >
+          {ICONS.map((icon, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => {
+                onPick(icon);
+                onClose();
+              }}
+              style={{ margin: 10 }}
+            >
+              <FontAwesome5 name={icon} size={24} color="black" />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
   const sections = [
     {
       id: "members",
@@ -164,7 +207,7 @@ const InboxScreen = ({ route }) => {
     return data;
   };
 
-  // Hàm chọn ảnh - video từ thư viện hoặc camera
+  // Hàm chọn ảnh - video - file từ thư viện hoặc camera
   const pickMedia = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -185,32 +228,15 @@ const InboxScreen = ({ route }) => {
     }
   }, [photo]);
 
-  // upload file
-  // const pickDocument = async () => {
-  //   try {
-  //     const res = await DocumentPicker.pickSingle({
-  //       type: [DocumentPicker.types.allFiles],
-  //     });
-
-  //     // Bạn có thể gửi file ở đây
-  //     console.log('File picked:', res);
-  //     setDocument(res); // bạn tạo thêm state `document`
-  //   } catch (err) {
-  //     if (DocumentPicker.isCancel(err)) {
-  //       console.log('User cancelled document picker');
-  //     } else {
-  //       console.error('DocumentPicker Error: ', err);
-  //     }
-  //   }
-  // };
-
   const handleUploadPhoto = async () => {
-    if (!photo && !document) {
+    if (!photo) {
       Alert.alert("Chưa chọn ảnh or video");
       return;
     }
 
     try {
+      console.log("photo: ", photo);
+
       const formData = createFormData(photo);
       const res = await dispatch(uploadAvatar(formData)).unwrap();
 
@@ -219,11 +245,13 @@ const InboxScreen = ({ route }) => {
         const mimeType = photo[0].mimeType;
         let type;
         if (mimeType.split("/")[0] === "video") {
-          type = 3; // video
+          type = "video";
         } else if (mimeType.split("/")[0] === "image") {
-          type = 2; // image
+          type = "image";
+        } else if (mimeType.split("/")[0] === "application") {
+          type = "file";
         } else {
-          type = 1; // text
+          type = "text";
         }
         sendMessage(res.DT, type);
       }
@@ -233,6 +261,17 @@ const InboxScreen = ({ route }) => {
     }
   };
 
+  const handleSelectIcon = (iconName) =>{
+    const iconMap = {
+      smile: '😄',
+      heart: '❤️',
+      'thumbs-up': '👍',
+      'sad-tear': '😢',
+      laugh: '😂',
+    };
+    const emoji = iconMap[iconName] || '';
+    setInput((prev) => prev + emoji);
+  }
   // action socket
   useEffect(() => {
     if (socketRef.current) {
@@ -298,21 +337,21 @@ const InboxScreen = ({ route }) => {
         data={allMsg}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            onLongPress={() => {
-              setSelectedMessage(item);
-              setModalVisible(true);
-            }}
+          <View
+            style={[
+              styles.message,
+              item.sender._id === user._id
+                ? styles.userMessage
+                : styles.friendMessage,
+            ]}
           >
-            <View
-              style={[
-                styles.message,
-                item.sender._id === user._id
-                  ? styles.userMessage
-                  : styles.friendMessage,
-              ]}
-            >
-              {item.type === "2" ? (
+            {item.type === "image" ? (
+              <TouchableOpacity
+                onLongPress={() => {
+                  setSelectedMessage(item);
+                  setModalVisible(true);
+                }}
+              >
                 <Image
                   source={{ uri: item.msg }}
                   style={{
@@ -323,7 +362,14 @@ const InboxScreen = ({ route }) => {
                   }}
                   resizeMode="cover"
                 />
-              ) : item.type === "3" ? (
+              </TouchableOpacity>
+            ) : item.type === "video" ? (
+              <TouchableOpacity
+                onLongPress={() => {
+                  setSelectedMessage(item);
+                  setModalVisible(true);
+                }}
+              >
                 <Video
                   source={{ uri: item.msg }}
                   style={{
@@ -336,13 +382,27 @@ const InboxScreen = ({ route }) => {
                   resizeMode="contain"
                   isLooping={false}
                 />
-              ) : item.type === "4" ? (
-                <TouchableOpacity onPress={() => Linking.openURL(item.msg)}>
-                  <Text style={{ color: "blue" }}>
-                    📎 {item.fileName || "Tệp đính kèm"}
-                  </Text>
-                </TouchableOpacity>
-              ) : (
+              </TouchableOpacity>
+            ) : item.type === "file" ? (
+              <TouchableOpacity onPress={() => Linking.openURL(item.msg)}>
+                <Text
+                  style={{
+                    color: "white",
+                    backgroundColor: "#007bff",
+                    padding: 8,
+                    borderRadius: 10,
+                  }}
+                >
+                  🡇 {item.msg.split("_").pop() || "Tệp đính kèm"}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onLongPress={() => {
+                  setSelectedMessage(item);
+                  setModalVisible(true);
+                }}
+              >
                 <Text
                   style={
                     item.sender._id === user._id
@@ -352,12 +412,12 @@ const InboxScreen = ({ route }) => {
                 >
                   {item.msg || ""}
                 </Text>
-              )}
-              <Text style={styles.messageTime}>
-                {convertTime(item.createdAt)}
-              </Text>
-            </View>
-          </TouchableOpacity>
+              </TouchableOpacity>
+            )}
+            <Text style={styles.messageTime}>
+              {convertTime(item.createdAt)}
+            </Text>
+          </View>
         )}
         contentContainerStyle={styles.messagesContainer}
         onContentSizeChange={() => {
@@ -371,13 +431,14 @@ const InboxScreen = ({ route }) => {
       <View style={styles.inputContainer}>
         <TouchableOpacity
           style={{ flexDirection: "row", alignItems: "center" }}
+          onPress={() => setShowPicker(true)}
         >
           <FontAwesome5 name="sticky-note" size={24} color="black" />
           <FontAwesome5
             name="smile"
             size={12}
             color="black"
-            style={{ marginLeft: -19 }}
+            style={{ marginLeft: -17 }}
           />
         </TouchableOpacity>
         <View style={styles.inputWrapper}>
@@ -410,6 +471,12 @@ const InboxScreen = ({ route }) => {
           </TouchableOpacity>
         )}
       </View>
+
+      <IconPicker
+        visible={showPicker}
+        onClose={() => setShowPicker(false)}
+        onPick={(iconName) => handleSelectIcon(iconName)}
+      />
 
       <Modal
         visible={modalVisible}
