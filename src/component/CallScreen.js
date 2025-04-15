@@ -307,7 +307,6 @@ const CallScreen = ({
               ? `Đang gọi ${receiverName || "Người nhận"}...`
               : "Cuộc gọi video" || " "}
           </Text>
-          {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
