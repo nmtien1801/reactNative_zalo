@@ -77,29 +77,6 @@ const InboxScreen = ({ route }) => {
       </TouchableOpacity>
     </Modal>
   );
-  const sections = [
-    {
-      id: "members",
-      title: "Thành viên",
-      icon: "users",
-      content: null,
-      empty: "Chưa có thành viên nào.",
-    },
-    {
-      id: "files",
-      title: "Tệp đã chia sẻ",
-      icon: "file-text",
-      content: null,
-      empty: "Không có tệp nào.",
-    },
-    {
-      id: "links",
-      title: "Liên kết đã chia sẻ",
-      icon: "link",
-      content: null,
-      empty: "Không có liên kết nào.",
-    },
-  ];
 
   // handleTypeChat
   useEffect(() => {
