@@ -21,6 +21,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import * as DocumentPicker from "expo-document-picker";
 import { Platform } from "react-native";
+import CallScreen from "../../component/CallScreen";
 
 const InboxScreen = ({ route }) => {
   let receiver = route.params?.item; // click conversation
@@ -41,6 +42,8 @@ const InboxScreen = ({ route }) => {
   });
   const [allMsg, setAllMsg] = useState([]);
   const [showPicker, setShowPicker] = useState(false);
+  const [showCallScreen, setShowCallScreen] = useState(false);
+  const [isInitiator, setIsInitiator] = useState(false); // Thêm state để theo dõi người khởi tạo
   const ICONS = ["smile", "heart", "thumbs-up", "laugh", "sad-tear"];
 
   const IconPicker = ({ visible, onClose, onPick }) => (
@@ -252,6 +255,12 @@ const InboxScreen = ({ route }) => {
     const emoji = iconMap[iconName] || "";
     setInput((prev) => prev + emoji);
   };
+
+  const handleStartCall = () => {
+    setShowCallScreen(true); // Mở modal
+    setIsInitiator(true); // Đặt người dùng hiện tại là người khởi tạo
+  };
+
   // action socket
   useEffect(() => {
     if (socketRef.current) {
@@ -292,7 +301,7 @@ const InboxScreen = ({ route }) => {
         </View>
 
         <View style={styles.headerIcons}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleStartCall}>
             <Ionicons name="call" size={23} color="white" />
           </TouchableOpacity>
           <TouchableOpacity>
@@ -512,6 +521,21 @@ const InboxScreen = ({ route }) => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Call Screen Modal */}
+      <CallScreen
+        show={showCallScreen}
+        onHide={() => {
+          setShowCallScreen(false);
+          setIsInitiator(false); // Reset khi đóng modal
+        }}
+        senderId={user._id}
+        receiverId={receiver._id}
+        callerName={user.username}
+        receiverName={receiver.username}
+        socketRef={socketRef}
+        isInitiator={isInitiator} // Truyền state isInitiator
+      />
     </SafeAreaView>
   );
 };
