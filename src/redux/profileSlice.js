@@ -1,12 +1,24 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { uploadAvatarService } from "../service/profileService";
+import {
+  uploadAvatarService,
+  uploadProfileService,
+} from "../service/profileService";
 
 const initialState = {};
 
 export const uploadAvatar = createAsyncThunk(
   "profile/uploadAvatar",
-async (formData, thunkAPI) => {
+  async (formData, thunkAPI) => {
     let response = await uploadAvatarService(formData);
+
+    return response;
+  }
+);
+
+export const uploadProfile = createAsyncThunk(
+  "profile/uploadProfile",
+  async (formData, thunkAPI) => {
+    let response = await uploadProfileService(formData);
 
     return response;
   }
@@ -15,14 +27,15 @@ async (formData, thunkAPI) => {
 const chatSlice = createSlice({
   name: "profile",
   initialState,
-
+  reducers: {},
   extraReducers: (builder) => {
     //  uploadAvatar
     builder
       .addCase(uploadAvatar.pending, (state) => {})
       .addCase(uploadAvatar.fulfilled, (state, action) => {})
-      .addCase(uploadAvatar.rejected, (state, action) => {
-      });
+      .addCase(uploadAvatar.rejected, (state, action) => {});
+
+    
   },
 });
 

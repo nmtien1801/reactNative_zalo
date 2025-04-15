@@ -21,6 +21,7 @@ import PersonOption from "./src/page/chat/PersonOption";
 import ResetPassword from "./src/page/auth/ResetPassword";
 import ChangePassword from "./src/component/changePassword"
 import Setting from './src/page/personal/Setting'
+import InformationAccount  from './src/page/personal/InfomationAccount'
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -98,6 +99,10 @@ const Project = () => {
               <Stack.Screen
                 name="Setting"
                 component={Setting}
+              />
+               <Stack.Screen
+                name="InformationAccount"
+                component={InformationAccount}
               />
             </>
           ) : (

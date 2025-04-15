@@ -29,4 +29,20 @@ const uploadAvatarProfileService = (phone, avatar) => {
   }
 };
 
-export { uploadAvatarService, uploadAvatarProfileService };
+const uploadProfileService = (data) => {
+  if (Platform.OS === "android" || Platform.OS === "ios") {
+    return customizeAxios.post(`/uploadProfile`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data", // Đảm bảo gửi đúng kiểu Content-Type
+      },
+    });
+  } else {
+    return customizeAxios.post(`/uploadProfile`, data);
+  }
+};
+
+export {
+  uploadAvatarService,
+  uploadAvatarProfileService,
+  uploadProfileService,
+};

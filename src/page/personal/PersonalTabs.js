@@ -13,16 +13,11 @@ import SearchHeader from "../../component/Header";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import { uploadAvatarProfile } from "../../redux/authSlice.js";
 import { useSelector, useDispatch } from "react-redux";
-import { launchImageLibrary } from "react-native-image-picker"; // Import đúng cách
+import { launchImageLibrary } from "react-native-image-picker";
 import { FontAwesome } from "@expo/vector-icons";
+import { Platform } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
-const createFormData = (photo) => {
-  const data = new FormData();
-
-  data.append("avatar", photo.uri);
-
-  return data;
-};
 export default function PersonalTabs() {
   const personal = [
     {
@@ -38,7 +33,10 @@ export default function PersonalTabs() {
   ];
 
   const PersonalItem = ({ personal }) => (
-    <TouchableOpacity style={styles.itemContainer}>
+    <TouchableOpacity
+      style={styles.itemContainer}
+      onPress={() => handleItemPress(personal)}
+    >
       <Image source={personal.avatar} style={styles.itemAvatar} />
       <View style={styles.itemTextContainer}>
         <Text style={styles.itemName}>{personal.name}</Text>
@@ -51,12 +49,30 @@ export default function PersonalTabs() {
   const dispatch = useDispatch();
   const [photo, setPhoto] = useState(null);
   const [uploadedUrl, setUploadedUrl] = useState(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
     if (user?.avatar) {
       setUploadedUrl(user.avatar);
     }
   }, [user?.avatar]);
+
+  const createFormData = (photo) => {
+    const data = new FormData();
+    if (Platform.OS === "android" || Platform.OS === "ios") {
+      data.append("avatar", {
+        uri: photo.uri,
+        name: photo.name || "photo.jpg",
+        type: photo.mimeType || "image/jpeg",
+      });
+    } else {
+      data.append("avatar", photo.uri);
+      data.append("fileName", photo.name);
+      data.append("mimeType", photo.mimeType);
+    }
+
+    return data;
+  };
 
   // Hàm chọn ảnh từ thư viện hoặc camera
   const pickImage = async () => {
@@ -75,7 +91,9 @@ export default function PersonalTabs() {
   };
 
   useEffect(() => {
-    handleUploadPhoto();
+    if (photo) {
+      handleUploadPhoto();
+    }
   }, [photo]);
 
   const handleUploadPhoto = async () => {
@@ -104,7 +122,12 @@ export default function PersonalTabs() {
       Alert.alert("Lỗi upload", error.message);
     }
   };
-  console.log(user);
+
+  const handleItemPress = (item) => {
+    if (item.id === "2") {
+      navigation.navigate("InformationAccount");
+    }
+  };
 
   return (
     <View style={styles.container}>
