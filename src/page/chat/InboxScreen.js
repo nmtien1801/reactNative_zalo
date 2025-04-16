@@ -289,21 +289,6 @@ const InboxScreen = ({ route }) => {
         console.log("Tin nhắn đã được thu hồi:", response.DT);
 
         socketRef.current.emit("RECALL", message);
-        // Cập nhật Redux state
-        dispatch(
-          recallMessage({
-            id: message._id,
-            updatedMessage: { msg: "Tin nhắn đã được thu hồi", type: "system" },
-          })
-        );
-
-        // setAllMsg((prevMessages) =>
-        //   prevMessages.map((msg) =>
-        //     msg._id === messageId
-        //       ? { ...msg, msg: "Tin nhắn đã được thu hồi", type: "system" }
-        //       : msg
-        //   )
-        // );
       } else {
         console.error("Thu hồi tin nhắn thất bại:", response.EM);
       }
