@@ -36,6 +36,12 @@ const ChangePassword = () => {
     if (formData.newPassword !== formData.confirmPassword) {
       tempErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
     }
+<<<<<<< HEAD
+=======
+    if (formData.newPassword === formData.currentPassword) {
+      tempErrors.newPassword = "Mật khẩu mới không được trùng với mật khẩu cũ";
+  }
+>>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };

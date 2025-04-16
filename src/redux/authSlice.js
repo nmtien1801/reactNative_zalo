@@ -6,7 +6,16 @@ import {
   sendCodeService,
   resetPasswordService,
   changePasswordService,
+<<<<<<< HEAD
 } from "../service/authService";
+=======
+  verifyEmailService,
+  logoutUserService,
+} from "../service/authService";
+import { uploadAvatarProfileService } from "../service/profileService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { uploadProfile } from "./profileSlice"; // update state từ 1 slice khác
+>>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 
 const initialState = {
   user: {}, // user info nào login(hs - teacher)
@@ -36,7 +45,11 @@ export const register = createAsyncThunk(
   "auth/register",
   async (formData, thunkAPI) => {
     const response = await registerService({ formData });
+<<<<<<< HEAD
     console.log("response", response);
+=======
+    console.log("sss", response);
+>>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 
     return response;
   }
@@ -71,6 +84,34 @@ export const changePassword = createAsyncThunk(
   }
 );
 
+<<<<<<< HEAD
+=======
+export const uploadAvatarProfile = createAsyncThunk(
+  "auth/uploadAvatarProfile",
+  async ({ phone, avatar }, thunkAPI) => {
+    let response = await uploadAvatarProfileService(phone, avatar);
+
+    return response;
+  }
+);
+
+export const verifyEmail = createAsyncThunk(
+  "auth/verifyEmail",
+  async (email, thunkAPI) => {
+    const response = await verifyEmailService(email);
+    return response;
+  }
+);
+
+export const logoutUser = createAsyncThunk(
+  "auth/logoutUser",
+  async (thunkAPI) => {
+    const response = await logoutUserService();
+    return response;
+  }
+);
+
+>>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 // đây là reducer
 const authSlice = createSlice({
   name: "auth",
@@ -107,7 +148,10 @@ const authSlice = createSlice({
       .addCase(doGetAccount.fulfilled, (state, action) => {
         if (action.payload.EC === 0) {
           state.user = action.payload.DT || {};
+<<<<<<< HEAD
           console.log("state.user: ", action.payload);
+=======
+>>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 
           state.isLoggedIn = true;
           state.isLoading = false; // Kết thúc loading
@@ -141,6 +185,49 @@ const authSlice = createSlice({
       .addCase(changePassword.pending, (state) => {})
       .addCase(changePassword.fulfilled, (state, action) => {})
       .addCase(changePassword.rejected, (state, action) => {});
+<<<<<<< HEAD
+=======
+
+    //uploadAvatarProfile
+    builder
+      .addCase(uploadAvatarProfile.pending, (state) => {})
+      .addCase(uploadAvatarProfile.fulfilled, (state, action) => {
+        if (action.payload.EC === 0) {
+          console.log("action: ", action);
+
+          state.user.avatar = action.payload.DT || {};
+        }
+      })
+      .addCase(uploadAvatarProfile.rejected, (state, action) => {});
+
+    //verifyEmail
+    builder
+      .addCase(verifyEmail.pending, (state) => {})
+      .addCase(verifyEmail.fulfilled, (state, action) => {})
+      .addCase(verifyEmail.rejected, (state, action) => {});
+
+    // logoutUser
+    builder
+      .addCase(logoutUser.pending, (state) => {})
+      .addCase(logoutUser.fulfilled, (state, action) => {
+        if (action.payload.EC === 2) {
+          (state.user = {}), (state.isLoggedIn = false);
+          AsyncStorage.removeItem("access_Token");
+          AsyncStorage.removeItem("refresh_Token");
+        }
+      })
+      .addCase(logoutUser.rejected, (state, action) => {});
+
+    // uploadProfile
+    builder
+      .addCase(uploadProfile.pending, (state) => {})
+      .addCase(uploadProfile.fulfilled, (state, action) => {
+        if (action.payload.EC === 0) {
+          state.user = action.payload.DT;
+        }
+      })
+      .addCase(uploadProfile.rejected, (state, action) => {});
+>>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
   },
 });
 

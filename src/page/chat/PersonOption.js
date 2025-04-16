@@ -14,7 +14,10 @@ import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
-const ChatInfoScreen = () => {
+const ChatInfoScreen = ({route}) => {
+  let item = route.params?.receiver; // click conversation
+  let socketRef = route.params?.socketRef;
+  let onlineUsers = route.params?.onlineUsers 
   const navigation = useNavigation();
   const [isReportCallsEnabled, setIsReportCallsEnabled] = useState(true);
   const [isHiddenChatEnabled, setIsHiddenChatEnabled] = useState(false);
@@ -33,7 +36,7 @@ const ChatInfoScreen = () => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={() => navigation.navigate("InboxScreen")}
+            onPress={() => navigation.navigate("InboxScreen", { item, socketRef, onlineUsers })}
           >
             <Ionicons name="arrow-back" size={24} color="black" />
           </TouchableOpacity>

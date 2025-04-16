@@ -11,7 +11,6 @@ import {
   Modal,
   Image,
   Linking,
-  Trash2,
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
@@ -43,7 +42,7 @@ const InboxScreen = ({ route }) => {
   const [input, setInput] = useState("");
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [photo, setPhoto] = useState(null); // lưu video, file
+  const [photo, setPhoto] = useState(null);
   const video = useRef(null); // quản lý video
   const [roomData, setRoomData] = useState({
     room: null,
@@ -53,9 +52,10 @@ const InboxScreen = ({ route }) => {
   const [showPicker, setShowPicker] = useState(false);
   const ICONS = ["smile", "heart", "thumbs-up", "laugh", "sad-tear"];
 
+  const imageInputRef = useRef(null);
   const [hasSelectedImages, setHasSelectedImages] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
-  const [selectedFiles, setSelectedFiles] = useState([]); // lưu ảnh
+  const [selectedFiles, setSelectedFiles] = useState([]);
   // ImageViewer
   const [selectedImage, setSelectedImage] = useState(null);
 
@@ -149,7 +149,7 @@ const InboxScreen = ({ route }) => {
     }
   };
 
-  const sendMessage = (message, type) => {
+  const sendMessage = (msg, type) => {
     if (socketRef.current) {
       let sender = { ...user };
       sender.socketId = socketRef.current.id;
@@ -158,24 +158,6 @@ const InboxScreen = ({ route }) => {
       const receiverOnline = onlineUsers.find(
         (u) => u.userId === roomData.receiver?._id
       );
-
-      let msg;
-      if (typeof message === "string") {
-        if (!message.trim()) {
-          alert("Tin nhắn không được để trống!");
-          return;
-        }
-        msg = message; // Gán chuỗi như bình thường
-      } else if (Array.isArray(message)) {
-        if (message.length === 0) {
-          alert("Danh sách ảnh/file rỗng!");
-          return;
-        }
-        msg = message; // Gán mảng luôn, không stringify
-      } else {
-        alert("Dữ liệu không hợp lệ");
-        return;
-      }
 
       const data = {
         msg: msg,
@@ -225,8 +207,8 @@ const InboxScreen = ({ route }) => {
   const pickMedia = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["video/*", "application/*"], // hoặc 'image/*', 'video/*', 'application/pdf'
-        multiple: false,
+        type: "*/*", // hoặc 'image/*', 'video/*', 'application/pdf'
+        multiple: true,
         copyToCacheDirectory: true,
       });
 
@@ -275,7 +257,6 @@ const InboxScreen = ({ route }) => {
     }
   };
 
-  // select icon
   const handleSelectIcon = (iconName) => {
     const iconMap = {
       smile: "😄",
@@ -349,71 +330,108 @@ const InboxScreen = ({ route }) => {
     }
   };
 
-  const pickImage = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: "image/*", // hoặc 'image/*', 'video/*', 'application/pdf'
-        multiple: true,
-        copyToCacheDirectory: true,
-      });
+  const handleImageChange = async (e) => {
+    const selectedImages = e.target.files;
 
-      if (!result.assets || result.assets.length === 0) return;
+    if (selectedImages && selectedImages.length > 0) {
 
-      if (result.assets.length > 10) {
-        alert("Chỉ được chọn tối đa 10 ảnh.");
+      if (selectedImages.length > 10) {
+        setHasSelectedImages(false);
+        alert("Số lượng ảnh không được quá 10!");
         return;
       }
 
-      setPreviewImages(result.assets);
-    } catch (err) {
-      console.log("Error picking file:", err);
+      const previews = [];
+      const files = Array.from(e.target.files);
+
+      for (let image of selectedImages) {
+        // Tạo URL xem trước
+        const reader = new FileReader();
+        reader.onload = () => {
+          previews.push(reader.result); // Lưu URL xem trước vào mảng
+          setPreviewImages([...previews]); // Cập nhật state xem trước
+          setHasSelectedImages(true);
+        };
+        reader.readAsDataURL(image);
+      }
+
+      if (files.length > 0) {
+        setSelectedFiles((prev) => [...prev, ...files]);
+      }
+    } else {
+      setHasSelectedImages(false);
     }
   };
 
-  useEffect(() => {
-    if (previewImages) {
-      handleUploadMultiple();
-    }
-  }, [previewImages]);
+  const handleButtonClickImage = () => {
+    imageInputRef.current.click(); // Mở dialog chọn file
+  };
 
-  const handleUploadMultiple = async () => {
-    if (!previewImages || previewImages.length === 0) {
-      console.log("Chưa chọn ảnh, video hoặc file");
-      return;
-    }
+  // Hàm nhấp vào image xem
+  const handleImageClick = (imageUrl) => {
+    setSelectedImage(imageUrl);
+  };
 
-    try {
+  const handleCloseImageViewer = () => {
+    setSelectedImage(null);
+  };
+
+  // xóa ảnh xem trước
+  const handleRemovePreview = (index) => {
+    const updatedPreviews = [...previewImages];
+    updatedPreviews.splice(index, 1);
+    setPreviewImages(updatedPreviews);
+
+    if (updatedPreviews.length === 0) {
+      setHasSelectedImages(false);
+    }
+  };
+
+  const handleMessage = async (message) => {
+    if (previewImages.length === 0) {
+      sendMessage(message, "text");
+    } else if (previewImages.length > 0) {
+
       const listUrlImage = [];
-      for (const file of previewImages) {
-        const formData = new FormData();
-        if (Platform.OS === "android" || Platform.OS === "ios") {
-          formData.append("avatar", {
-            uri: file.uri,
-            name: file.name || "photo.jpg",
-            type: file.mimeType || "image/jpeg",
-          });
-        } else {
-          formData.append("avatar", file.uri);
-          formData.append("fileName", file.name);
-          formData.append("mimeType", file.mimeType);
-        }
 
-        const res = await dispatch(uploadAvatar(formData)).unwrap();
-        console.log("Upload thành công:", res);
-        if (res.EC === 0) {
-          listUrlImage.push(res.DT);
-        } else {
-          console.log(res.EM);
+      for (const image of selectedFiles) {
+        const formData = new FormData();
+        console.log("Ảnh:" + image);
+        formData.append("avatar", image);
+
+        try {
+          const response = await dispatch(uploadAvatar({ formData }));
+          if (response.payload.EC === 0) {
+            listUrlImage.push(response.payload.DT);
+          } else {
+            alert(response.payload.EM || "Lỗi khi tải lên ảnh!");
+          }
+        } catch (error) {
+          console.error("Lỗi khi tải lên ảnh:", error);
+          alert("Đã xảy ra lỗi khi tải lên ảnh.");
         }
       }
+
       if (listUrlImage.length > 0) {
         const listUrlImageString = listUrlImage.join(", ");
         sendMessage(listUrlImageString, "image");
       }
-    } catch (error) {
-      console.error("Upload thất bại:", error);
-      Alert.alert("Lỗi upload", error.message);
+
+      if (message.trim()) {
+        sendMessage(message, "text");
+      }
+
+      setPreviewImages([]);
+      setHasSelectedImages(false);
     }
+
+    setInput("");
+  }
+
+
+  const handleClearAllPreviews = () => {
+    setPreviewImages([]); // Xóa toàn bộ ảnh xem trước
+    setHasSelectedImages(false);
   };
 
   return (
@@ -613,10 +631,10 @@ const InboxScreen = ({ route }) => {
         </View>
         {!input.trim() ? (
           <View style={{ flexDirection: "row" }}>
-            <TouchableOpacity style={styles.iconWrapper} onPress={pickMedia}>
+            <TouchableOpacity style={styles.iconWrapper} onPress={handleButtonClickImage}>
               <FontAwesome5 name="paperclip" size={22} color="gray" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconWrapper} onPress={pickImage}>
+            <TouchableOpacity style={styles.iconWrapper} onPress={pickMedia}>
               <FontAwesome5 name="image" size={22} color="gray" />
             </TouchableOpacity>
           </View>
@@ -630,28 +648,28 @@ const InboxScreen = ({ route }) => {
         )}
       </View>
 
-      {/* <View style={styles.previewContainer}>
-        {previewImages.map((image, index) => (
-          <View key={index} style={styles.previewItem}>
-            <Image
-              source={{ uri: image }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-            <TouchableOpacity
-              style={styles.removeButton}
-              onPress={() => handleRemovePreview(index)}
-            >
-              <Trash2 size={16} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        ))}
-        {previewImages.length > 0 && (
-          <TouchableOpacity onPress={handleClearAllPreviews}>
-            <Text style={styles.clearAllButton}>Xóa tất cả</Text>
+      <View style={styles.previewContainer}>
+      {previewImages.map((image, index) => (
+        <View key={index} style={styles.previewItem}>
+          <Image
+            source={{ uri: image }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+          <TouchableOpacity
+            style={styles.removeButton}
+            onPress={() => handleRemovePreview(index)}
+          >
+            <Trash2 size={16} color="#fff" />
           </TouchableOpacity>
-        )}
-      </View> */}
+        </View>
+      ))}
+      {previewImages.length > 0 && (
+        <TouchableOpacity onPress={handleClearAllPreviews}>
+          <Text style={styles.clearAllButton}>Xóa tất cả</Text>
+        </TouchableOpacity>
+      )}
+    </View>
 
       <IconPicker
         visible={showPicker}
@@ -734,12 +752,9 @@ const InboxScreen = ({ route }) => {
         </TouchableOpacity>
       </Modal>
 
-      {/* {selectedImage && (
-        <ImageViewer
-          imageUrl={selectedImage}
-          onClose={handleCloseImageViewer}
-        />
-      )} */}
+      {selectedImage && (
+        <ImageViewer imageUrl={selectedImage} onClose={handleCloseImageViewer} />
+      )}
     </SafeAreaView>
   );
 };
@@ -901,8 +916,8 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   gridContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10, // nếu dùng React Native Web, có thể dùng gap; nếu không, dùng margin
     marginVertical: 10,
   },
@@ -912,46 +927,46 @@ const styles = StyleSheet.create({
     margin: 5,
   },
   imageSquare: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     borderRadius: 10,
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
   },
   previewContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8, // nếu bạn dùng React Native Web. Nếu không:
     marginTop: 8,
   },
   previewItem: {
-    position: "relative",
+    position: 'relative',
     margin: 4,
     width: 100,
     height: 100,
     borderRadius: 8,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   image: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     borderRadius: 8,
   },
   removeButton: {
-    position: "absolute",
+    position: 'absolute',
     top: 2,
     right: 2,
-    backgroundColor: "red",
+    backgroundColor: 'red',
     width: 24,
     height: 24,
     borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 1,
   },
   clearAllButton: {
-    color: "red",
+    color: 'red',
     marginTop: 10,
-    textDecorationLine: "underline",
+    textDecorationLine: 'underline',
   },
 });
 
