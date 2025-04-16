@@ -64,7 +64,7 @@ const ChatTab = () => {
   }, [conversationRedux]);
 
   // connect docket -> cmd(IPv4 Address): ipconfig
-  const IPv4 = "192.168.1.5"
+  const IPv4 = "192.168.1.33"
   useEffect(() => {
     const socket = io.connect(`http://${IPv4}:8080`);
 
@@ -88,7 +88,11 @@ const ChatTab = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
-      <SearchHeader option={"chatTab"} />
+      <SearchHeader
+        option="chatTab"
+        socketRef={socketRef}
+        onlineUsers={onlineUsers}
+      />
       {/* Chat List */}
       <FlatList
         data={conversations}

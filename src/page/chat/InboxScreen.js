@@ -320,6 +320,10 @@ const InboxScreen = ({ route }) => {
     }
   };
 
+  const forwardMessage = (message) => {
+    navigation.navigate("ShareScreen", { message });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -570,6 +574,7 @@ const InboxScreen = ({ route }) => {
                 { name: "Nhắc hẹn", icon: "clock", action: () => {} },
                 { name: "Chọn nhiều", icon: "check-square", action: () => {} },
                 { name: "Xóa", icon: "trash", action: () => handleDeleteMessageForMe(selectedMessage._id, user._id) },
+                { name: "Chuyển tiếp", icon: "share", action: () => forwardMessage(selectedMessage) },
               ].map((item, index) => (
                 <TouchableOpacity key={index} style={styles.menuItem} onPress={item.action}>
                   <FontAwesome5 name={item.icon} size={25} color="black" />

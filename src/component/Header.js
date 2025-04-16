@@ -21,7 +21,7 @@ import { useNavigation } from "@react-navigation/native";
 const { width, height } = Dimensions.get("window");
 const HEADER_HEIGHT = height * 0.08;
 
-export default function SearchHeader({ option }) {
+export default function SearchHeader({ option, socketRef, onlineUsers }) {
   const navigation = useNavigation();
 
   return (
@@ -50,7 +50,12 @@ export default function SearchHeader({ option }) {
           height: HEADER_HEIGHT * 0.6,
           fontSize: 15,
         }}
-        onPress={() => navigation.navigate("SearchScreen")}
+        onFocus={() =>
+          navigation.navigate("SearchScreen", {
+            socketRef,
+            onlineUsers,
+          })
+        }
       />
 
       {option === "person" && (

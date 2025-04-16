@@ -21,7 +21,9 @@ import PersonOption from "./src/page/chat/PersonOption";
 import ResetPassword from "./src/page/auth/ResetPassword";
 import ChangePassword from "./src/component/changePassword"
 import Setting from './src/page/personal/Setting'
-import InformationAccount  from './src/page/personal/InfomationAccount'
+import InformationAccount from './src/page/personal/InfomationAccount'
+import AddFriendScreen from "./src/page/chat/AddFriendScreen";
+import SearchScreen from "./src/page/chat/SearchScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -82,6 +84,17 @@ const Project = () => {
                 component={MainTabs}
                 options={{ headerShown: false }}
               />
+               <Stack.Screen
+                name="SearchScreen"
+                component={SearchScreen}
+                options={{ headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="AddFriendScreen"
+                component={AddFriendScreen}
+                options={{ headerShown: false }}
+              />
               <Stack.Screen
                 name="InboxScreen"
                 component={InboxScreen}
@@ -100,10 +113,12 @@ const Project = () => {
                 name="Setting"
                 component={Setting}
               />
-               <Stack.Screen
+              <Stack.Screen
                 name="InformationAccount"
                 component={InformationAccount}
               />
+
+
             </>
           ) : (
             <>
