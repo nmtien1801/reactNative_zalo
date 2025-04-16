@@ -1,11 +1,41 @@
-import React from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import QRCode from 'react-native-qrcode-svg';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { getUserByPhoneService } from "../../service/userService"; // Giả sử bạn đã định nghĩa hàm này trong userService.js
+const AddFriendScreen = ({ route }) => {
+  const navigation = useNavigation();
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { socketRef, onlineUsers } = route.params || {};
 
-const AddFriendScreen = () => {
-    const navigation = useNavigation();
+  const handleSearchAndNavigate = async () => {
+   
+    const query = phone.trim();
+    if (!query) return;
+
+    try {
+      setLoading(true);
+      const response = await getUserByPhoneService(query);
+      if (
+        response.EC === 0 &&
+        response.EM === "User found" &&
+        response.DT &&
+        response.DT.DT
+      ) {
+        const foundUser = response.DT.DT;
+        navigation.navigate('UserProfileScreen', { user: foundUser, socketRef, onlineUsers }); // truyền user qua screen
+      } else {
+        Alert.alert("Not Found", "Không tìm thấy người dùng.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi tìm kiếm:", error);
+      Alert.alert("Error", "Đã có lỗi xảy ra.");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -32,13 +62,16 @@ const AddFriendScreen = () => {
           <View style={styles.prefixBox}>
             <Text style={styles.prefixText}>+84</Text>
           </View>
+
           <TextInput
             style={styles.phoneInput}
             placeholder="Enter phone number"
             placeholderTextColor="#999"
             keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
           />
-          <TouchableOpacity style={styles.arrowButton}>
+          <TouchableOpacity style={styles.arrowButton} onPress={handleSearchAndNavigate}>
             <Icon name="arrow-forward" size={20} color="#fff" />
           </TouchableOpacity>
         </View>

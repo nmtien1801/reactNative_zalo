@@ -95,7 +95,8 @@ export default function SearchHeader({ option, socketRef, onlineUsers }) {
                 padding: 10,
               }}
             >
-              <MenuOption onSelect={() => navigation.navigate("AddFriendScreen")}>
+              <MenuOption onSelect={() => navigation.navigate("AddFriendScreen", { socketRef,
+            onlineUsers})}>
                 <View
                   style={{
                     flexDirection: "row",
