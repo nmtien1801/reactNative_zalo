@@ -2,13 +2,18 @@ import React from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import QRCode from 'react-native-qrcode-svg';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const AddFriendScreen = () => {
+    const navigation = useNavigation();
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Icon name="arrow-back" size={24} color="#fff" />
+
+        <TouchableOpacity onPress={() => navigation.goBack()} >
+          <Icon name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
         <Text style={styles.headerText}>Add friends</Text>
       </View>
 

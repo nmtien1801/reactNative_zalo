@@ -95,7 +95,7 @@ export default function SearchHeader({ option, socketRef, onlineUsers }) {
                 padding: 10,
               }}
             >
-              <MenuOption onSelect={() => alert("Thêm bạn")}>
+              <MenuOption onSelect={() => navigation.navigate("AddFriendScreen")}>
                 <View
                   style={{
                     flexDirection: "row",
