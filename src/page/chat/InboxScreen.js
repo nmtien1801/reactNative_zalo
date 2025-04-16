@@ -182,49 +182,62 @@ const InboxScreen = ({ route }) => {
 
     setInput("");
   };
+  
 
     // Hàm gửi tin nhắn đến các cuộc trò chuyện được chọn
+const handleShareMessage = () => {
+  console.log("Selected conversations:", selectedConversations); // Log danh sách các cuộc trò chuyện được chọn
+  console.log("Selected message:", selectedMessage); // Log tin nhắn được chọn
 
-    const handleShareMessage = () => {
-      console.log("Selected conversations:", selectedConversations); // Log danh sách các cuộc trò chuyện được chọn
-      console.log("Selected message:", selectedMessage); // Log tin nhắn được chọn
-    if (!selectedMessage) {
-      Alert.alert("Lỗi", "Không có tin nhắn nào được chọn để chia sẻ!");
+  if (!selectedMessage) {
+    Alert.alert("Lỗi", "Không có tin nhắn nào được chọn để chia sẻ!");
+    return;
+  }
+
+  if (selectedConversations.length === 0) {
+    Alert.alert("Lỗi", "Vui lòng chọn ít nhất một cuộc trò chuyện để chia sẻ!");
+    return;
+  }
+
+  if (!socketRef.current || !socketRef.current.connected) {
+    Alert.alert("Lỗi", "Không thể kết nối đến máy chủ!");
+    return;
+  }
+
+  // Lặp qua danh sách các cuộc trò chuyện được chọn
+  selectedConversations.forEach((conversationId) => {
+    const conversation = conversations.find((c) => c._id === conversationId);
+    if (!conversation) {
+      console.error(`Không tìm thấy cuộc trò chuyện với ID: ${conversationId}`);
       return;
     }
-  
-    if (selectedConversations.length === 0) {
-      Alert.alert("Lỗi", "Vui lòng chọn ít nhất một cuộc trò chuyện để chia sẻ!");
-      return;
-    }
-  
-    // Lọc danh sách các receiverOnline
-    const onlineReceivers = selectedConversations
-      .map((conversationId) => {
-        const conversation = conversations.find((c) => c._id === conversationId);
-        const receiverOnline = onlineUsers.find((u) => u.userId === conversation._id);
-        if (receiverOnline) {
-          return { ...conversation, socketId: receiverOnline.socketId };
-        }
-        return null;
-      })
-      .filter((receiver) => receiver !== null); // Loại bỏ các receiver không online
-  
-    if (onlineReceivers.length === 0) {
-      Alert.alert("Thông báo", "Không có người nhận nào đang online!");
-      return;
-    }
-  
-    // Gửi tin nhắn đến từng receiverOnline
-    onlineReceivers.forEach((receiver) => {
-      sendMessage(selectedMessage.msg, selectedMessage.type, receiver);
-    });
-  
-    // Đóng modal sau khi gửi
-    setShareModalVisible(false);
-    setSelectedConversations([]);
-    Alert.alert("Thành công", "Tin nhắn đã được chia sẻ đến người nhận online!");
-  };
+
+    const receiverOnline = onlineUsers.find((u) => u.userId === conversation._id);
+
+    const data = {
+      msg: selectedMessage.msg, // Nội dung tin nhắn
+      receiver: {
+        ...conversation,
+        socketId: receiverOnline ? receiverOnline.socketId : null,
+      },
+      sender: {
+        ...user,
+        socketId: socketRef.current.id,
+      },
+      type: selectedMessage.type, // Kiểu tin nhắn (text, image, video, etc.)
+    };
+
+    console.log("Sending data: ", data);
+
+    // Gửi tin nhắn qua socket
+    socketRef.current.emit("SEND_MSG", data);
+  });
+
+  // Đóng modal sau khi gửi
+  setShareModalVisible(false);
+  setSelectedConversations([]);
+  Alert.alert("Thành công", "Tin nhắn đã được chia sẻ đến người nhận online!");
+};
 
   const convertTime = (time) => {
     const date = new Date(time);
@@ -345,6 +358,37 @@ const InboxScreen = ({ route }) => {
       });
     }
   }, []);
+
+  //   useEffect(() => {
+  //   if (socketRef.current) {
+  //     socketRef.current.on("RECEIVED_MSG", (data) => {
+  //       console.log("Received message from socket:", data);
+  
+  //       // Kiểm tra xem tin nhắn có thuộc về cuộc trò chuyện hiện tại không
+  //       if (data.receiver._id === roomData.receiver?._id || data.sender._id === roomData.receiver?._id) {
+  //         setAllMsg((prevState) => [...prevState, data]);
+  //       } else {
+  //         console.log("Tin nhắn không thuộc về cuộc trò chuyện hiện tại, bỏ qua.");
+  //       }
+  //     });
+  
+  //     socketRef.current.on("RECALL_MSG", (data) => {
+  //       setAllMsg((prevMsgs) =>
+  //         prevMsgs.map((msg) =>
+  //           msg._id === data._id
+  //             ? { ...msg, msg: "Tin nhắn đã được thu hồi", type: "system" }
+  //             : msg
+  //         )
+  //       );
+  //     });
+  
+  //     socketRef.current.on("DELETED_MSG", (data) => {
+  //       setAllMsg((prevState) =>
+  //         prevState.filter((item) => item._id != data.msg._id)
+  //       );
+  //     });
+  //   }
+  // }, [roomData.receiver]);
 
   const handleRecallMessage = async (message) => {
     try {
