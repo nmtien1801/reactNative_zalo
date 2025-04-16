@@ -507,7 +507,7 @@ const InboxScreen = ({ route }) => {
         ) : (
           <TouchableOpacity
             style={styles.iconWrapper}
-            onPress={() => sendMessage(input, 1)}
+            onPress={() => sendMessage(input, "text")}
           >
             <FontAwesome5 name="paper-plane" size={22} color="blue" />
           </TouchableOpacity>
