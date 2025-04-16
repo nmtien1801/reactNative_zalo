@@ -11,31 +11,39 @@ import {
   Modal,
   Image,
   Linking,
-  Trash2,
+  CheckBox,
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { useNavigation } from "@react-navigation/native";
-import {
-  deleteMessageForMe,
-  loadMessages,
-  recallMessage,
-} from "../../redux/chatSlice";
+import { deleteMessageForMe, loadMessages, recallMessage } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import * as DocumentPicker from "expo-document-picker";
 import { Platform } from "react-native";
 
-import {
-  recallMessageService,
-  deleteMessageForMeService,
-} from "../../service/chatService";
+import { recallMessageService, deleteMessageForMeService } from "../../service/chatService";
 
 const InboxScreen = ({ route }) => {
   let receiver = route.params?.item; // click conversation
   let socketRef = route.params?.socketRef;
   let onlineUsers = route.params?.onlineUsers;
+  
+  let conversations = route.params?.conversations; // Nhận conversations từ route.params
+  
+  const [shareModalVisible, setShareModalVisible] = useState(false); // Trạng thái cho modal chia sẻ
+  const [selectedConversations, setSelectedConversations] = useState([]); // Lưu các conversation được chọn
+
+  const toggleConversationSelection = (conversationId) => {
+    setSelectedConversations((prev) =>
+      prev.includes(conversationId)
+        ? prev.filter((id) => id !== conversationId)
+        : [...prev, conversationId]
+    );
+  };
+  
+
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const flatListRef = useRef(null);
@@ -43,7 +51,7 @@ const InboxScreen = ({ route }) => {
   const [input, setInput] = useState("");
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [photo, setPhoto] = useState(null); // lưu video, file
+  const [photo, setPhoto] = useState(null);
   const video = useRef(null); // quản lý video
   const [roomData, setRoomData] = useState({
     room: null,
@@ -52,12 +60,6 @@ const InboxScreen = ({ route }) => {
   const [allMsg, setAllMsg] = useState([]);
   const [showPicker, setShowPicker] = useState(false);
   const ICONS = ["smile", "heart", "thumbs-up", "laugh", "sad-tear"];
-
-  const [hasSelectedImages, setHasSelectedImages] = useState(false);
-  const [previewImages, setPreviewImages] = useState([]);
-  const [selectedFiles, setSelectedFiles] = useState([]); // lưu ảnh
-  // ImageViewer
-  const [selectedImage, setSelectedImage] = useState(null);
 
   const IconPicker = ({ visible, onClose, onPick }) => (
     <Modal visible={visible} transparent animationType="fade">
@@ -149,33 +151,20 @@ const InboxScreen = ({ route }) => {
     }
   };
 
-  const sendMessage = (message, type) => {
+  const sendMessage = (msg, type) => {
+
+    console.log("user: " , user);
+
     if (socketRef.current) {
       let sender = { ...user };
       sender.socketId = socketRef.current.id;
+      console.log("sender: ", sender);
 
       // Lấy socketId của receiver từ danh sách onlineUsers
       const receiverOnline = onlineUsers.find(
         (u) => u.userId === roomData.receiver?._id
       );
-
-      let msg;
-      if (typeof message === "string") {
-        if (!message.trim()) {
-          alert("Tin nhắn không được để trống!");
-          return;
-        }
-        msg = message; // Gán chuỗi như bình thường
-      } else if (Array.isArray(message)) {
-        if (message.length === 0) {
-          alert("Danh sách ảnh/file rỗng!");
-          return;
-        }
-        msg = message; // Gán mảng luôn, không stringify
-      } else {
-        alert("Dữ liệu không hợp lệ");
-        return;
-      }
+      console.log("receiverOnline: ", receiverOnline);
 
       const data = {
         msg: msg,
@@ -192,6 +181,49 @@ const InboxScreen = ({ route }) => {
     }
 
     setInput("");
+  };
+
+    // Hàm gửi tin nhắn đến các cuộc trò chuyện được chọn
+
+    const handleShareMessage = () => {
+      console.log("Selected conversations:", selectedConversations); // Log danh sách các cuộc trò chuyện được chọn
+      console.log("Selected message:", selectedMessage); // Log tin nhắn được chọn
+    if (!selectedMessage) {
+      Alert.alert("Lỗi", "Không có tin nhắn nào được chọn để chia sẻ!");
+      return;
+    }
+  
+    if (selectedConversations.length === 0) {
+      Alert.alert("Lỗi", "Vui lòng chọn ít nhất một cuộc trò chuyện để chia sẻ!");
+      return;
+    }
+  
+    // Lọc danh sách các receiverOnline
+    const onlineReceivers = selectedConversations
+      .map((conversationId) => {
+        const conversation = conversations.find((c) => c._id === conversationId);
+        const receiverOnline = onlineUsers.find((u) => u.userId === conversation._id);
+        if (receiverOnline) {
+          return { ...conversation, socketId: receiverOnline.socketId };
+        }
+        return null;
+      })
+      .filter((receiver) => receiver !== null); // Loại bỏ các receiver không online
+  
+    if (onlineReceivers.length === 0) {
+      Alert.alert("Thông báo", "Không có người nhận nào đang online!");
+      return;
+    }
+  
+    // Gửi tin nhắn đến từng receiverOnline
+    onlineReceivers.forEach((receiver) => {
+      sendMessage(selectedMessage.msg, selectedMessage.type, receiver);
+    });
+  
+    // Đóng modal sau khi gửi
+    setShareModalVisible(false);
+    setSelectedConversations([]);
+    Alert.alert("Thành công", "Tin nhắn đã được chia sẻ đến người nhận online!");
   };
 
   const convertTime = (time) => {
@@ -225,8 +257,8 @@ const InboxScreen = ({ route }) => {
   const pickMedia = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["video/*", "application/*"], // hoặc 'image/*', 'video/*', 'application/pdf'
-        multiple: false,
+        type: "*/*", // hoặc 'image/*', 'video/*', 'application/pdf'
+        multiple: true,
         copyToCacheDirectory: true,
       });
 
@@ -275,7 +307,6 @@ const InboxScreen = ({ route }) => {
     }
   };
 
-  // select icon
   const handleSelectIcon = (iconName) => {
     const iconMap = {
       smile: "😄",
@@ -296,6 +327,7 @@ const InboxScreen = ({ route }) => {
         setAllMsg((prevState) => [...prevState, data]);
       });
 
+      
       socketRef.current.on("RECALL_MSG", (data) => {
         setAllMsg((prevMsgs) =>
           prevMsgs.map((msg) =>
@@ -328,7 +360,7 @@ const InboxScreen = ({ route }) => {
       console.error("Error recalling message:", error);
     }
   };
-
+  
   const handleDeleteMessageForMe = async (messageId) => {
     try {
       const response = await deleteMessageForMeService(messageId, user._id);
@@ -346,73 +378,6 @@ const InboxScreen = ({ route }) => {
     } catch (error) {
       console.error("Error deleting message:", error);
       Alert.alert("Lỗi", "Đã xảy ra lỗi khi xóa tin nhắn.");
-    }
-  };
-
-  const pickImage = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: "image/*", // hoặc 'image/*', 'video/*', 'application/pdf'
-        multiple: true,
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.assets || result.assets.length === 0) return;
-
-      if (result.assets.length > 10) {
-        alert("Chỉ được chọn tối đa 10 ảnh.");
-        return;
-      }
-
-      setPreviewImages(result.assets);
-    } catch (err) {
-      console.log("Error picking file:", err);
-    }
-  };
-
-  useEffect(() => {
-    if (previewImages) {
-      handleUploadMultiple();
-    }
-  }, [previewImages]);
-
-  const handleUploadMultiple = async () => {
-    if (!previewImages || previewImages.length === 0) {
-      console.log("Chưa chọn ảnh, video hoặc file");
-      return;
-    }
-
-    try {
-      const listUrlImage = [];
-      for (const file of previewImages) {
-        const formData = new FormData();
-        if (Platform.OS === "android" || Platform.OS === "ios") {
-          formData.append("avatar", {
-            uri: file.uri,
-            name: file.name || "photo.jpg",
-            type: file.mimeType || "image/jpeg",
-          });
-        } else {
-          formData.append("avatar", file.uri);
-          formData.append("fileName", file.name);
-          formData.append("mimeType", file.mimeType);
-        }
-
-        const res = await dispatch(uploadAvatar(formData)).unwrap();
-        console.log("Upload thành công:", res);
-        if (res.EC === 0) {
-          listUrlImage.push(res.DT);
-        } else {
-          console.log(res.EM);
-        }
-      }
-      if (listUrlImage.length > 0) {
-        const listUrlImageString = listUrlImage.join(", ");
-        sendMessage(listUrlImageString, "image");
-      }
-    } catch (error) {
-      console.error("Upload thất bại:", error);
-      Alert.alert("Lỗi upload", error.message);
     }
   };
 
@@ -473,49 +438,32 @@ const InboxScreen = ({ route }) => {
             ]}
           >
             {item.type === "image" ? (
-              item.msg.includes(",") ? (
-                // Nếu có nhiều ảnh, tách và hiển thị dạng lưới
-                <View style={styles.gridContainer}>
-                  {item.msg.split(",").map((url, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() => handleImageClick(url.trim())}
-                      onLongPress={() => {
-                        setSelectedMessage(item);
-                        setModalVisible(true);
-                      }}
-                      style={styles.gridItem}
-                    >
-                      <Image
-                        source={{ uri: url.trim() }}
-                        style={styles.imageSquare}
-                        resizeMode="cover"
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : (
-                // Nếu chỉ có một ảnh
-                <TouchableOpacity
-                  onPress={() => handleImageClick(item.msg)}
-                  onLongPress={() => {
-                    setSelectedMessage(item);
-                    setModalVisible(true);
+              <TouchableOpacity
+                onLongPress={() => {
+                  setSelectedMessage(item);
+                  setModalVisible(true);
+                  console.log("Conversations:", conversations); // Log danh sách conversations
+
+                }}
+              >
+                <Image
+                  source={{ uri: item.msg }}
+                  style={{
+                    width: 200,
+                    height: 200,
+                    borderRadius: 10,
+                    backgroundColor: "transparent",
                   }}
-                  style={styles.gridItem}
-                >
-                  <Image
-                    source={{ uri: item.msg }}
-                    style={styles.imageSquare}
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
-              )
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
             ) : item.type === "video" ? (
               <TouchableOpacity
                 onLongPress={() => {
                   setSelectedMessage(item);
                   setModalVisible(true);
+                  console.log("Conversations:", conversations); // Log danh sách conversations
+
                 }}
               >
                 <Video
@@ -551,17 +499,20 @@ const InboxScreen = ({ route }) => {
                     item.sender._id === user._id
                       ? styles.messageTextUser
                       : styles.messageTextFriend,
-                    styles.italicText,
+                    styles.italicText
                   ]}
                 >
                   {item.msg || ""}
                 </Text>
               </TouchableOpacity>
-            ) : (
+            )
+              : (
               <TouchableOpacity
                 onLongPress={() => {
                   setSelectedMessage(item);
                   setModalVisible(true);
+                  console.log("Conversations:", conversations); // Log danh sách conversations
+
                 }}
               >
                 <Text
@@ -613,10 +564,13 @@ const InboxScreen = ({ route }) => {
         </View>
         {!input.trim() ? (
           <View style={{ flexDirection: "row" }}>
-            <TouchableOpacity style={styles.iconWrapper} onPress={pickMedia}>
-              <FontAwesome5 name="paperclip" size={22} color="gray" />
+            <TouchableOpacity style={styles.iconWrapper}>
+              <FontAwesome5 name="ellipsis-h" size={20} color="gray" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconWrapper} onPress={pickImage}>
+            <TouchableOpacity style={styles.iconWrapper}>
+              <FontAwesome5 name="microphone" size={22} color="gray" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconWrapper} onPress={pickMedia}>
               <FontAwesome5 name="image" size={22} color="gray" />
             </TouchableOpacity>
           </View>
@@ -629,29 +583,6 @@ const InboxScreen = ({ route }) => {
           </TouchableOpacity>
         )}
       </View>
-
-      {/* <View style={styles.previewContainer}>
-        {previewImages.map((image, index) => (
-          <View key={index} style={styles.previewItem}>
-            <Image
-              source={{ uri: image }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-            <TouchableOpacity
-              style={styles.removeButton}
-              onPress={() => handleRemovePreview(index)}
-            >
-              <Trash2 size={16} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        ))}
-        {previewImages.length > 0 && (
-          <TouchableOpacity onPress={handleClearAllPreviews}>
-            <Text style={styles.clearAllButton}>Xóa tất cả</Text>
-          </TouchableOpacity>
-        )}
-      </View> */}
 
       <IconPicker
         visible={showPicker}
@@ -695,36 +626,31 @@ const InboxScreen = ({ route }) => {
             <View style={styles.menuOptions}>
               {[
                 { name: "Trả lời", icon: "reply", action: () => {} },
-                { name: "Chia sẻ", icon: "share", action: () => {} },
-                { name: "Lưu Cloud", icon: "save", action: () => {} },
+
+
+                {
+                  name: "Chia sẻ",
+                  icon: "share",
+                  action: () => {
+                    console.log("Conversations:", conversations); // Log danh sách conversations
+                    setModalVisible(false); // Đóng modal sau khi chia sẻ
+                    setShareModalVisible(true); // Mở modal chia sẻ
+                  },
+                },
+
+
+                { name: "Lưu Cloud", icon: "save", action: () => {}},
                 ...(selectedMessage?.sender._id === user._id &&
-                (new Date() - new Date(selectedMessage.createdAt)) /
-                  (1000 * 60 * 60) <
-                  1
-                  ? [
-                      {
-                        name: "Thu hồi",
-                        icon: "undo",
-                        action: () => handleRecallMessage(selectedMessage),
-                      },
-                    ]
+                (new Date() - new Date(selectedMessage.createdAt)) / (1000 * 60 * 60) < 1
+                  ? [{ name: "Thu hồi", icon: "undo", action: () => handleRecallMessage(selectedMessage) }]
                   : []),
                 { name: "Sao chép", icon: "copy", action: () => {} },
                 { name: "Ghim", icon: "map-pin", action: () => {} },
                 { name: "Nhắc hẹn", icon: "clock", action: () => {} },
                 { name: "Chọn nhiều", icon: "check-square", action: () => {} },
-                {
-                  name: "Xóa",
-                  icon: "trash",
-                  action: () =>
-                    handleDeleteMessageForMe(selectedMessage._id, user._id),
-                },
+                { name: "Xóa", icon: "trash", action: () => handleDeleteMessageForMe(selectedMessage._id, user._id) },
               ].map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.menuItem}
-                  onPress={item.action}
-                >
+                <TouchableOpacity key={index} style={styles.menuItem} onPress={item.action}>
                   <FontAwesome5 name={item.icon} size={25} color="black" />
                   <Text style={styles.menuText}>{item.name}</Text>
                 </TouchableOpacity>
@@ -734,12 +660,61 @@ const InboxScreen = ({ route }) => {
         </TouchableOpacity>
       </Modal>
 
-      {/* {selectedImage && (
-        <ImageViewer
-          imageUrl={selectedImage}
-          onClose={handleCloseImageViewer}
-        />
-      )} */}
+      {/* Modal chia sẻ */}
+      <Modal
+        visible={shareModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShareModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>
+              Chọn cuộc trò chuyện để chia sẻ
+            </Text>
+            <FlatList
+              data={conversations}
+              keyExtractor={(item) => item._id.toString()}
+              renderItem={({ item }) => (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 10,
+                  }}
+                >
+                  <CheckBox
+                    value={selectedConversations.includes(item._id)}
+                    onValueChange={() => toggleConversationSelection(item._id)}
+                  />
+                  <Image
+                    source={item.avatar}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      marginRight: 10,
+                    }}
+                  />
+                  <Text style={{ fontSize: 16 }}>{item.username}</Text>
+                </View>
+              )}
+            />
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#007bff",
+                padding: 10,
+                borderRadius: 5,
+                marginTop: 10,
+              }}
+              onPress={handleShareMessage} // Gọi đúng hàm
+            >
+              <Text style={{ color: "white", textAlign: "center" }}>Chia sẻ</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -900,58 +875,18 @@ const styles = StyleSheet.create({
   italicText: {
     fontStyle: "italic",
   },
-  gridContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10, // nếu dùng React Native Web, có thể dùng gap; nếu không, dùng margin
-    marginVertical: 10,
-  },
-  gridItem: {
-    width: 100,
-    height: 100,
-    margin: 5,
-  },
-  imageSquare: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 10,
-    backgroundColor: "transparent",
-  },
-  previewContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8, // nếu bạn dùng React Native Web. Nếu không:
-    marginTop: 8,
-  },
-  previewItem: {
-    position: "relative",
-    margin: 4,
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 8,
-  },
-  removeButton: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    backgroundColor: "red",
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: "center",
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
-    zIndex: 1,
+    alignItems: "center",
   },
-  clearAllButton: {
-    color: "red",
-    marginTop: 10,
-    textDecorationLine: "underline",
+  modalContainer: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    width: "90%",
+    maxHeight: "80%",
   },
 });
 

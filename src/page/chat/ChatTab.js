@@ -10,13 +10,9 @@ import {
   SafeAreaView,
 } from "react-native";
 import SearchHeader from "../../component/Header";
-<<<<<<< HEAD
-
-=======
 import { getConversations } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 import io from "socket.io-client";
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
@@ -68,7 +64,7 @@ const ChatTab = () => {
   }, [conversationRedux]);
 
   // connect docket -> cmd(IPv4 Address): ipconfig
-  const IPv4 = "192.168.1.5"
+  const IPv4 = "192.168.1.53"
   useEffect(() => {
     const socket = io.connect(`http://${IPv4}:8080`);
 
@@ -91,15 +87,8 @@ const ChatTab = () => {
   }, [isConnect]);
 
   return (
-<<<<<<< HEAD
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: "#f5f5f5" }}
-    >
-       <SearchHeader option={'chatTab'}/>
-=======
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
       <SearchHeader option={"chatTab"} />
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
       {/* Chat List */}
       <FlatList
         data={conversations}
@@ -119,6 +108,7 @@ const ChatTab = () => {
                 item,
                 socketRef,
                 onlineUsers,
+                conversations,
               })
             }
           >

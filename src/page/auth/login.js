@@ -103,16 +103,12 @@ export default function LoginForm() {
 
         {/* Links */}
         <TouchableOpacity>
-<<<<<<< HEAD
-          <Text style={styles.linkText} onPress={() => navigation.navigate("ResetPassword")}>Quên mật khẩu?</Text>
-=======
           <Text
             style={styles.linkText}
             onPress={() => navigation.navigate("ResetPassword")}
           >
             Quên mật khẩu?
           </Text>
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
         </TouchableOpacity>
         <TouchableOpacity>
           <Text style={styles.linkText}>Đăng nhập qua mã QR</Text>

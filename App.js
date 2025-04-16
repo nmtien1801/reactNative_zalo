@@ -20,11 +20,8 @@ import InboxScreen from "./src/page/chat/InboxScreen";
 import PersonOption from "./src/page/chat/PersonOption";
 import ResetPassword from "./src/page/auth/ResetPassword";
 import ChangePassword from "./src/component/changePassword"
-<<<<<<< HEAD
-=======
 import Setting from './src/page/personal/Setting'
 import InformationAccount  from './src/page/personal/InfomationAccount'
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -98,9 +95,6 @@ const Project = () => {
               <Stack.Screen
                 name="ChangePassword"
                 component={ChangePassword}
-<<<<<<< HEAD
-                // options={{ headerShown: false }}
-=======
               />
               <Stack.Screen
                 name="Setting"
@@ -109,7 +103,6 @@ const Project = () => {
                <Stack.Screen
                 name="InformationAccount"
                 component={InformationAccount}
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
               />
             </>
           ) : (

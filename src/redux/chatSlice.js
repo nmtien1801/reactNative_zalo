@@ -31,25 +31,8 @@ const chatSlice = createSlice({
   name: "chat",
   initialState,
 
-  reducers: {
-    recallMessage: (state, action) => {
-      const { id, updatedMessage } = action.payload;
-      const messageIndex = state.messages.findIndex((msg) => msg._id === id);
-    
-      if (messageIndex !== -1) {
-        state.messages[messageIndex] = {
-          ...state.messages[messageIndex],
-          ...updatedMessage, 
-        };
-      }
-    },
-    deleteMessageForMe: (state, action) => {
-      const id = action.payload;
-      state.messages = state.messages.filter((msg) => msg._id !== id);
-    },
-  },
-
   extraReducers: (builder) => {
+
 
     //  loadMessages
     builder
@@ -74,7 +57,7 @@ const chatSlice = createSlice({
 });
 
 // Export actions
-export const { recallMessage, deleteMessageForMe } = chatSlice.actions;
+export const { } = chatSlice.actions;
 
 // Export reducer
 export default chatSlice.reducer;

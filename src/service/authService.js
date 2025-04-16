@@ -12,11 +12,7 @@ const doGetAccountService = () => {
 
 const registerService = (formData) => {
   return customizeAxios.post("/register", formData);
-<<<<<<< HEAD
-}
-=======
 };
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 
 const sendCodeService = (email) => {
   return customizeAxios.post("/send-code", {
@@ -40,8 +36,6 @@ const changePasswordService = (phone, currentPassword, newPassword) => {
   });
 };
 
-<<<<<<< HEAD
-=======
 const verifyEmailService = (email) => {
   return customizeAxios.post("/verifyEmail", { email });
 };
@@ -50,18 +44,13 @@ const logoutUserService = () => {
   return customizeAxios.post("/logout");
 };
 
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 export {
   handleLoginApi,
   doGetAccountService,
   registerService,
   sendCodeService,
   resetPasswordService,
-<<<<<<< HEAD
-  changePasswordService
-=======
   changePasswordService,
   verifyEmailService,
   logoutUserService
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 };

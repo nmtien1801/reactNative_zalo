@@ -141,13 +141,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 20,
-<<<<<<< HEAD
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-=======
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
     elevation: 3,
   },
   title: {

@@ -10,8 +10,6 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import SearchHeader from "../../component/Header";
-<<<<<<< HEAD
-=======
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import { uploadAvatarProfile } from "../../redux/authSlice.js";
 import { useSelector, useDispatch } from "react-redux";
@@ -19,7 +17,6 @@ import { launchImageLibrary } from "react-native-image-picker";
 import { FontAwesome } from "@expo/vector-icons";
 import { Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 
 export default function PersonalTabs() {
   const personal = [
@@ -133,49 +130,6 @@ export default function PersonalTabs() {
   };
 
   return (
-<<<<<<< HEAD
-    <View>
-      <SearchHeader option={'person'}/>
-
-      <FlatList
-        ListHeaderComponent={() => (
-          <>
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                padding: 10,
-                alignItems: "center",
-                borderBottomWidth: 1,
-                borderColor: "#ddd",
-                justifyContent: "space-between",
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Image
-                  source={require("../../../assets/favicon.png")}
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 30,
-                    marginRight: 10,
-                  }}
-                />
-                <Text style={{ fontSize: 16 }}>Lộc lá</Text>
-              </View>
-              <Icon
-                name="swap-horizontal-outline"
-                size={24}
-                color="#2196F3"
-                style={{ marginRight: 10 }}
-              />
-            </TouchableOpacity>
-          </>
-        )}
-        style={{ flex: 1, backgroundColor: "#fff" }}
-        data={personal}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <PersonalItem personal={item} />}
-=======
     <View style={styles.container}>
       <SearchHeader option={"person"} />
       <FlatList
@@ -207,7 +161,6 @@ export default function PersonalTabs() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <PersonalItem personal={item} />}
         style={styles.flatList}
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
       />
     </View>
   );

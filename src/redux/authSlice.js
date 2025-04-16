@@ -6,16 +6,12 @@ import {
   sendCodeService,
   resetPasswordService,
   changePasswordService,
-<<<<<<< HEAD
-} from "../service/authService";
-=======
   verifyEmailService,
   logoutUserService,
 } from "../service/authService";
 import { uploadAvatarProfileService } from "../service/profileService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { uploadProfile } from "./profileSlice"; // update state từ 1 slice khác
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 
 const initialState = {
   user: {}, // user info nào login(hs - teacher)
@@ -45,11 +41,7 @@ export const register = createAsyncThunk(
   "auth/register",
   async (formData, thunkAPI) => {
     const response = await registerService({ formData });
-<<<<<<< HEAD
-    console.log("response", response);
-=======
     console.log("sss", response);
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 
     return response;
   }
@@ -84,8 +76,6 @@ export const changePassword = createAsyncThunk(
   }
 );
 
-<<<<<<< HEAD
-=======
 export const uploadAvatarProfile = createAsyncThunk(
   "auth/uploadAvatarProfile",
   async ({ phone, avatar }, thunkAPI) => {
@@ -111,7 +101,6 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 // đây là reducer
 const authSlice = createSlice({
   name: "auth",
@@ -148,10 +137,6 @@ const authSlice = createSlice({
       .addCase(doGetAccount.fulfilled, (state, action) => {
         if (action.payload.EC === 0) {
           state.user = action.payload.DT || {};
-<<<<<<< HEAD
-          console.log("state.user: ", action.payload);
-=======
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
 
           state.isLoggedIn = true;
           state.isLoading = false; // Kết thúc loading
@@ -185,8 +170,6 @@ const authSlice = createSlice({
       .addCase(changePassword.pending, (state) => {})
       .addCase(changePassword.fulfilled, (state, action) => {})
       .addCase(changePassword.rejected, (state, action) => {});
-<<<<<<< HEAD
-=======
 
     //uploadAvatarProfile
     builder
@@ -227,7 +210,6 @@ const authSlice = createSlice({
         }
       })
       .addCase(uploadProfile.rejected, (state, action) => {});
->>>>>>> efd88a4c37eb2a37cfec15487b23592e41a68cd4
   },
 });
 
