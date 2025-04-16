@@ -263,6 +263,17 @@ const InboxScreen = ({ route }) => {
         setAllMsg((prevState) => [...prevState, data]);
       });
 
+      
+      socketRef.current.on("RECALL_MSG", (data) => {
+        setAllMsg((prevMsgs) =>
+          prevMsgs.map((msg) =>
+            msg._id === data._id
+              ? { ...msg, msg: "Tin nhắn đã được thu hồi", type: "system" }
+              : msg
+          )
+        );
+      });
+
       socketRef.current.on("DELETED_MSG", (data) => {
         setAllMsg((prevState) =>
           prevState.filter((item) => item._id != data.msg._id)
@@ -271,27 +282,28 @@ const InboxScreen = ({ route }) => {
     }
   }, []);
 
-  const handleRecallMessage = async (messageId) => {
+  const handleRecallMessage = async (message) => {
     try {
-      const response = await recallMessageService(messageId);
+      const response = await recallMessageService(message._id);
       if (response && response.EC === 0) {
         console.log("Tin nhắn đã được thu hồi:", response.DT);
 
+        socketRef.current.emit("RECALL", message);
         // Cập nhật Redux state
         dispatch(
           recallMessage({
-            id: messageId,
+            id: message._id,
             updatedMessage: { msg: "Tin nhắn đã được thu hồi", type: "system" },
           })
         );
 
-        setAllMsg((prevMessages) =>
-          prevMessages.map((msg) =>
-            msg._id === messageId
-              ? { ...msg, msg: "Tin nhắn đã được thu hồi", type: "system" }
-              : msg
-          )
-        );
+        // setAllMsg((prevMessages) =>
+        //   prevMessages.map((msg) =>
+        //     msg._id === messageId
+        //       ? { ...msg, msg: "Tin nhắn đã được thu hồi", type: "system" }
+        //       : msg
+        //   )
+        // );
       } else {
         console.error("Thu hồi tin nhắn thất bại:", response.EM);
       }
@@ -563,7 +575,7 @@ const InboxScreen = ({ route }) => {
                 { name: "Lưu Cloud", icon: "save", action: () => {}},
                 ...(selectedMessage?.sender._id === user._id &&
                 (new Date() - new Date(selectedMessage.createdAt)) / (1000 * 60 * 60) < 1
-                  ? [{ name: "Thu hồi", icon: "undo", action: () => handleRecallMessage(selectedMessage._id) }]
+                  ? [{ name: "Thu hồi", icon: "undo", action: () => handleRecallMessage(selectedMessage) }]
                   : []),
                 { name: "Sao chép", icon: "copy", action: () => {} },
                 { name: "Ghim", icon: "map-pin", action: () => {} },
