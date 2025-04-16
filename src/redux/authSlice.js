@@ -6,7 +6,12 @@ import {
   sendCodeService,
   resetPasswordService,
   changePasswordService,
+  verifyEmailService,
+  logoutUserService,
 } from "../service/authService";
+import { uploadAvatarProfileService } from "../service/profileService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { uploadProfile } from "./profileSlice"; // update state từ 1 slice khác
 
 const initialState = {
   user: {}, // user info nào login(hs - teacher)
@@ -36,7 +41,7 @@ export const register = createAsyncThunk(
   "auth/register",
   async (formData, thunkAPI) => {
     const response = await registerService({ formData });
-    console.log("response", response);
+    console.log("sss", response);
 
     return response;
   }
@@ -71,20 +76,35 @@ export const changePassword = createAsyncThunk(
   }
 );
 
+export const uploadAvatarProfile = createAsyncThunk(
+  "auth/uploadAvatarProfile",
+  async ({ phone, avatar }, thunkAPI) => {
+    let response = await uploadAvatarProfileService(phone, avatar);
 
+    return response;
+  }
+);
+
+export const verifyEmail = createAsyncThunk(
+  "auth/verifyEmail",
+  async (email, thunkAPI) => {
+    const response = await verifyEmailService(email);
+    return response;
+  }
+);
+
+export const logoutUser = createAsyncThunk(
+  "auth/logoutUser",
+  async (thunkAPI) => {
+    const response = await logoutUserService();
+    return response;
+  }
+);
 
 // đây là reducer
 const authSlice = createSlice({
   name: "auth",
   initialState,
-
-  reducers: {
-    updateAvatar: (state, action) => {
-      if (state.user) {
-        state.user.avatar = action.payload; // Cập nhật avatar trong Redux store
-      }
-    }
-  },
 
   // dùng api mới sử dụng extraReducers
   // 3 trạng thái của api: pending, fulfilled, rejected
@@ -117,7 +137,6 @@ const authSlice = createSlice({
       .addCase(doGetAccount.fulfilled, (state, action) => {
         if (action.payload.EC === 0) {
           state.user = action.payload.DT || {};
-          console.log("state.user: ", action.payload);
 
           state.isLoggedIn = true;
           state.isLoading = false; // Kết thúc loading
@@ -151,10 +170,49 @@ const authSlice = createSlice({
       .addCase(changePassword.pending, (state) => {})
       .addCase(changePassword.fulfilled, (state, action) => {})
       .addCase(changePassword.rejected, (state, action) => {});
+
+    //uploadAvatarProfile
+    builder
+      .addCase(uploadAvatarProfile.pending, (state) => {})
+      .addCase(uploadAvatarProfile.fulfilled, (state, action) => {
+        if (action.payload.EC === 0) {
+          console.log("action: ", action);
+
+          state.user.avatar = action.payload.DT || {};
+        }
+      })
+      .addCase(uploadAvatarProfile.rejected, (state, action) => {});
+
+    //verifyEmail
+    builder
+      .addCase(verifyEmail.pending, (state) => {})
+      .addCase(verifyEmail.fulfilled, (state, action) => {})
+      .addCase(verifyEmail.rejected, (state, action) => {});
+
+    // logoutUser
+    builder
+      .addCase(logoutUser.pending, (state) => {})
+      .addCase(logoutUser.fulfilled, (state, action) => {
+        if (action.payload.EC === 2) {
+          (state.user = {}), (state.isLoggedIn = false);
+          AsyncStorage.removeItem("access_Token");
+          AsyncStorage.removeItem("refresh_Token");
+        }
+      })
+      .addCase(logoutUser.rejected, (state, action) => {});
+
+    // uploadProfile
+    builder
+      .addCase(uploadProfile.pending, (state) => {})
+      .addCase(uploadProfile.fulfilled, (state, action) => {
+        if (action.payload.EC === 0) {
+          state.user = action.payload.DT;
+        }
+      })
+      .addCase(uploadProfile.rejected, (state, action) => {});
   },
 });
 
 export const {} = authSlice.actions; // đây là action -> chỉ dùng khi trong reducer có reducers:{}
 
 export default authSlice.reducer;
-export const { updateAvatar } = authSlice.actions;

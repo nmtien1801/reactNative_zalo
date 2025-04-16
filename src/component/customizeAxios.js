@@ -3,13 +3,14 @@ import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from '@react-navigation/native';
 //SEARCH: axios npm github
-import { navigationRef } from "../component/NavigationService";
-import { navigate } from "../component/NavigationService";
+
+const URL_ANDROID = "http://192.168.1.5:8080/api"
+URL_WEB="http://localhost:8080/api"
 
 const baseUrl =
   Platform.OS === "android"
-    ? "http://192.168.1.3:8080/api" // URL cho Android và iOS
-    : "http://localhost:8080/api"; // URL cho web hoặc môi trường khác
+    ? URL_ANDROID // URL cho Android và iOS
+    : URL_WEB; // URL cho web hoặc môi trường khác
 
 // Set config defaults when creating the instance
 const instance = axios.create({
@@ -31,6 +32,7 @@ instance.interceptors.request.use(
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`; // Thêm Bearer token vào header
     }
+    console.log("Body:", config.data); 
     return config;
   },
   (error) => {
@@ -85,7 +87,8 @@ instance.interceptors.response.use(
     const status = error.response?.status || 500;
     switch (status) {
       case 401: {
-        const currentRoute = navigationRef.getCurrentRoute()?.name;
+        const navigation = useNavigation();
+        const currentRoute = navigation.getState().routes[navigation.getState().index].name;
 
         if (['Login', 'Register', 'ResetPassword'].includes(currentRoute)) {
           console.warn("401 on auth page, skip refresh");
@@ -125,7 +128,7 @@ instance.interceptors.response.use(
           // handle logout
           AsyncStorage.removeItem('access_Token');
           AsyncStorage.removeItem('refresh_Token');
-          navigate('Login');
+          navigation.navigate('Login');
           return Promise.reject(err);
         } finally {
           isRefreshing = false;

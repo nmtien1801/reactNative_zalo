@@ -54,7 +54,7 @@ export default function SearchHeader({ option }) {
       />
 
       {option === "person" && (
-        <TouchableOpacity onPress={()=>navigation.navigate("ChangePassword")}>
+        <TouchableOpacity onPress={()=>navigation.navigate("Setting")}>
           <Ionicons
             name="settings-outline"
             size={24}

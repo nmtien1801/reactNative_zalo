@@ -12,7 +12,7 @@ const doGetAccountService = () => {
 
 const registerService = (formData) => {
   return customizeAxios.post("/register", formData);
-}
+};
 
 const sendCodeService = (email) => {
   return customizeAxios.post("/send-code", {
@@ -36,18 +36,14 @@ const changePasswordService = (phone, currentPassword, newPassword) => {
   });
 };
 
-const updateAvatarService = (formData) => {
-  return customizeAxios.put("/user/avatar", formData, {
-    transformRequest: (data, headers) => {
-      // Xóa Content-Type để axios tự động thêm boundary
-      delete headers.common['Content-Type'];
-      return data;
-    },
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    }
-  });
+const verifyEmailService = (email) => {
+  return customizeAxios.post("/verifyEmail", { email });
 };
+
+const logoutUserService = () => {
+  return customizeAxios.post("/logout");
+};
+
 export {
   handleLoginApi,
   doGetAccountService,
@@ -55,5 +51,6 @@ export {
   sendCodeService,
   resetPasswordService,
   changePasswordService,
-  updateAvatarService
+  verifyEmailService,
+  logoutUserService
 };

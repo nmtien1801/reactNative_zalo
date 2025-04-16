@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,58 +10,89 @@ import {
   SafeAreaView,
 } from "react-native";
 import SearchHeader from "../../component/Header";
-
+import { getConversations } from "../../redux/chatSlice";
+import { useSelector, useDispatch } from "react-redux";
+import io from "socket.io-client";
 import { useNavigation } from "@react-navigation/native";
+
 const { width, height } = Dimensions.get("window");
 const ITEM_HEIGHT = height * 0.1;
-const HEADER_HEIGHT = height * 0.08;
-const FOOTER_HEIGHT = height * 0.08;
 const AVATAR_SIZE = ITEM_HEIGHT * 0.6;
-const MENU_WIDTH = width * 0.5;
-const MENU_HEIGHT = height * 0.3;
-
-const messages = [
-  {
-    id: "1",
-    name: "Media Box",
-    message: "Zing MP3: Lắng nghe Negav...",
-    time: "",
-    avatar: require("../../../assets/man.png"),
-  },
-  {
-    id: "2",
-    name: "Hiếu Lai",
-    message: "cho xin UML của m đi",
-    time: "2 giờ",
-    avatar: require("../../../assets/man.png"),
-  },
-  {
-    id: "3",
-    name: "TTDT_NHÓM 1_TH",
-    message: "Nhắc hẹn: deadline đi...",
-    time: "5 giờ",
-    avatar: require("../../../assets/man.png"),
-  },
-  {
-    id: "4",
-    name: "Hồ Mờ Hồ Và Những Người Bạn",
-    message: "Hồ Minh Hậu: T về LA",
-    time: "6 giờ",
-    avatar: require("../../../assets/man.png"),
-  },
-];
 
 const ChatTab = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const socketRef = useRef();
+  const [onlineUsers, setOnlineUsers] = useState([]);
+
+  const user = useSelector((state) => state.auth.user);
+  const conversationRedux = useSelector((state) => state.chat.conversations);
+  const [isConnect, setIsConnect] = useState(false); // connect socket
+
+  const [conversations, setConversations] = useState([
+    {
+      _id: 1,
+      username: "Cloud",
+      message: "[Thông báo] Giới thiệu về Trường Kha...",
+      time: "26/07/24",
+      avatar: require("../../../assets/man.png"),
+      type: 3,
+    },
+  ]);
+
+  useEffect(() => {
+    dispatch(getConversations(user._id));
+  }, []);
+
+  useEffect(() => {
+    if (conversationRedux) {
+      let _conversations = conversationRedux.map((item) => {
+        return {
+          _id: item.receiver._id,
+          username: item.receiver.username,
+          message: item.message,
+          time: item.time,
+          avatar: item.avatar,
+          type: item.type,
+          phone: item.receiver.phone,
+          members: item.receiver.members,
+        };
+      });
+
+      setConversations(_conversations);
+    }
+  }, [conversationRedux]);
+
+  // connect docket -> cmd(IPv4 Address): ipconfig
+  const IPv4 = "192.168.1.5"
+  useEffect(() => {
+    const socket = io.connect(`http://${IPv4}:8080`);
+
+    socketRef.current = socket;
+    socket.on("connect", () => setIsConnect(true));
+    socket.off("disconnect", () => setIsConnect(false));
+  }, []);
+
+  // action socket
+  useEffect(() => {
+    if (isConnect) {
+      socketRef.current.emit("register", user._id);
+
+      socketRef.current.on("user-list", (usersList) => {
+        setOnlineUsers(usersList); // Lưu danh sách user online
+      });
+
+      return () => socketRef.current.disconnect();
+    }
+  }, [isConnect]);
+
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: "#f5f5f5" }}
-    >
-       <SearchHeader option={'chatTab'}/>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
+      <SearchHeader option={"chatTab"} />
       {/* Chat List */}
       <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
+        data={conversations}
+        keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={{
@@ -72,7 +103,13 @@ const ChatTab = () => {
               marginBottom: 2,
               height: ITEM_HEIGHT,
             }}
-            onPress={() => navigation.navigate("InboxScreen", { item })}
+            onPress={() =>
+              navigation.navigate("InboxScreen", {
+                item,
+                socketRef,
+                onlineUsers,
+              })
+            }
           >
             <Image
               source={item.avatar}
@@ -85,7 +122,7 @@ const ChatTab = () => {
             />
             <View style={{ flex: 1 }}>
               <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-                {item.name}
+                {item.username}
               </Text>
               <Text style={{ color: "gray" }}>{item.message}</Text>
             </View>
