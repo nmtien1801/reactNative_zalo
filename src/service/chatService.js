@@ -18,4 +18,12 @@ const createConversationGroupService = (data) => {
     `/createConversationGroup`, data);
 }
 
-export { loadMessagesService, getConversationsService, createConversationGroupService };
+const recallMessageService = (id) => {
+  return customizeAxios.put(`/messages/recall/${id}`);
+};
+
+const deleteMessageForMeService = (id, userId) => {
+  return customizeAxios.put(`/messages/deleteForMe/${id}`, { userId });
+};
+
+export { loadMessagesService, getConversationsService, createConversationGroupService, recallMessageService, deleteMessageForMeService };

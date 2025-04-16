@@ -16,11 +16,13 @@ import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { useNavigation } from "@react-navigation/native";
-import { loadMessages } from "../../redux/chatSlice";
+import { deleteMessageForMe, loadMessages, recallMessage } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import * as DocumentPicker from "expo-document-picker";
 import { Platform } from "react-native";
+
+import { recallMessageService, deleteMessageForMeService } from "../../service/chatService";
 
 const InboxScreen = ({ route }) => {
   let receiver = route.params?.item; // click conversation
@@ -269,6 +271,55 @@ const InboxScreen = ({ route }) => {
     }
   }, []);
 
+  const handleRecallMessage = async (messageId) => {
+    try {
+      const response = await recallMessageService(messageId);
+      if (response && response.EC === 0) {
+        console.log("Tin nhắn đã được thu hồi:", response.DT);
+
+        // Cập nhật Redux state
+        dispatch(
+          recallMessage({
+            id: messageId,
+            updatedMessage: { msg: "Tin nhắn đã được thu hồi", type: "system" },
+          })
+        );
+
+        setAllMsg((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg._id === messageId
+              ? { ...msg, msg: "Tin nhắn đã được thu hồi", type: "system" }
+              : msg
+          )
+        );
+      } else {
+        console.error("Thu hồi tin nhắn thất bại:", response.EM);
+      }
+    } catch (error) {
+      console.error("Error recalling message:", error);
+    }
+  };
+  
+  const handleDeleteMessageForMe = async (messageId) => {
+    try {
+      const response = await deleteMessageForMeService(messageId, user._id);
+      console.log("response: ", response);
+      if (response && response.EC === 0) {
+        console.log("Tin nhắn đã được xóa chỉ ở phía tôi:", response.DT);
+        dispatch(deleteMessageForMe(messageId));
+
+        setAllMsg((prevMessages) =>
+          prevMessages.filter((msg) => msg._id !== messageId)
+        );
+      } else {
+        Alert.alert("Lỗi", response.EM || "Không thể xóa tin nhắn.");
+      }
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      Alert.alert("Lỗi", "Đã xảy ra lỗi khi xóa tin nhắn.");
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -376,7 +427,21 @@ const InboxScreen = ({ route }) => {
                   🡇 {item.msg.split("_").pop() || "Tệp đính kèm"}
                 </Text>
               </TouchableOpacity>
-            ) : (
+            ) : item.type === "system" ? (
+              <TouchableOpacity>
+                <Text
+                  style={[
+                    item.sender._id === user._id
+                      ? styles.messageTextUser
+                      : styles.messageTextFriend,
+                    styles.italicText
+                  ]}
+                >
+                  {item.msg || ""}
+                </Text>
+              </TouchableOpacity>
+            )
+              : (
               <TouchableOpacity
                 onLongPress={() => {
                   setSelectedMessage(item);
@@ -493,17 +558,20 @@ const InboxScreen = ({ route }) => {
             {/* Menu hành động */}
             <View style={styles.menuOptions}>
               {[
-                { name: "Reply", icon: "reply" },
-                { name: "Forward", icon: "share" },
-                { name: "Save", icon: "save" },
-                { name: "Recall", icon: "undo" },
-                { name: "Copy", icon: "copy" },
-                { name: "Pin", icon: "map-pin" },
-                { name: "Remind", icon: "clock" },
-                { name: "Select", icon: "check-square" },
-                { name: "Delete", icon: "trash" },
+                { name: "Trả lời", icon: "reply", action: () => {} },
+                { name: "Chia sẻ", icon: "share", action: () => {}},
+                { name: "Lưu Cloud", icon: "save", action: () => {}},
+                ...(selectedMessage?.sender._id === user._id &&
+                (new Date() - new Date(selectedMessage.createdAt)) / (1000 * 60 * 60) < 1
+                  ? [{ name: "Thu hồi", icon: "undo", action: () => handleRecallMessage(selectedMessage._id) }]
+                  : []),
+                { name: "Sao chép", icon: "copy", action: () => {} },
+                { name: "Ghim", icon: "map-pin", action: () => {} },
+                { name: "Nhắc hẹn", icon: "clock", action: () => {} },
+                { name: "Chọn nhiều", icon: "check-square", action: () => {} },
+                { name: "Xóa", icon: "trash", action: () => handleDeleteMessageForMe(selectedMessage._id, user._id) },
               ].map((item, index) => (
-                <TouchableOpacity key={index} style={styles.menuItem}>
+                <TouchableOpacity key={index} style={styles.menuItem} onPress={item.action}>
                   <FontAwesome5 name={item.icon} size={25} color="black" />
                   <Text style={styles.menuText}>{item.name}</Text>
                 </TouchableOpacity>
@@ -669,6 +737,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 5,
   },
+  italicText: {
+    fontStyle: "italic",
+  }
 });
 
 export default InboxScreen;
