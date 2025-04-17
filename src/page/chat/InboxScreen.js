@@ -126,7 +126,7 @@ const InboxScreen = ({ route }) => {
       handleLoadMessages(receiver._id, receiver.type);
 
       receiverOnline = onlineUsers.find((u) =>
-        receiver.members.includes(u.userId)
+        receiver.members?.includes(u.userId)
       );
 
       setRoomData({
@@ -166,6 +166,7 @@ const InboxScreen = ({ route }) => {
     if (socketRef.current) {
       let sender = { ...user };
       sender.socketId = socketRef.current.id;
+      console.log("roomDataaa: ", roomData);
 
       // Lấy socketId của receiver từ danh sách onlineUsers
       const receiverOnline = onlineUsers.find(
