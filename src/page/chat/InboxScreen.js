@@ -19,11 +19,7 @@ import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { useNavigation } from "@react-navigation/native";
-import {
-  deleteMessageForMe,
-  loadMessages,
-  recallMessage,
-} from "../../redux/chatSlice";
+import { loadMessages } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import * as DocumentPicker from "expo-document-picker";
@@ -158,7 +154,11 @@ const InboxScreen = ({ route }) => {
     );
 
     if (res.payload.EC === 0) {
-      setAllMsg(res.payload.DT);
+      let msg = res.payload.DT;
+      const filteredMessages = msg.filter(
+        (msg) => !msg.memberDel?.includes(user._id)
+      );
+      setAllMsg(filteredMessages);
     }
   };
 
@@ -399,11 +399,20 @@ const InboxScreen = ({ route }) => {
 
   const handleDeleteMessageForMe = async (messageId) => {
     try {
-      const response = await deleteMessageForMeService(messageId, user._id);
+      let member;
+      if (receiver.type === 2) {
+        member = {
+          ...receiver,
+          memberDel: user._id,
+        };
+      } else {
+        member = user;
+      }
+
+      const response = await deleteMessageForMeService(messageId, member);
       console.log("response: ", response);
       if (response && response.EC === 0) {
         console.log("Tin nhắn đã được xóa chỉ ở phía tôi:", response.DT);
-        dispatch(deleteMessageForMe(messageId));
 
         setAllMsg((prevMessages) =>
           prevMessages.filter((msg) => msg._id !== messageId)
@@ -766,10 +775,12 @@ const InboxScreen = ({ route }) => {
                 { name: "Nhắc hẹn", icon: "clock", action: () => {} },
                 { name: "Chọn nhiều", icon: "check-square", action: () => {} },
                 {
-                  name: "Xóa",
+                  name: "Xóa ở phía tôi",
                   icon: "trash",
-                  action: () =>
+                  action: () => {
                     handleDeleteMessageForMe(selectedMessage._id, user._id),
+                    setModalVisible(false);
+                  },
                 },
               ].map((item, index) => (
                 <TouchableOpacity
