@@ -15,23 +15,35 @@ import {
   rejectFriendRequestService,
 } from "../../service/friendRequestService";
 
-const FriendRequest = ({socketRef}) => {
+const FriendRequest = ({route}) => {
   const [friendRequests, setFriendRequests] = useState([]);
   const userInfo = useSelector((state) => state.auth.userInfo);
   const userId = userInfo ? userInfo.id : null;
+  const socketRef = route.params.socketRef
 
   const fetchFriendRequests = async () => {
     const response = await getFriendRequestsService();
-    console.log("res  ", response);
 
     setFriendRequests(response.DT);
 
     // action socket
     // add friend
-    // socketRef.current.on("RES_ADD_FRIEND", async () => {
-    //   const response = await getFriendRequestsService();
-    //   setFriendRequests(response.DT);
-    // });
+    socketRef.current.on("RES_ADD_FRIEND", async () => {
+      const response = await getFriendRequestsService();
+      setFriendRequests(response.DT);
+    });
+
+    // reject friend
+    socketRef.current.on("RES_REJECT_FRIEND", async () => {
+      setFriendRequests([]);
+    });
+
+    // accept friend
+    socketRef.current.on("RES_ACCEPT_FRIEND", async () => {
+      const response = await getFriendRequestsService();
+
+      setFriendRequests(response.DT);
+    });
   };
 
   useEffect(() => {
@@ -40,7 +52,10 @@ const FriendRequest = ({socketRef}) => {
 
   const handleAcceptRequest = async (requestId) => {
     try {
-      await acceptFriendRequestService(requestId);
+      let response = await acceptFriendRequestService(requestId);
+      if (response.EC === 0) {
+        socketRef.current.emit("REQ_ACCEPT_fRIEND", response.DT);
+      }
       fetchFriendRequests();
     } catch (error) {
       console.error("Error accepting friend request:", error);
@@ -49,7 +64,10 @@ const FriendRequest = ({socketRef}) => {
 
   const handleRejectRequest = async (requestId) => {
     try {
-      await rejectFriendRequestService(requestId);
+      let response = await rejectFriendRequestService(requestId);
+      if (response.EC === 0) {
+        socketRef.current.emit("REQ_REJECT_fRIEND", response.DT);
+      }
       fetchFriendRequests();
     } catch (error) {
       console.error("Error rejecting friend request:", error);

@@ -16,7 +16,6 @@ const AddFriendModal = ({ show, onHide, socketRef }) => {
     if (!searchQuery) return;
 
     const response = await getRoomChatByPhoneService(searchQuery);
-    console.log('response', response);
 
     if (response.EC === 0) {
       setSearchResult(response.DT);

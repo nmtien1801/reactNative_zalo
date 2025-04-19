@@ -12,23 +12,22 @@ import {
 import SearchHeader from "../../component/Header";
 import { getConversations } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
-import io from "socket.io-client";
+
 import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 const ITEM_HEIGHT = height * 0.1;
 const AVATAR_SIZE = ITEM_HEIGHT * 0.6;
 
-const ChatTab = () => {
+const ChatTab = ({ route }) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const socketRef = useRef();
   const [onlineUsers, setOnlineUsers] = useState([]);
 
   const user = useSelector((state) => state.auth.user);
   const conversationRedux = useSelector((state) => state.chat.conversations);
-  const [isConnect, setIsConnect] = useState(false); // connect socket
-
+  const socketRef = route.params.socketRef;
+  
   const [conversations, setConversations] = useState([
     {
       _id: 1,
@@ -63,32 +62,20 @@ const ChatTab = () => {
     }
   }, [conversationRedux]);
 
-  // connect docket -> cmd(IPv4 Address): ipconfig
-  const IPv4 = "192.168.1.5"
-  useEffect(() => {
-    const socket = io.connect(`http://${IPv4}:8080`);
-
-    socketRef.current = socket;
-    socket.on("connect", () => setIsConnect(true));
-    socket.off("disconnect", () => setIsConnect(false));
-  }, []);
-
   // action socket
   useEffect(() => {
-    if (isConnect) {
-      socketRef.current.emit("register", user._id);
+    socketRef.current.emit("register", user._id);
 
-      socketRef.current.on("user-list", (usersList) => {
-        setOnlineUsers(usersList); // Lưu danh sách user online
-      });
+    socketRef.current.on("user-list", (usersList) => {
+      setOnlineUsers(usersList); // Lưu danh sách user online
+    });
 
-      return () => socketRef.current.disconnect();
-    }
-  }, [isConnect]);
+    return () => socketRef.current.disconnect();
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
-      <SearchHeader option={"chatTab"} socketRef={socketRef}/>
+      <SearchHeader option={"chatTab"} socketRef={socketRef} />
       {/* Chat List */}
       <FlatList
         data={conversations}

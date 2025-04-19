@@ -17,11 +17,12 @@ import { useNavigation } from "@react-navigation/native";
 
 const TopTab = createMaterialTopTabNavigator();
 
-export default function ContactsTabs() {
+export default function ContactsTabs({route}) {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const conversationRedux = useSelector((state) => state.chat.conversations);
   const user = useSelector((state) => state.auth.user);
+  const socketRef = route.params.socketRef;
 
   const [conversations, setConversations] = useState([]);
 
@@ -90,7 +91,7 @@ export default function ContactsTabs() {
               borderBottomWidth: 1,
               borderColor: "#ddd",
             }}
-            onPress={() => navigation.navigate('FriendRequest')}
+            onPress={() => navigation.navigate('FriendRequest', {socketRef})}
           >
             <Icon
               name="person-add-outline"
