@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState , useEffect} from "react";
 import {
   View,
   Text,
@@ -11,63 +11,42 @@ import {
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import Icon from "react-native-vector-icons/Ionicons";
 import SearchHeader from "../../component/Header";
+import { getConversations } from "../../redux/chatSlice";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigation } from "@react-navigation/native";
 
 const TopTab = createMaterialTopTabNavigator();
 
 export default function ContactsTabs() {
-  const friends = [
-    { id: "1", name: "Bò Đực", avatar: require("../../../assets/favicon.png") },
-    { id: "2", name: "A An", avatar: require("../../../assets/favicon.png") },
-    {
-      id: "3",
-      name: "Anh Khoa",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "4",
-      name: "Anh Quân",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    { id: "5", name: "Bà", avatar: require("../../../assets/favicon.png") },
-    {
-      id: "6",
-      name: "Bà Ngoại",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    { id: "7", name: "Bác", avatar: require("../../../assets/favicon.png") },
-    { id: "8", name: "Bác Hồ", avatar: require("../../../assets/favicon.png") },
-    { id: "9", name: "Bác Sĩ", avatar: require("../../../assets/favicon.png") },
-    {
-      id: "10",
-      name: "Bác Tài",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "11",
-      name: "Bác Thắng",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "12",
-      name: "Bác Thành",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "13",
-      name: "Bác Tùng",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "14",
-      name: "Bác Tuyên",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "15",
-      name: "Bác Tú",
-      avatar: require("../../../assets/favicon.png"),
-    },
-  ];
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const conversationRedux = useSelector((state) => state.chat.conversations);
+  const user = useSelector((state) => state.auth.user);
+
+  const [conversations, setConversations] = useState([]);
+
+  useEffect(() => {
+    dispatch(getConversations(user._id));
+  }, []);
+
+  useEffect(() => {
+    if (conversationRedux) {
+      let _conversations = conversationRedux.map((item) => {
+        return {
+          _id: item.receiver._id,
+          username: item.receiver.username,
+          message: item.message,
+          time: item.time,
+          avatar: item.avatar,
+          type: item.type,
+          phone: item.receiver.phone,
+          members: item.members,
+        };
+      });
+
+      setConversations(_conversations);
+    }
+  }, [conversationRedux]);
 
   const FriendItem = ({ friend }) => (
     <View
@@ -83,7 +62,7 @@ export default function ContactsTabs() {
         source={friend.avatar}
         style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
       />
-      <Text style={{ flex: 1, fontSize: 16 }}>{friend.name}</Text>
+      <Text style={{ flex: 1, fontSize: 16 }}>{friend.username}</Text>
       <TouchableOpacity>
         <Icon
           name="call"
@@ -111,6 +90,7 @@ export default function ContactsTabs() {
               borderBottomWidth: 1,
               borderColor: "#ddd",
             }}
+            onPress={() => navigation.navigate('FriendRequest')}
           >
             <Icon
               name="person-add-outline"
@@ -161,8 +141,8 @@ export default function ContactsTabs() {
           </Text>
         </>
       )}
-      data={friends}
-      keyExtractor={(item) => item.id}
+      data={conversations}
+      keyExtractor={(item) => item._id}
       renderItem={({ item }) => <FriendItem friend={item} />}
     />
   );
@@ -350,7 +330,7 @@ export default function ContactsTabs() {
 
   return (
     <View>
-      <SearchHeader option={'contact'}/>
+      <SearchHeader option={"contact"} />
 
       <TopTab.Navigator
         screenOptions={{

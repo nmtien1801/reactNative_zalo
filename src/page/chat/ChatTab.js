@@ -88,7 +88,7 @@ const ChatTab = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
-      <SearchHeader option={"chatTab"} />
+      <SearchHeader option={"chatTab"} socketRef={socketRef}/>
       {/* Chat List */}
       <FlatList
         data={conversations}

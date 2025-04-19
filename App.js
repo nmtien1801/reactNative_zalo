@@ -22,6 +22,7 @@ import ResetPassword from "./src/page/auth/ResetPassword";
 import ChangePassword from "./src/component/changePassword"
 import Setting from './src/page/personal/Setting'
 import InformationAccount  from './src/page/personal/InfomationAccount'
+import FriendRequest from './src/page/contacts/FriendRequest';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -103,6 +104,10 @@ const Project = () => {
                <Stack.Screen
                 name="InformationAccount"
                 component={InformationAccount}
+              />
+               <Stack.Screen
+                name="FriendRequest"
+                component={FriendRequest}
               />
             </>
           ) : (
