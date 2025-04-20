@@ -54,7 +54,7 @@ const ChatTab = ({ route }) => {
           avatar: item.avatar,
           type: item.type,
           phone: item.receiver.phone,
-          members: item.receiver.members,
+          members: item.members,
         };
       });
 

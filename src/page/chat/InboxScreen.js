@@ -792,7 +792,10 @@ const InboxScreen = ({ route }) => {
                       {
                         name: "Thu hồi",
                         icon: "undo",
-                        action: () => handleRecallMessage(selectedMessage),
+                        action: () => {
+                          handleRecallMessage(selectedMessage),
+                          setModalVisible(false);
+                        },
                       },
                     ]
                   : []),
