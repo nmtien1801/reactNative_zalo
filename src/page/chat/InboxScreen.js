@@ -548,6 +548,7 @@ const InboxScreen = ({ route }) => {
                 receiver,
                 socketRef,
                 onlineUsers,
+                conversations,
               })
             }
           >
@@ -794,7 +795,7 @@ const InboxScreen = ({ route }) => {
                         icon: "undo",
                         action: () => {
                           handleRecallMessage(selectedMessage),
-                          setModalVisible(false);
+                            setModalVisible(false);
                         },
                       },
                     ]

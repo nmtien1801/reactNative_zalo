@@ -24,6 +24,7 @@ import Setting from "./src/page/personal/Setting";
 import InformationAccount from "./src/page/personal/InfomationAccount";
 import FriendRequest from "./src/page/contacts/FriendRequest";
 import io from "socket.io-client";
+import ManageGroup  from './src/page/auth/ManageGroup'
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -130,6 +131,12 @@ const Project = () => {
               <Stack.Screen
                 name="InformationAccount"
                 component={InformationAccount}
+              />
+              <Stack.Screen
+                name="ManageGroup"
+                component={ManageGroup}
+                options={{ headerShown: false }}
+                initialParams={{ socketRef }}
               />
               <Stack.Screen name="FriendRequest" component={FriendRequest} />
             </>

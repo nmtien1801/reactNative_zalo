@@ -27,7 +27,7 @@ const ChatTab = ({ route }) => {
   const user = useSelector((state) => state.auth.user);
   const conversationRedux = useSelector((state) => state.chat.conversations);
   const socketRef = route.params.socketRef;
-  
+
   const [conversations, setConversations] = useState([
     {
       _id: 1,
@@ -55,6 +55,7 @@ const ChatTab = ({ route }) => {
           type: item.type,
           phone: item.receiver.phone,
           members: item.members,
+          role: item.role,
         };
       });
 
