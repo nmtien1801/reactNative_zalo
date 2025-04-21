@@ -13,6 +13,8 @@ import SearchHeader from "../../component/Header";
 import { getConversations } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 
+import io from "socket.io-client";
+
 import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");

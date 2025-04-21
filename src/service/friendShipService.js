@@ -15,8 +15,18 @@ const deleteFriendService = async (friendId) => {
     }
   };
 
+const getFriendListService = async () => {
+    try {
+        const response = await customizeAxios.get(`/friends`);
+        return response;
+    } catch (err) {
+        console.error('Service error:', err);
+        return null;
+    }
+};
+
 export {
     deleteFriendService,
     checkFriendShipExistsService,
-
+    getFriendListService
 };

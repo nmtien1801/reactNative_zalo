@@ -19,18 +19,16 @@ import RegisterForm from "./src/page/auth/register";
 import InboxScreen from "./src/page/chat/InboxScreen";
 import PersonOption from "./src/page/chat/PersonOption";
 import ResetPassword from "./src/page/auth/ResetPassword";
-import ChangePassword from "./src/component/changePassword";
-import Setting from "./src/page/personal/Setting";
+import ChangePassword from "./src/component/changePassword"; 
+import Setting from "./src/page/personal/Setting"; 
 import InformationAccount from "./src/page/personal/InfomationAccount";
 import FriendRequest from "./src/page/contacts/FriendRequest";
 import io from "socket.io-client";
-import ManageGroup  from './src/page/auth/ManageGroup'
-import ChangePassword from "./src/component/changePassword"
-import Setting from './src/page/personal/Setting'
-import InformationAccount from './src/page/personal/InfomationAccount'
+import ManageGroup from "./src/page/auth/ManageGroup";
 import AddFriendScreen from "./src/page/chat/AddFriendScreen";
 import SearchScreen from "./src/page/chat/SearchScreen";
 import UserProfileScreen from "./src/page/personal/UserProfileScreen";
+import CreateGroupTab from "./src/page/chat/CreateGroupTab";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -132,6 +130,12 @@ const Project = () => {
                 name="AddFriendScreen"
                 component={AddFriendScreen}
                 options={{ headerShown: false }}
+              />
+
+              <Stack.Screen 
+                name="CreateGroupTab"
+                component={CreateGroupTab}
+                options={{headerShown: false}}
               />
 
               <Stack.Screen

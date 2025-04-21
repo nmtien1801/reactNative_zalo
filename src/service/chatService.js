@@ -8,16 +8,20 @@ const getConversationsService = (sender) => {
   return customizeAxios.get(`/getConversations/${sender}`);
 };
 
-const createConversationGroupService = (data) => {
-  return customizeAxios.post(`/createConversationGroup`, data);
-};
-
 const recallMessageService = (id) => {
   return customizeAxios.put(`/messages/recall/${id}`);
 };
 
 const deleteMessageForMeService = (id, member) => {
   return customizeAxios.put(`/messages/deleteForMe/${id}`, member);
+};
+
+const createConversationGroupService = (nameGroup, avatarGroup, members) => {
+  return customizeAxios.post(`/createConversationGroup`, {
+    nameGroup,
+    avatarGroup,
+    members,
+  });
 };
 
 export {

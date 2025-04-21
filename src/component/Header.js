@@ -116,7 +116,7 @@ export default function SearchHeader({ option, socketRef, onlineUsers }) {
                   <Text style={{ fontSize: 16 }}>Thêm bạn</Text>
                 </View>
               </MenuOption>
-              <MenuOption onSelect={() => alert("Tạo nhóm")}>
+              <MenuOption onSelect={() => navigation.navigate("CreateGroupTab")}>
                 <View
                   style={{
                     flexDirection: "row",
