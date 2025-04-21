@@ -145,11 +145,25 @@ const InboxScreen = ({ route }) => {
     const res = await dispatch(
       loadMessages({ sender: user._id, receiver: receiver, type: type })
     );
-
+  
     if (res.payload.EC === 0) {
-      setAllMsg(res.payload.DT);
+      let msg = res.payload.DT;
+      const filteredMessages = msg.filter(
+        (msg) => !msg.memberDel?.includes(user._id)
+      );
+      setAllMsg(filteredMessages);
     }
   };
+
+  // const handleLoadMessages = async (receiver, type) => {
+  //   const res = await dispatch(
+  //     loadMessages({ sender: user._id, receiver: receiver, type: type })
+  //   );
+
+  //   if (res.payload.EC === 0) {
+  //     setAllMsg(res.payload.DT);
+  //   }
+  // };
 
   const sendMessage = (msg, type) => {
 
