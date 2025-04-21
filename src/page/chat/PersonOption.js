@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,10 +14,11 @@ import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
-const ChatInfoScreen = ({route}) => {
+const ChatInfoScreen = ({ route }) => {
   let item = route.params?.receiver; // click conversation
   let socketRef = route.params?.socketRef;
-  let onlineUsers = route.params?.onlineUsers 
+  let onlineUsers = route.params?.onlineUsers;
+  const conversations = route.params?.conversations;
   const navigation = useNavigation();
   const [isReportCallsEnabled, setIsReportCallsEnabled] = useState(true);
   const [isHiddenChatEnabled, setIsHiddenChatEnabled] = useState(false);
@@ -30,13 +31,31 @@ const ChatInfoScreen = ({route}) => {
     setIsHiddenChatEnabled((previousState) => !previousState);
   };
 
+  // ManageGroup
+  const [role, setRole] = useState("member");
+  useEffect(() => {
+    const role = conversations.find(
+      (conversation) => conversation._id === item._id
+    );
+    if (role) {
+      setRole(role.role);
+    }
+  }, [conversations, item]);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={() => navigation.navigate("InboxScreen", { item, socketRef, onlineUsers })}
+            onPress={() =>
+              navigation.navigate("InboxScreen", {
+                item,
+                socketRef,
+                onlineUsers,
+                conversations,
+              })
+            }
           >
             <Ionicons name="arrow-back" size={24} color="black" />
           </TouchableOpacity>
@@ -118,6 +137,28 @@ const ChatInfoScreen = ({route}) => {
             />
             <Text style={styles.optionText}>Xem nhóm chung (14)</Text>
           </TouchableOpacity>
+
+          {(role === "leader" || role === "deputy") && (
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() =>
+                navigation.navigate("ManageGroup", {
+                  receiver: item,
+                  socketRef,
+                  onlineUsers,
+                  conversations,
+                })
+              }
+            >
+              <Feather
+                name="settings"
+                size={20}
+                color="#555"
+                style={styles.optionIcon}
+              />
+              <Text style={styles.optionText}>Quản lý nhóm</Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity style={styles.optionItem}>
             <Feather

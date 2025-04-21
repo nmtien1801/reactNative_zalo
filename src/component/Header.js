@@ -20,10 +20,13 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 const { width, height } = Dimensions.get("window");
 const HEADER_HEIGHT = height * 0.08;
+import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
+import AddFriendModal from './AddFriendModal'
 
-export default function SearchHeader({ option }) {
+export default function SearchHeader({ option , socketRef}) {
   const navigation = useNavigation();
-
+  const [showModalAddFriend, setShowModalAddFriend] = useState(false); // modal thêm bạn
+ 
   return (
     <View
       style={{
@@ -54,7 +57,7 @@ export default function SearchHeader({ option }) {
       />
 
       {option === "person" && (
-        <TouchableOpacity onPress={()=>navigation.navigate("Setting")}>
+        <TouchableOpacity onPress={() => navigation.navigate("Setting")}>
           <Ionicons
             name="settings-outline"
             size={24}
@@ -90,7 +93,7 @@ export default function SearchHeader({ option }) {
                 padding: 10,
               }}
             >
-              <MenuOption onSelect={() => alert("Thêm bạn")}>
+              <MenuOption onSelect={() => setShowModalAddFriend(true)}>
                 <View
                   style={{
                     flexDirection: "row",
@@ -115,11 +118,12 @@ export default function SearchHeader({ option }) {
                     padding: 10,
                   }}
                 >
-                  <Icon
-                    name="group-add"
+                  <FontAwesome5
+                    name="users"
                     size={20}
                     color="black"
                     style={{ marginRight: 10 }}
+                    solid
                   />
                   <Text style={{ fontSize: 16 }}>Tạo nhóm</Text>
                 </View>
@@ -132,11 +136,12 @@ export default function SearchHeader({ option }) {
                     padding: 10,
                   }}
                 >
-                  <Icon
-                    name="contacts"
+                  <FontAwesome5
+                    name="address-book"
                     size={20}
                     color="black"
                     style={{ marginRight: 10 }}
+                    solid
                   />
                   <Text style={{ fontSize: 16 }}>Gửi danh bạ</Text>
                 </View>
@@ -149,11 +154,12 @@ export default function SearchHeader({ option }) {
                     padding: 10,
                   }}
                 >
-                  <Icon
-                    name="event"
+                  <FontAwesome5
+                    name="calendar-alt"
                     size={20}
                     color="black"
                     style={{ marginRight: 10 }}
+                    solid
                   />
                   <Text style={{ fontSize: 16 }}>Lịch Zalo</Text>
                 </View>
@@ -166,11 +172,12 @@ export default function SearchHeader({ option }) {
                     padding: 10,
                   }}
                 >
-                  <Icon
-                    name="call"
+                  <FontAwesome5
+                    name="phone"
                     size={20}
                     color="black"
                     style={{ marginRight: 10 }}
+                    solid
                   />
                   <Text style={{ fontSize: 16 }}>Tạo cuộc gọi nhóm</Text>
                 </View>
@@ -183,17 +190,23 @@ export default function SearchHeader({ option }) {
                     padding: 10,
                   }}
                 >
-                  <Icon
-                    name="devices"
+                  <FontAwesome5
+                    name="laptop"
                     size={20}
                     color="black"
                     style={{ marginRight: 10 }}
+                    solid
                   />
                   <Text style={{ fontSize: 16 }}>Thiết bị đăng nhập</Text>
                 </View>
               </MenuOption>
             </MenuOptions>
           </Menu>
+          <AddFriendModal
+            show={showModalAddFriend}
+            onHide={() => setShowModalAddFriend(false)}
+            socketRef={socketRef}
+          />
         </View>
       )}
     </View>
