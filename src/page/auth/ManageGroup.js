@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,20 +10,16 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
+import { updatePermission } from "../../redux/chatSlice";
+import { getAllPermission } from "../../redux/permissionSlice";
 
 const ManageGroup = ({ navigation, route }) => {
+  const dispatch = useDispatch();
   let item = route.params?.receiver; // click conversation
   let socketRef = route.params?.socketRef;
   let onlineUsers = route.params?.onlineUsers;
   const conversations = route.params?.conversations;
-
-  const permissions = [
-    "Thay đổi tên & ảnh đại diện của nhóm",
-    "Ghim tin nhắn, ghi chú, bình chọn lên đầu hội thoại",
-    "Tạo mới ghi chú, nhắc hẹn",
-    "Tạo mới bình chọn",
-    "Gửi tin nhắn",
-  ];
+  const permissions = useSelector((state) => state.permission.permission);
 
   const settings = [
     "Chế độ phê duyệt thành viên mới",
@@ -32,14 +28,54 @@ const ManageGroup = ({ navigation, route }) => {
     "Cho phép dùng link tham gia nhóm",
   ];
 
-  const [checkedStates, setCheckedStates] = useState(
-    Array(permissions.length).fill(true)
-  );
+  const [checkedStates, setCheckedStates] = useState([]);
+
+  // getAllPermission
+  useEffect(() => {
+    dispatch(getAllPermission());
+  }, []);
 
   const handleCheckboxChange = (index) => {
     const updated = [...checkedStates];
     updated[index] = !updated[index];
     setCheckedStates(updated);
+
+    // Tạo danh sách permission dựa trên checkedStates
+    const newPermissions = updated
+      .map((isChecked, idx) => (isChecked ? idx + 1 : null))
+      .filter((perm) => perm !== null);
+
+    // Gọi hàm cập nhật permission trong DB
+    updatePermissionsInDB(newPermissions);
+  };
+
+  useEffect(() => {
+    if (item?.permission && permissions.length > 0) {
+      const updatedStates = permissions.map((_, index) =>
+        item.permission.includes(index + 1)
+      );
+
+      setCheckedStates(updatedStates);
+    }
+  }, [item, permissions]);
+
+  // Hàm gửi yêu cầu cập nhật permission đến server
+  const updatePermissionsInDB = async (newPermissions) => {
+    try {
+      // Giả sử bạn có một API endpoint để cập nhật permission
+      let res = await dispatch(
+        updatePermission({
+          groupId: item._id,
+          newPermission: newPermissions,
+        })
+      );
+      console.log("res ", res);
+
+      console.log("Permissions updated in DB:", newPermissions);
+    } catch (error) {
+      console.error("Error updating permissions:", error);
+      // Có thể hiển thị thông báo lỗi cho người dùng
+    }
   };
 
   // chọn settings
@@ -91,7 +127,7 @@ const ManageGroup = ({ navigation, route }) => {
       <Text style={{ fontWeight: "600", marginBottom: 8 }}>
         Cho phép các thành viên trong nhóm:
       </Text>
-      {permissions.map((text, idx) => (
+      {permissions.map((per, idx) => (
         <TouchableOpacity
           key={idx}
           onPress={() => handleCheckboxChange(idx)}
@@ -107,7 +143,7 @@ const ManageGroup = ({ navigation, route }) => {
             color={checkedStates[idx] ? "#007bff" : "#999"} // xanh dương khi được chọn
             style={{ marginRight: 10 }}
           />
-          <Text>{text}</Text>
+          <Text>{per.desc}</Text>
         </TouchableOpacity>
       ))}
 

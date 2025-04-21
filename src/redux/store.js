@@ -3,6 +3,7 @@ import authReducer from "./authSlice";
 import profileReducer from "./profileSlice";
 import roomChatReducer from "./roomChatSlice";
 import chatReducer from "./chatSlice";
+import permissionReducer from "./permissionSlice";
 
 export const store = configureStore({
   reducer: {
@@ -10,5 +11,6 @@ export const store = configureStore({
     auth: authReducer,
     roomChat: roomChatReducer,
     profile: profileReducer,
+    permission: permissionReducer,
   },
 });

@@ -20,10 +20,18 @@ const deleteMessageForMeService = (id, member) => {
   return customizeAxios.put(`/messages/deleteForMe/${id}`, member);
 };
 
+const updatePermissionService = (groupId, newPermission) => {
+  return customizeAxios.post(`/updatePermission`, {
+    groupId,
+    newPermission,
+  });
+};
+
 export {
   loadMessagesService,
   getConversationsService,
   createConversationGroupService,
   recallMessageService,
   deleteMessageForMeService,
+  updatePermissionService,
 };

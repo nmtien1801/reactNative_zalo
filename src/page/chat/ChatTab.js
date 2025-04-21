@@ -56,6 +56,7 @@ const ChatTab = ({ route }) => {
           phone: item.receiver.phone,
           members: item.members,
           role: item.role,
+          permission: item.receiver.permission
         };
       });
 
