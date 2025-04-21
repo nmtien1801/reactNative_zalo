@@ -2,7 +2,7 @@ import customizeAxios from "../component/customizeAxios";
 
 const getRoomChatByPhoneService = (phone) => {
     return customizeAxios.get(
-        `/roomChat/${phone}`
+        `/api/roomChat/${phone}`
     );
 };
 

@@ -511,6 +511,11 @@ const InboxScreen = ({ route }) => {
       console.error("Upload thất bại:", error);
       Alert.alert("Lỗi upload", error.message);
     }
+
+  }
+  
+  const forwardMessage = (message) => {
+    navigation.navigate("ShareScreen", { message });
   };
 
   return (
@@ -812,6 +817,8 @@ const InboxScreen = ({ route }) => {
                       setModalVisible(false);
                   },
                 },
+                { name: "Xóa", icon: "trash", action: () => handleDeleteMessageForMe(selectedMessage._id, user._id) },
+                { name: "Chuyển tiếp", icon: "share", action: () => forwardMessage(selectedMessage) },
               ].map((item, index) => (
                 <TouchableOpacity
                   key={index}

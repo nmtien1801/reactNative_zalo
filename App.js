@@ -25,6 +25,12 @@ import InformationAccount from "./src/page/personal/InfomationAccount";
 import FriendRequest from "./src/page/contacts/FriendRequest";
 import io from "socket.io-client";
 import ManageGroup  from './src/page/auth/ManageGroup'
+import ChangePassword from "./src/component/changePassword"
+import Setting from './src/page/personal/Setting'
+import InformationAccount from './src/page/personal/InfomationAccount'
+import AddFriendScreen from "./src/page/chat/AddFriendScreen";
+import SearchScreen from "./src/page/chat/SearchScreen";
+import UserProfileScreen from "./src/page/personal/UserProfileScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -116,6 +122,25 @@ const Project = () => {
                 initialParams={{ socketRef }}
                 options={{ headerShown: false }}
               />
+              <Stack.Screen
+                name="SearchScreen"
+                component={SearchScreen}
+                options={{ headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="AddFriendScreen"
+                component={AddFriendScreen}
+                options={{ headerShown: false }}
+              />
+
+              <Stack.Screen
+                name="UserProfileScreen"
+                component={UserProfileScreen}
+                options={{ headerShown: false }}
+              />
+
+
               <Stack.Screen
                 name="InboxScreen"
                 component={InboxScreen}
