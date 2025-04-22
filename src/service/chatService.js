@@ -20,10 +20,23 @@ const deleteMessageForMeService = (id, member) => {
   return customizeAxios.put(`/messages/deleteForMe/${id}`, member);
 };
 
+const removeMemberFromGroupService = async (groupId, memberId) => {
+  try {
+    const response = await customizeAxios.delete(
+      `/roomChat/${groupId}/members/${memberId}`
+    );
+    return response.data; // Trả về dữ liệu từ API
+  } catch (error) {
+    console.error("Lỗi khi gọi API xóa thành viên:", error);
+    return { EC: -1, EM: "Lỗi khi gọi API", DT: null }; // Trả về định dạng mặc định khi lỗi
+  }
+};
+
 export {
   loadMessagesService,
   getConversationsService,
   createConversationGroupService,
   recallMessageService,
   deleteMessageForMeService,
+  removeMemberFromGroupService,
 };
