@@ -13,11 +13,13 @@ import { Feather } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useSelector, useDispatch } from "react-redux";
 
 const ChatInfoScreen = ({ route }) => {
   let item = route.params?.receiver; // click conversation
   let socketRef = route.params?.socketRef;
   let onlineUsers = route.params?.onlineUsers;
+  const user = useSelector((state) => state.auth.user);
   const conversations = route.params?.conversations;
   const navigation = useNavigation();
   const [isReportCallsEnabled, setIsReportCallsEnabled] = useState(true);
@@ -41,6 +43,17 @@ const ChatInfoScreen = ({ route }) => {
       setRole(role.role);
     }
   }, [conversations, item]);
+
+  // action socket
+  useEffect(() => {
+    socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
+      if (data.upsertedCount === 0) {
+        setRole("member");
+      }
+      const member = data.find((item) => item.sender._id === user._id);
+      setRole(member.role);
+    });
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>

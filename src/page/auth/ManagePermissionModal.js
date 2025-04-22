@@ -19,7 +19,7 @@ import {
 import { updateDeputyService } from "../../service/permissionService";
 import { Search } from "lucide-react-native";
 
-const ManagePermissionModal = ({ closeModal, receiver }) => {
+const ManagePermissionModal = ({ closeModal, receiver, socketRef }) => {
   const user = useSelector((state) => state.auth.user);
   const [searchTerm, setSearchTerm] = useState("");
   const [members, setMembers] = useState([]);
@@ -104,6 +104,7 @@ const ManagePermissionModal = ({ closeModal, receiver }) => {
       const res = await updateDeputyService(members);
       if (res.EC === 0) {
         closeModal();
+        socketRef.current.emit("REQ_UPDATE_DEPUTY", res.DT);
       } else {
         Alert.alert("Lỗi", res.EM || "Không thể cập nhật");
       }

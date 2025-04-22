@@ -31,7 +31,7 @@ import {
 } from "../../service/chatService";
 
 const InboxScreen = ({ route }) => {
-  let receiver = route.params?.item; // click conversation
+  const [receiver, setReceiver] = useState(route.params?.item || null); // click conversation
   let socketRef = route.params?.socketRef;
   let onlineUsers = route.params?.onlineUsers;
   let conversations = route.params?.conversations; // Nhận conversations từ route.params
@@ -513,6 +513,20 @@ const InboxScreen = ({ route }) => {
     }
   };
 
+  // action socket
+  useEffect(() => {
+    socketRef.current.on("RES_MEMBER_PERMISSION", (data) => {
+      const member = data.find((item) => item.sender._id === user._id);
+      console.log("member ", member);
+
+      setReceiver({
+        ...receiver,
+        permission: member.receiver.permission,
+        role: member.role,
+      });
+    });
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -694,46 +708,58 @@ const InboxScreen = ({ route }) => {
 
       {/* Input Box */}
       <View style={styles.inputContainer}>
-      {(receiver.permission.includes(3) || receiver.role === 'leader' || receiver.role === 'deputy') ? (<>
-        <TouchableOpacity
-          style={{ flexDirection: "row", alignItems: "center" }}
-          onPress={() => setShowPicker(true)}
-        >
-          <FontAwesome5 name="sticky-note" size={24} color="black" />
-          <FontAwesome5
-            name="smile"
-            size={12}
-            color="black"
-            style={{ marginLeft: -17 }}
-          />
-        </TouchableOpacity>
-        <View style={styles.inputWrapper}>
-          <TextInput
-            style={styles.input}
-            placeholder="Message"
-            placeholderTextColor="grey"
-            value={input}
-            onChangeText={(text) => setInput(text)}
-          />
-        </View>
-        {!input.trim() ? (
-          <View style={{ flexDirection: "row" }}>
-            <TouchableOpacity style={styles.iconWrapper} onPress={pickMedia}>
-              <FontAwesome5 name="paperclip" size={22} color="gray" />
+        {receiver.permission.includes(3) ||
+        receiver.role === "leader" ||
+        receiver.role === "deputy" ? (
+          <>
+            <TouchableOpacity
+              style={{ flexDirection: "row", alignItems: "center" }}
+              onPress={() => setShowPicker(true)}
+            >
+              <FontAwesome5 name="sticky-note" size={24} color="black" />
+              <FontAwesome5
+                name="smile"
+                size={12}
+                color="black"
+                style={{ marginLeft: -17 }}
+              />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconWrapper} onPress={pickImage}>
-              <FontAwesome5 name="image" size={22} color="gray" />
-            </TouchableOpacity>
-          </View>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="Message"
+                placeholderTextColor="grey"
+                value={input}
+                onChangeText={(text) => setInput(text)}
+              />
+            </View>
+            {!input.trim() ? (
+              <View style={{ flexDirection: "row" }}>
+                <TouchableOpacity
+                  style={styles.iconWrapper}
+                  onPress={pickMedia}
+                >
+                  <FontAwesome5 name="paperclip" size={22} color="gray" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.iconWrapper}
+                  onPress={pickImage}
+                >
+                  <FontAwesome5 name="image" size={22} color="gray" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.iconWrapper}
+                onPress={() => sendMessage(input, "text")}
+              >
+                <FontAwesome5 name="paper-plane" size={22} color="blue" />
+              </TouchableOpacity>
+            )}
+          </>
         ) : (
-          <TouchableOpacity
-            style={styles.iconWrapper}
-            onPress={() => sendMessage(input, "text")}
-          >
-            <FontAwesome5 name="paper-plane" size={22} color="blue" />
-          </TouchableOpacity>
+          <Text>Chỉ có trưởng nhóm/ phó nhóm mới được phép nhắn tin</Text>
         )}
-          </>) : (<Text>Chỉ có trưởng nhóm/ phó nhóm mới được phép nhắn tin</Text>)}
       </View>
 
       <IconPicker

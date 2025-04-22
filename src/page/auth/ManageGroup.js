@@ -24,8 +24,6 @@ const ManageGroup = ({ navigation, route }) => {
 
   const settings = [
     "Chế độ phê duyệt thành viên mới",
-    "Đánh dấu tin nhắn từ trưởng/phó nhóm",
-    "Cho phép thành viên mới đọc tin nhắn gần nhất",
     "Cho phép dùng link tham gia nhóm",
   ];
 
@@ -79,8 +77,8 @@ const ManageGroup = ({ navigation, route }) => {
           newPermission: newPermissions,
         })
       );
-      console.log("res ", res);
-
+      
+      socketRef.current.emit("REQ_MEMBER_PERMISSION", res.payload.DT);
       console.log("Permissions updated in DB:", newPermissions);
     } catch (error) {
       console.error("Error updating permissions:", error);
@@ -247,7 +245,7 @@ const ManageGroup = ({ navigation, route }) => {
         <Text style={{ marginLeft: 8 }}>Trưởng & phó nhóm</Text>
       </TouchableOpacity>
       {isModalOpen && (
-        <ManagePermissionModal closeModal={closeModal} receiver={item} />
+        <ManagePermissionModal closeModal={closeModal} receiver={item} socketRef={socketRef}/>
       )}
       {/* Nút giải tán nhóm */}
       <TouchableOpacity
