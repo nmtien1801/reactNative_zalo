@@ -21,6 +21,7 @@ const ManageGroup = ({ navigation, route }) => {
   let onlineUsers = route.params?.onlineUsers;
   const conversations = route.params?.conversations;
   const permissions = useSelector((state) => state.permission.permission);
+  const user = useSelector((state) => state.auth.user);
 
   const settings = [
     "Chế độ phê duyệt thành viên mới",
@@ -77,7 +78,7 @@ const ManageGroup = ({ navigation, route }) => {
           newPermission: newPermissions,
         })
       );
-      
+
       socketRef.current.emit("REQ_MEMBER_PERMISSION", res.payload.DT);
       console.log("Permissions updated in DB:", newPermissions);
     } catch (error) {
@@ -95,6 +96,26 @@ const ManageGroup = ({ navigation, route }) => {
     updated[idx] = !updated[idx];
     setSettingSwitches(updated);
   };
+
+  // action socket
+  useEffect(() => {
+    socketRef.current.on("RES_TRANS_LEADER", (data) => {
+      const { newLeader, oldLeader } = data;
+      let member = null;
+      if (newLeader?.sender?._id === user._id) {
+        member = newLeader;
+      } else if (oldLeader?.sender?._id === user._id) {
+        member = oldLeader;
+      }
+
+      navigation.navigate("PersonOption", {
+        receiver: member,
+        socketRef,
+        onlineUsers,
+        conversations,
+      });
+    });
+  }, []);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "#fff", padding: 16 }}>
@@ -227,39 +248,46 @@ const ManageGroup = ({ navigation, route }) => {
         <Feather name="user-x" size={18} color="#dc3545" />
         <Text style={{ color: "#dc3545", marginLeft: 8 }}>Chặn khỏi nhóm</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity
-        style={{
-          backgroundColor: "#e2e3e5",
-          borderColor: "#d3d6d8",
-          borderWidth: 1,
-          borderRadius: 6,
-          padding: 12,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        onPress={openModal}
-      >
-        <Feather name="users" size={18} />
-        <Text style={{ marginLeft: 8 }}>Trưởng & phó nhóm</Text>
-      </TouchableOpacity>
+      {item.role === "leader" && (
+        <TouchableOpacity
+          style={{
+            backgroundColor: "#e2e3e5",
+            borderColor: "#d3d6d8",
+            borderWidth: 1,
+            borderRadius: 6,
+            padding: 12,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onPress={openModal}
+        >
+          <Feather name="users" size={18} />
+          <Text style={{ marginLeft: 8 }}>Trưởng & phó nhóm</Text>
+        </TouchableOpacity>
+      )}
       {isModalOpen && (
-        <ManagePermissionModal closeModal={closeModal} receiver={item} socketRef={socketRef}/>
+        <ManagePermissionModal
+          closeModal={closeModal}
+          receiver={item}
+          socketRef={socketRef}
+        />
       )}
       {/* Nút giải tán nhóm */}
-      <TouchableOpacity
-        style={{
-          backgroundColor: "#dc3545",
-          marginTop: 20,
-          padding: 12,
-          borderRadius: 6,
-          alignItems: "center",
-        }}
-      >
-        <Feather name="trash" size={16} color="#fff" />
-        <Text style={{ color: "#fff", marginTop: 4 }}>Giải tán nhóm</Text>
-      </TouchableOpacity>
+      {item.role === "leader" && (
+        <TouchableOpacity
+          style={{
+            backgroundColor: "#dc3545",
+            marginTop: 20,
+            padding: 12,
+            borderRadius: 6,
+            alignItems: "center",
+          }}
+        >
+          <Feather name="trash" size={16} color="#fff" />
+          <Text style={{ color: "#fff", marginTop: 4 }}>Giải tán nhóm</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };

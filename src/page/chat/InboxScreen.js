@@ -517,13 +517,28 @@ const InboxScreen = ({ route }) => {
   useEffect(() => {
     socketRef.current.on("RES_MEMBER_PERMISSION", (data) => {
       const member = data.find((item) => item.sender._id === user._id);
-      console.log("member ", member);
 
       setReceiver({
         ...receiver,
         permission: member.receiver.permission,
         role: member.role,
       });
+    });
+
+    socketRef.current.on("RES_TRANS_LEADER", (data) => {
+      const { newLeader, oldLeader } = data;
+      let member = null;
+      if (newLeader?.sender?._id === user._id) {
+        member = newLeader;
+      } else if (oldLeader?.sender?._id === user._id) {
+        member = oldLeader;
+      }
+
+      setReceiver({
+        ...receiver,
+        permission: member.receiver.permission,
+        role: member.role,
+      })
     });
   }, []);
 
@@ -708,7 +723,7 @@ const InboxScreen = ({ route }) => {
 
       {/* Input Box */}
       <View style={styles.inputContainer}>
-        {receiver.permission.includes(3) ||
+        {receiver?.permission?.includes(3) ||
         receiver.role === "leader" ||
         receiver.role === "deputy" ? (
           <>

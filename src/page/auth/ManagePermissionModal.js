@@ -16,7 +16,10 @@ import {
   getAllMemberGroupService,
   getMemberByPhoneService,
 } from "../../service/roomChatService";
-import { updateDeputyService } from "../../service/permissionService";
+import {
+  updateDeputyService,
+  transLeaderService,
+} from "../../service/permissionService";
 import { Search } from "lucide-react-native";
 
 const ManagePermissionModal = ({ closeModal, receiver, socketRef }) => {
@@ -99,6 +102,7 @@ const ManagePermissionModal = ({ closeModal, receiver, socketRef }) => {
     }
   }, [selectedTab, searchResults]);
 
+  // xác nhận
   const handleConfirm = async () => {
     if (selectedTab === "Thêm phó nhóm") {
       const res = await updateDeputyService(members);
@@ -107,6 +111,17 @@ const ManagePermissionModal = ({ closeModal, receiver, socketRef }) => {
         socketRef.current.emit("REQ_UPDATE_DEPUTY", res.DT);
       } else {
         Alert.alert("Lỗi", res.EM || "Không thể cập nhật");
+      }
+    } else {
+      // Chuyển quyền trưởng nhóm
+      let res = await transLeaderService(
+        members[0].receiver._id,
+        members[0].sender._id
+      );
+
+      if (res.EC === 0) {
+        closeModal();
+        socketRef.current.emit("REQ_TRANS_LEADER", res.DT);
       }
     }
   };
@@ -188,20 +203,20 @@ const ManagePermissionModal = ({ closeModal, receiver, socketRef }) => {
           </View>
 
           <View style={styles.memberContainer}>
-  <View style={styles.memberList}>
-    <Text style={styles.subHeader}>Thành viên trong nhóm</Text>
-    <FlatList
-      data={searchResults}
-      keyExtractor={(item) => item._id}
-      renderItem={renderUserItem}
-    />
-  </View>
+            <View style={styles.memberList}>
+              <Text style={styles.subHeader}>Thành viên trong nhóm</Text>
+              <FlatList
+                data={searchResults}
+                keyExtractor={(item) => item._id}
+                renderItem={renderUserItem}
+              />
+            </View>
 
-  <View style={styles.selectedList}>
-    <Text style={styles.subHeader}>Đã chọn</Text>
-    <ScrollView>{members.map(renderSelectedUser)}</ScrollView>
-  </View>
-</View>
+            <View style={styles.selectedList}>
+              <Text style={styles.subHeader}>Đã chọn</Text>
+              <ScrollView>{members.map(renderSelectedUser)}</ScrollView>
+            </View>
+          </View>
 
           <View style={styles.footer}>
             <TouchableOpacity onPress={closeModal} style={styles.cancelBtn}>
@@ -304,7 +319,7 @@ const styles = StyleSheet.create({
   },
 
   memberContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 12,
   },
@@ -315,6 +330,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingLeft: 8,
     borderLeftWidth: 1,
-    borderLeftColor: '#ccc',
+    borderLeftColor: "#ccc",
   },
 });

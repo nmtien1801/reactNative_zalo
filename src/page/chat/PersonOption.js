@@ -16,7 +16,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useSelector, useDispatch } from "react-redux";
 
 const ChatInfoScreen = ({ route }) => {
-  let item = route.params?.receiver; // click conversation
+  const [item, setItem] = useState(route.params?.receiver); // click conversation
   let socketRef = route.params?.socketRef;
   let onlineUsers = route.params?.onlineUsers;
   const user = useSelector((state) => state.auth.user);
@@ -34,7 +34,7 @@ const ChatInfoScreen = ({ route }) => {
   };
 
   // ManageGroup
-  const [role, setRole] = useState("member");
+  const [role, setRole] = useState("");
   useEffect(() => {
     const role = conversations.find(
       (conversation) => conversation._id === item._id
@@ -42,7 +42,7 @@ const ChatInfoScreen = ({ route }) => {
     if (role) {
       setRole(role.role);
     }
-  }, [conversations, item]);
+  }, []);
 
   // action socket
   useEffect(() => {
@@ -53,6 +53,23 @@ const ChatInfoScreen = ({ route }) => {
       const member = data.find((item) => item.sender._id === user._id);
       setRole(member.role);
     });
+
+    socketRef.current.on("RES_TRANS_LEADER", (data) => {
+      const { newLeader, oldLeader } = data;
+      let member = null;
+      if (newLeader?.sender?._id === user._id) {
+        member = newLeader;
+      } else if (oldLeader?.sender?._id === user._id) {
+        member = oldLeader;
+      }
+
+      setRole(member.role);
+      setItem({
+        ...item,
+        role: member.role,
+      })
+    });
+
   }, []);
 
   return (
