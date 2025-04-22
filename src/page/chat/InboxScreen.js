@@ -694,6 +694,7 @@ const InboxScreen = ({ route }) => {
 
       {/* Input Box */}
       <View style={styles.inputContainer}>
+      {(receiver.permission.includes(3) || receiver.role === 'leader' || receiver.role === 'deputy') ? (<>
         <TouchableOpacity
           style={{ flexDirection: "row", alignItems: "center" }}
           onPress={() => setShowPicker(true)}
@@ -732,6 +733,7 @@ const InboxScreen = ({ route }) => {
             <FontAwesome5 name="paper-plane" size={22} color="blue" />
           </TouchableOpacity>
         )}
+          </>) : (<Text>Chỉ có trưởng nhóm/ phó nhóm mới được phép nhắn tin</Text>)}
       </View>
 
       <IconPicker

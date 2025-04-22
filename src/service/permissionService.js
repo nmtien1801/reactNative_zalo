@@ -5,4 +5,9 @@ const getAllPermissionService = async () => {
   return response;
 };
 
-export { getAllPermissionService };
+const updateDeputyService = async (members) => {
+  const response = await customizeAxios.post(`/updateDeputy`, { members });
+  return response;
+};
+
+export { getAllPermissionService, updateDeputyService };

@@ -12,6 +12,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
 import { updatePermission } from "../../redux/chatSlice";
 import { getAllPermission } from "../../redux/permissionSlice";
+import ManagePermissionModal from "../auth/ManagePermissionModal";
 
 const ManageGroup = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -29,6 +30,15 @@ const ManageGroup = ({ navigation, route }) => {
   ];
 
   const [checkedStates, setCheckedStates] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false); // mở modal ManagePermissionModal
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
 
   // getAllPermission
   useEffect(() => {
@@ -231,11 +241,14 @@ const ManageGroup = ({ navigation, route }) => {
           alignItems: "center",
           justifyContent: "center",
         }}
+        onPress={openModal}
       >
         <Feather name="users" size={18} />
         <Text style={{ marginLeft: 8 }}>Trưởng & phó nhóm</Text>
       </TouchableOpacity>
-
+      {isModalOpen && (
+        <ManagePermissionModal closeModal={closeModal} receiver={item} />
+      )}
       {/* Nút giải tán nhóm */}
       <TouchableOpacity
         style={{
