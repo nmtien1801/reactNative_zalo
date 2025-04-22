@@ -54,7 +54,7 @@ const FriendRequest = ({route}) => {
     try {
       let response = await acceptFriendRequestService(requestId);
       if (response.EC === 0) {
-        socketRef.current.emit("REQ_ACCEPT_fRIEND", response.DT);
+        socketRef.current.emit("REQ_ACCEPT_FRIEND", response.DT);
       }
       fetchFriendRequests();
     } catch (error) {

@@ -38,6 +38,7 @@ const InfoAddFriendMModal = ({ isOpen, closeModal, user, socketRef }) => {
   const [userInfo, setUserInfo] = useState(null);
   const [isFriend, setIsFriend] = useState(false);
   const [friendRequest, setFriendRequest] = useState(null);
+console.log('user ', user);
 
   const fetchUserInfo = async () => {
     try {
@@ -153,7 +154,7 @@ const InfoAddFriendMModal = ({ isOpen, closeModal, user, socketRef }) => {
       );
 
       if (response.EC === 0) {
-        socketRef.current.emit("REQ_ACCEPT_fRIEND", response.DT);
+        socketRef.current.emit("REQ_ACCEPT_FRIEND", response.DT);
       }
 
       closeModal();

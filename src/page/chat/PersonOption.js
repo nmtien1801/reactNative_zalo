@@ -14,6 +14,8 @@ import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSelector, useDispatch } from "react-redux";
+import InfoAddFriendMModal from "../../component/InfoAddFriendModal";
+import { getRoomChatByPhoneService } from '../../service/roomChatService';
 
 const ChatInfoScreen = ({ route }) => {
   const [item, setItem] = useState(route.params?.receiver); // click conversation
@@ -24,6 +26,25 @@ const ChatInfoScreen = ({ route }) => {
   const navigation = useNavigation();
   const [isReportCallsEnabled, setIsReportCallsEnabled] = useState(true);
   const [isHiddenChatEnabled, setIsHiddenChatEnabled] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchResult, setSearchResult] = useState({});
+
+  const openModal = () => setIsOpen(true);
+  const closeModal = () => setIsOpen(false);
+
+  const handleSearch = async () => {
+    let response = await getRoomChatByPhoneService(item.phone);
+
+    if (response.EC === 0) {
+      setSearchResult(response.DT);
+    } else {
+      alert(response.EM);
+    }
+  };
+
+  useEffect(()=>{
+    handleSearch()
+  },[])
 
   const toggleReportCalls = () => {
     setIsReportCallsEnabled((previousState) => !previousState);
@@ -67,9 +88,8 @@ const ChatInfoScreen = ({ route }) => {
       setItem({
         ...item,
         role: member.role,
-      })
+      });
     });
-
   }, []);
 
   return (
@@ -111,12 +131,18 @@ const ChatInfoScreen = ({ route }) => {
               </View>
               <Text style={{ fontSize: 12, color: "#555" }}>Tìm kiếm</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={{ alignItems: "center" }}>
+            <TouchableOpacity style={{ alignItems: "center" }} onPress={openModal}>
               <View style={styles.actionIcon}>
                 <Feather name="user" size={24} color="#555" />
               </View>
               <Text style={{ fontSize: 12, color: "#555" }}>Xem hồ sơ</Text>
             </TouchableOpacity>
+            <InfoAddFriendMModal
+              isOpen={isOpen}
+              closeModal={closeModal}
+              user={searchResult}
+              socketRef={socketRef}
+            />
             <TouchableOpacity style={{ alignItems: "center" }}>
               <View style={styles.actionIcon}>
                 <FontAwesome5 name="brush" size={24} color="#555" />

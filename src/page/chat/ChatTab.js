@@ -56,7 +56,7 @@ const ChatTab = ({ route }) => {
           phone: item.receiver.phone,
           members: item.members,
           role: item.role,
-          permission: item.receiver.permission
+          permission: item.receiver.permission,
         };
       });
 
@@ -70,6 +70,16 @@ const ChatTab = ({ route }) => {
 
     socketRef.current.on("user-list", (usersList) => {
       setOnlineUsers(usersList); // Lưu danh sách user online
+    });
+
+    // accept friend
+    socketRef.current.on("RES_ACCEPT_FRIEND", async () => {
+      dispatch(getConversations(user._id));
+    });
+
+    // delete friend
+    socketRef.current.on("RES_DELETE_FRIEND", async () => {
+      dispatch(getConversations(user._id));
     });
 
     return () => socketRef.current.disconnect();
