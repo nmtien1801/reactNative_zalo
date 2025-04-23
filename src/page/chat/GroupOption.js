@@ -15,45 +15,28 @@ import { Feather } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useSelector, useDispatch } from "react-redux";
-import InfoAddFriendMModal from "../../component/InfoAddFriendModal";
-import { getRoomChatByPhoneService } from '../../service/roomChatService';
 
 import { getRoomChatMembersService } from "../../service/roomChatService";
 import { removeMemberFromGroupService } from "../../service/chatService";
 
 
 const ChatInfoScreen = ({ route }) => {
-  const [item, setItem] = useState(route.params?.receiver); // click conversation
+  let item = route.params?.receiver; // click conversation
+  console.log("item", item._id);
+
   const receiver = route.params?.receiver; // click conversation
+  console.log("receiver", receiver._id);
   const [members, setMembers] = useState([]); // Danh sách thành viên
   const [showMemberModal, setShowMemberModal] = useState(false); // Trạng thái hiển thị modal
+
+
+
   let socketRef = route.params?.socketRef;
   let onlineUsers = route.params?.onlineUsers;
-  const user = useSelector((state) => state.auth.user);
   const conversations = route.params?.conversations;
   const navigation = useNavigation();
   const [isReportCallsEnabled, setIsReportCallsEnabled] = useState(true);
   const [isHiddenChatEnabled, setIsHiddenChatEnabled] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchResult, setSearchResult] = useState({});
-
-  const openModal = () => setIsOpen(true);
-  const closeModal = () => setIsOpen(false);
-
-  const handleSearch = async () => {
-    let response = await getRoomChatByPhoneService(item.phone);
-
-    if (response.EC === 0) {
-      setSearchResult(response.DT);
-    } else {
-      alert(response.EM);
-    }
-  };
-
-  useEffect(()=>{
-    handleSearch()
-  },[])
 
   const toggleReportCalls = () => {
     setIsReportCallsEnabled((previousState) => !previousState);
@@ -108,7 +91,7 @@ const ChatInfoScreen = ({ route }) => {
 
 
   // ManageGroup
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState("member");
   useEffect(() => {
     const role = conversations.find(
       (conversation) => conversation._id === item._id
@@ -116,34 +99,7 @@ const ChatInfoScreen = ({ route }) => {
     if (role) {
       setRole(role.role);
     }
-  }, []);
-
-  // action socket
-  useEffect(() => {
-    socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
-      if (data.upsertedCount === 0) {
-        setRole("member");
-      }
-      const member = data.find((item) => item.sender._id === user._id);
-      setRole(member.role);
-    });
-
-    socketRef.current.on("RES_TRANS_LEADER", (data) => {
-      const { newLeader, oldLeader } = data;
-      let member = null;
-      if (newLeader?.sender?._id === user._id) {
-        member = newLeader;
-      } else if (oldLeader?.sender?._id === user._id) {
-        member = oldLeader;
-      }
-
-      setRole(member.role);
-      setItem({
-        ...item,
-        role: member.role,
-      });
-    });
-  }, []);
+  }, [conversations, item]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -184,18 +140,12 @@ const ChatInfoScreen = ({ route }) => {
               </View>
               <Text style={{ fontSize: 12, color: "#555" }}>Tìm kiếm</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={{ alignItems: "center" }} onPress={openModal}>
+            <TouchableOpacity style={{ alignItems: "center" }}>
               <View style={styles.actionIcon}>
                 <Feather name="user" size={24} color="#555" />
               </View>
               <Text style={{ fontSize: 12, color: "#555" }}>Xem hồ sơ</Text>
             </TouchableOpacity>
-            <InfoAddFriendMModal
-              isOpen={isOpen}
-              closeModal={closeModal}
-              user={searchResult}
-              socketRef={socketRef}
-            />
             <TouchableOpacity style={{ alignItems: "center" }}>
               <View style={styles.actionIcon}>
                 <FontAwesome5 name="brush" size={24} color="#555" />

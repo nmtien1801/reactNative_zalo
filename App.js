@@ -18,6 +18,7 @@ import { doGetAccount } from "./src/redux/authSlice";
 import RegisterForm from "./src/page/auth/register";
 import InboxScreen from "./src/page/chat/InboxScreen";
 import PersonOption from "./src/page/chat/PersonOption";
+import GroupOption from "./src/page/chat/GroupOption";
 import ResetPassword from "./src/page/auth/ResetPassword";
 import ChangePassword from "./src/component/changePassword";
 import Setting from "./src/page/personal/Setting";
@@ -97,7 +98,7 @@ const Project = () => {
   // connect socket -> cmd(IPv4 Address): ipconfig
   const socketRef = useRef();
 
-  const IPv4 = "192.168.1.5";
+  const IPv4 = "192.168.1.12";
   useEffect(() => {
     const socket = io.connect(`http://${IPv4}:8080`);
 
@@ -124,6 +125,11 @@ const Project = () => {
               <Stack.Screen
                 name="PersonOption"
                 component={PersonOption}
+                options={{ headerShown: false }}
+              />
+                            <Stack.Screen
+                name="GroupOption"
+                component={GroupOption}
                 options={{ headerShown: false }}
               />
               <Stack.Screen name="ChangePassword" component={ChangePassword} />
