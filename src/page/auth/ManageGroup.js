@@ -13,6 +13,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { updatePermission } from "../../redux/chatSlice";
 import { getAllPermission } from "../../redux/permissionSlice";
 import ManagePermissionModal from "../auth/ManagePermissionModal";
+import { dissolveGroupService } from "../../service/chatService";
 
 const ManageGroup = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -116,6 +117,41 @@ const ManageGroup = ({ navigation, route }) => {
       });
     });
   }, []);
+
+  // Handle dissolve group
+  const handleDissolveGroup = async () => {
+    try {
+      Alert.alert("Thông báo", "Đang giải tán nhóm...");
+
+      const response = await dissolveGroupService(item._id);
+
+      const { EC, EM } = response || {};
+
+      if (EC === 0) {
+        Alert.alert("Thành công", "Nhóm đã được giải tán!");
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: "MainTabs",
+              state: {
+                index: 0,
+                routes: [{ name: "Tin nhắn" }],
+              },
+            },
+          ],
+        });
+        socketRef.current.emit("REQ_DISSOLVE_GROUP", {
+          item,
+        });
+      } else {
+        Alert.alert("Lỗi", EM || "Không thể giải tán nhóm.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi giải tán nhóm:", error);
+      Alert.alert("Lỗi", "Không thể giải tán nhóm, vui lòng thử lại sau.");
+    }
+  };
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "#fff", padding: 16 }}>
@@ -286,6 +322,7 @@ const ManageGroup = ({ navigation, route }) => {
             borderRadius: 6,
             alignItems: "center",
           }}
+          onPress={handleDissolveGroup}
         >
           <Feather name="trash" size={16} color="#fff" />
           <Text style={{ color: "#fff", marginTop: 4 }}>Giải tán nhóm</Text>

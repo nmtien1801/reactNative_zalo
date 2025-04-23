@@ -207,6 +207,7 @@ const ChatInfoScreen = ({ route }) => {
             },
           ],
         });
+        socketRef.current.emit("REQ_DISSOLVE_GROUP", item);
       } else {
         Alert.alert("Lỗi", EM || "Không thể giải tán nhóm.");
       }
