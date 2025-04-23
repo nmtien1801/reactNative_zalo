@@ -83,27 +83,13 @@ const ChatInfoScreen = ({ route }) => {
     fetchMembers();
   }, [receiver?._id]);
 
-  // Xử lý xóa thành viên
-  // const handleRemoveMember = async (memberId) => {
-  //   try {
-  //     const response = await removeMemberFromGroupService(receiver._id, memberId);
-  //     if (response.EC === 0) {
-  //       Alert.alert("Thành công", "Xóa thành viên khỏi nhóm thành công!");
-  //       setMembers((prevMembers) => prevMembers.filter((member) => member._id !== memberId));
-  //     } else {
-  //       Alert.alert("Lỗi", response.EM || "Không thể xóa thành viên.");
-  //     }
-  //   } catch (error) {
-  //     console.error("Lỗi khi gọi API xóa thành viên:", error);
-  //     Alert.alert("Lỗi", "Đã xảy ra lỗi khi xóa thành viên.");
-  //   }
-  // };
-
-  const handleRemoveMember = (memberId) => {
-    removeMemberFromGroupService(receiver._id, memberId);
-    setMembers((prevMembers) =>
-      prevMembers.filter((member) => member._id !== memberId)
-    );
+  const handleRemoveMember = async (memberId) => {
+    if (memberId === user._id) {
+      alert("Không thể xóa chính mình khỏi nhóm!");
+      return;
+    }
+    let res = await removeMemberFromGroupService(receiver._id, memberId);
+    socketRef.current.emit("REQ_REMOVE_MEMBER", members);
   };
 
   // ManageGroup
@@ -155,6 +141,24 @@ const ChatInfoScreen = ({ route }) => {
         ...item,
         role: member.role,
       });
+    });
+
+    socketRef.current.on("RES_REMOVE_MEMBER", (data) => {
+      const fetchMembers = async () => {
+        try {
+          if (receiver?._id) {
+            const response = await getRoomChatMembersService(receiver._id);
+            if (response.EC === 0) {
+              setMembers(response.DT); // Lưu danh sách thành viên vào state
+            } else {
+              console.error("Lỗi khi lấy danh sách thành viên:", response.EM);
+            }
+          }
+        } catch (error) {
+          console.error("Lỗi khi gọi API getRoomChatMembersService:", error);
+        }
+      };
+      fetchMembers();
     });
   }, []);
 
@@ -267,7 +271,8 @@ const ChatInfoScreen = ({ route }) => {
                         />
                         <Text style={styles.memberName}>{item.username}</Text>
                       </View>
-                      {(role === "leader" || role === "deputy") && (
+                      {((role === "leader" && item.role != "leader") ||
+                        (role === "deputy" && item.role != "leader")) && (
                         <TouchableOpacity
                           style={styles.removeButton}
                           onPress={() => handleRemoveMember(item._id)}
