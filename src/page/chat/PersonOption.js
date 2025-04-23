@@ -9,7 +9,7 @@ import {
   Switch,
   SafeAreaView,
   Modal,
-  FlatList 
+  FlatList,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
@@ -17,11 +17,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSelector, useDispatch } from "react-redux";
 import InfoAddFriendMModal from "../../component/InfoAddFriendModal";
-import { getRoomChatByPhoneService } from '../../service/roomChatService';
+import { getRoomChatByPhoneService } from "../../service/roomChatService";
 
 import { getRoomChatMembersService } from "../../service/roomChatService";
 import { removeMemberFromGroupService } from "../../service/chatService";
-
 
 const ChatInfoScreen = ({ route }) => {
   const [item, setItem] = useState(route.params?.receiver); // click conversation
@@ -51,9 +50,9 @@ const ChatInfoScreen = ({ route }) => {
     }
   };
 
-  useEffect(()=>{
-    handleSearch()
-  },[])
+  useEffect(() => {
+    handleSearch();
+  }, []);
 
   const toggleReportCalls = () => {
     setIsReportCallsEnabled((previousState) => !previousState);
@@ -63,7 +62,6 @@ const ChatInfoScreen = ({ route }) => {
     setIsHiddenChatEnabled((previousState) => !previousState);
   };
 
-  
   // Lấy danh sách thành viên nhóm
   useEffect(() => {
     const fetchMembers = async () => {
@@ -103,9 +101,10 @@ const ChatInfoScreen = ({ route }) => {
 
   const handleRemoveMember = (memberId) => {
     removeMemberFromGroupService(receiver._id, memberId);
-    setMembers((prevMembers) => prevMembers.filter((member) => member._id !== memberId));
-};
-
+    setMembers((prevMembers) =>
+      prevMembers.filter((member) => member._id !== memberId)
+    );
+  };
 
   // ManageGroup
   const [role, setRole] = useState("");
@@ -121,11 +120,25 @@ const ChatInfoScreen = ({ route }) => {
   // action socket
   useEffect(() => {
     socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
+      // Nếu không có bản ghi nào được cập nhật
       if (data.upsertedCount === 0) {
         setRole("member");
+        return;
       }
-      const member = data.find((item) => item.sender._id === user._id);
-      setRole(member.role);
+
+      // Tìm xem user có phải là sender hoặc receiver không
+      const member = data.find(
+        (item) =>
+          item?.sender?._id === user._id || item?.receiver?._id === user._id
+      );
+
+      if (member) {
+        setRole(member.role);
+      } else {
+        if (receiver.role !== "leader") {
+          setRole("member");
+        }
+      }
     });
 
     socketRef.current.on("RES_TRANS_LEADER", (data) => {
@@ -184,7 +197,10 @@ const ChatInfoScreen = ({ route }) => {
               </View>
               <Text style={{ fontSize: 12, color: "#555" }}>Tìm kiếm</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={{ alignItems: "center" }} onPress={openModal}>
+            <TouchableOpacity
+              style={{ alignItems: "center" }}
+              onPress={openModal}
+            >
               <View style={styles.actionIcon}>
                 <Feather name="user" size={24} color="#555" />
               </View>
@@ -212,58 +228,65 @@ const ChatInfoScreen = ({ route }) => {
         </View>
 
         <View style={styles.optionsContainer}>
-
-
           <TouchableOpacity
-        style={styles.optionItem}
-        onPress={() => setShowMemberModal(true)}
-      >
-        <Feather name="users" size={20} color="#555" style={styles.optionIcon} />
-        <Text style={styles.optionText}>Thành viên</Text>
-        <Text style={styles.badge}>{members.length}</Text>
-      </TouchableOpacity>
-
-      {/* Modal danh sách thành viên */}
-      <Modal
-        visible={showMemberModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowMemberModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Danh sách thành viên</Text>
-            <FlatList
-              data={members}
-              keyExtractor={(item) => item._id.toString()}
-              renderItem={({ item }) => (
-                <View style={styles.memberItem}>
-                  <View style={styles.memberInfo}>
-                    <Image
-                      source={{ uri: item.avatar || "https://via.placeholder.com/40" }}
-                      style={styles.memberAvatar}
-                    />
-                    <Text style={styles.memberName}>{item.username}</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => handleRemoveMember(item._id)}
-                  >
-                    <Text style={styles.removeButtonText}>Xóa</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+            style={styles.optionItem}
+            onPress={() => setShowMemberModal(true)}
+          >
+            <Feather
+              name="users"
+              size={20}
+              color="#555"
+              style={styles.optionIcon}
             />
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowMemberModal(false)}
-            >
-              <Text style={styles.closeButtonText}>Đóng</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+            <Text style={styles.optionText}>Thành viên</Text>
+            <Text style={styles.badge}>{members.length}</Text>
+          </TouchableOpacity>
 
+          {/* Modal danh sách thành viên */}
+          <Modal
+            visible={showMemberModal}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowMemberModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>Danh sách thành viên</Text>
+                <FlatList
+                  data={members}
+                  keyExtractor={(item) => item._id.toString()}
+                  renderItem={({ item }) => (
+                    <View style={styles.memberItem}>
+                      <View style={styles.memberInfo}>
+                        <Image
+                          source={{
+                            uri:
+                              item.avatar || "https://via.placeholder.com/40",
+                          }}
+                          style={styles.memberAvatar}
+                        />
+                        <Text style={styles.memberName}>{item.username}</Text>
+                      </View>
+                      {(role === "leader" || role === "deputy") && (
+                        <TouchableOpacity
+                          style={styles.removeButton}
+                          onPress={() => handleRemoveMember(item._id)}
+                        >
+                          <Text style={styles.removeButtonText}>Xóa</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  )}
+                />
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowMemberModal(false)}
+                >
+                  <Text style={styles.closeButtonText}>Đóng</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
 
           <TouchableOpacity style={styles.optionItem}>
             <Feather
@@ -623,7 +646,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
   },
-  
 });
 
 export default ChatInfoScreen;

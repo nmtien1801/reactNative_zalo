@@ -98,7 +98,7 @@ const Project = () => {
   // connect socket -> cmd(IPv4 Address): ipconfig
   const socketRef = useRef();
 
-  const IPv4 = "192.168.1.12";
+  const IPv4 = "192.168.1.5";
   useEffect(() => {
     const socket = io.connect(`http://${IPv4}:8080`);
 
