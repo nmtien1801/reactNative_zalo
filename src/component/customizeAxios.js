@@ -4,8 +4,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from '@react-navigation/native';
 //SEARCH: axios npm github
 
-const URL_ANDROID = "http://192.168.1.5:8080/api"
-URL_WEB="http://localhost:8080/api"
+const URL_ANDROID = "http://192.168.1.11:8080/api"
+URL_WEB = "http://localhost:8080/api"
 
 const baseUrl =
   Platform.OS === "android"
@@ -32,7 +32,7 @@ instance.interceptors.request.use(
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`; // Thêm Bearer token vào header
     }
-    console.log("Body:", config.data); 
+    console.log("Body:", config.data);
     return config;
   },
   (error) => {

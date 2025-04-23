@@ -10,9 +10,15 @@ const checkFriendShipExistsService = async (friendId) => {
     return response;
 }
 
+const getAllFriendsService = async () => {
+    const response = await customizeAxios.get(`/getAllFriends`);
+    return response;
+}
+
 
 export {
     deleteFriendService,
     checkFriendShipExistsService,
+    getAllFriendsService,
 
 };

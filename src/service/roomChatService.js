@@ -22,9 +22,19 @@ const getRoomChatMembersService = async (roomId) => {
   }
 };
 
+
+// Thêm thành viên vào nhóm
+const addMembersToRoomChatService = async (roomId, members) => {
+  const response = await customizeAxios.post(`/roomChat/${roomId}/members`, {
+    members,
+  });
+  return response;
+};
+
 export {
   getRoomChatByPhoneService,
   getRoomChatMembersService,
   getAllMemberGroupService,
   getMemberByPhoneService,
+  addMembersToRoomChatService,
 };

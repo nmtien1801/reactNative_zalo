@@ -25,7 +25,7 @@ import Setting from "./src/page/personal/Setting";
 import InformationAccount from "./src/page/personal/InfomationAccount";
 import FriendRequest from "./src/page/contacts/FriendRequest";
 import io from "socket.io-client";
-import ManageGroup  from './src/page/auth/ManageGroup'
+import ManageGroup from './src/page/auth/ManageGroup'
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -98,7 +98,7 @@ const Project = () => {
   // connect socket -> cmd(IPv4 Address): ipconfig
   const socketRef = useRef();
 
-  const IPv4 = "192.168.1.5";
+  const IPv4 = "192.168.1.11";
   useEffect(() => {
     const socket = io.connect(`http://${IPv4}:8080`);
 
@@ -127,7 +127,7 @@ const Project = () => {
                 component={PersonOption}
                 options={{ headerShown: false }}
               />
-                            <Stack.Screen
+              <Stack.Screen
                 name="GroupOption"
                 component={GroupOption}
                 options={{ headerShown: false }}
