@@ -94,6 +94,11 @@ const ChatTab = ({ route }) => {
     socketRef.current.on("RES_DISSOLVE_GROUP", (data) => {
       dispatch(getConversations(user._id));
     });
+
+     // add member group
+     socketRef.current.on("RES_ADD_GROUP", (data) => {
+      dispatch(getConversations(user._id));
+    });
   }, []);
 
   return (
