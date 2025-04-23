@@ -24,7 +24,7 @@ const ManageGroup = ({ navigation, route }) => {
   const permissions = useSelector((state) => state.permission.permission);
   const user = useSelector((state) => state.auth.user);
   const role = route.params?.role; // role của người dùng trong nhóm
-  
+
   const settings = [
     "Chế độ phê duyệt thành viên mới",
     "Cho phép dùng link tham gia nhóm",
@@ -110,8 +110,8 @@ const ManageGroup = ({ navigation, route }) => {
         member = oldLeader;
       }
 
-      navigation.navigate("PersonOption", {
-        receiver: member,
+      navigation.navigate("InboxScreen", {
+        item: item,
         socketRef,
         onlineUsers,
         conversations,
@@ -153,6 +153,7 @@ const ManageGroup = ({ navigation, route }) => {
       Alert.alert("Lỗi", "Không thể giải tán nhóm, vui lòng thử lại sau.");
     }
   };
+  console.log("itemzzzzzzzzz", item);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "#fff", padding: 16 }}>

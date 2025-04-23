@@ -16,13 +16,17 @@ import { Feather } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useSelector, useDispatch } from "react-redux";
 import InfoAddFriendMModal from "../../component/InfoAddFriendModal";
 import { getRoomChatByPhoneService } from "../../service/roomChatService";
 import { getRoomChatMembersService } from "../../service/roomChatService";
 import { removeMemberFromGroupService } from "../../service/chatService";
 import AddMemberModal from "./AddMemberModal";
 import { dissolveGroupService } from "../../service/chatService";
+import { launchImageLibrary } from "react-native-image-picker";
+import { uploadAvatar } from "../../redux/profileSlice.js";
+import { uploadAvatarProfile } from "../../redux/authSlice.js";
+import { Platform } from "react-native";
+import { useSelector, useDispatch } from "react-redux";
 
 const ChatInfoScreen = ({ route }) => {
   const [item, setItem] = useState(route.params?.receiver); // click conversation
@@ -33,11 +37,14 @@ const ChatInfoScreen = ({ route }) => {
   const user = useSelector((state) => state.auth.user);
   const conversations = route.params?.conversations;
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const [isReportCallsEnabled, setIsReportCallsEnabled] = useState(true);
   const [isHiddenChatEnabled, setIsHiddenChatEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [searchResult, setSearchResult] = useState({});
   const [showMemberModal, setShowMemberModal] = useState(false); // Trạng thái hiển thị modal
+  const [photo, setPhoto] = useState(null);
+  const [uploadedUrl, setUploadedUrl] = useState(null);
 
   const [showAddMemberModal, setShowAddMemberModal] = useState(false); // State quản lý modal
 
@@ -73,6 +80,7 @@ const ChatInfoScreen = ({ route }) => {
   const toggleHiddenChat = () => {
     setIsHiddenChatEnabled((previousState) => !previousState);
   };
+  console.log("receiver", receiver);
 
   // Lấy danh sách thành viên nhóm
   useEffect(() => {
@@ -106,7 +114,7 @@ const ChatInfoScreen = ({ route }) => {
   // ManageGroup
   const [role, setRole] = useState(route.params?.role); // click conversation
   console.log("role", role);
-  
+
   useEffect(() => {
     const role = conversations.find(
       (conversation) => conversation._id === item._id
@@ -162,15 +170,26 @@ const ChatInfoScreen = ({ route }) => {
       let member = null;
       if (newLeader?.sender?._id === user._id) {
         member = newLeader;
-      } else if (oldLeader?.sender?._id === user._id) {
-        member = oldLeader;
       }
+      // else if (oldLeader?.sender?._id === user._id) {
+      //   member = oldLeader;
+      //   member.role = "member";
+      // }
+      console.log("memberOLddddd", member);
 
-      setRole(member.role);
-      setItem({
-        ...item,
-        role: member.role,
-      });
+      if (member) {
+        setRole(member.role);
+        setItem({
+          ...item,
+          role: member.role,
+        });
+      } else {
+        setRole("member");
+        setItem({
+          ...item,
+          role: "member",
+        });
+      }
     });
 
     socketRef.current.on("RES_REMOVE_MEMBER", (data) => {
@@ -226,6 +245,78 @@ const ChatInfoScreen = ({ route }) => {
     }
   };
 
+  useEffect(() => {
+    if (user?.avatar) {
+      setUploadedUrl(user.avatar);
+    }
+  }, [user?.avatar]);
+
+  const createFormData = (photo) => {
+    const data = new FormData();
+    if (Platform.OS === "android" || Platform.OS === "ios") {
+      data.append("avatar", {
+        uri: photo.uri,
+        name: photo.name || "photo.jpg",
+        type: photo.mimeType || "image/jpeg",
+      });
+    } else {
+      data.append("avatar", photo.uri);
+      data.append("fileName", photo.name);
+      data.append("mimeType", photo.mimeType);
+    }
+
+    return data;
+  };
+
+  // Hàm chọn ảnh từ thư viện hoặc camera
+  const pickImage = async () => {
+    launchImageLibrary(
+      { mediaType: "photo", includeBase64: false },
+      async (response) => {
+        if (response.didCancel) {
+          console.log("User cancelled image picker");
+        } else if (response.errorMessage) {
+          console.log("ImagePicker Error: ", response.errorMessage);
+        } else if (response.assets && response.assets.length > 0) {
+          setPhoto(response.assets[0]);
+        }
+      }
+    );
+  };
+
+  useEffect(() => {
+    if (photo) {
+      handleUploadPhoto();
+    }
+  }, [photo]);
+
+  const handleUploadPhoto = async () => {
+    if (!photo) {
+      Alert.alert("Chưa chọn ảnh");
+      return;
+    }
+
+    try {
+      const formData = createFormData(photo);
+      const res = await dispatch(uploadAvatar(formData)).unwrap();
+
+      console.log("Upload thành công:", res);
+      if (res.EC === 0) {
+        setUploadedUrl(res.DT); // link ảnh server trả về
+        let a = await dispatch(
+          uploadAvatarProfile({ phone: user.phone, avatar: res.DT })
+        );
+        console.log("a sac", a);
+        if (a.payload.EC === 0) {
+          Alert.alert("Upload thành công!", `Link: ${res.DT}`);
+        }
+      }
+    } catch (error) {
+      console.error("Upload thất bại:", error);
+      Alert.alert("Lỗi upload", error.message);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView}>
@@ -249,12 +340,25 @@ const ChatInfoScreen = ({ route }) => {
         <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
             <Image
-              source={{ uri: "https://randomuser.me/api/portraits/men/32.jpg" }}
+              source={{ uri: uploadedUrl || "https://randomuser.me/api/portraits/men/32.jpg" }}
               style={styles.profileImage}
             />
-            <View style={styles.editIconContainer}>
+            <TouchableOpacity
+              style={styles.editIconContainer}
+              onPress={() => {
+                if (
+                  item.permission.includes(2) ||
+                  item.role === "leader" ||
+                  item.role === "deputy"
+                ) {
+                  pickImage()
+                } else {
+                  Alert.alert("Không có quyền thêm");
+                }
+              }}
+            >
               <Feather name="edit-2" size={14} color="#000" />
-            </View>
+            </TouchableOpacity>
           </View>
           <Text style={styles.profileName}>Công nghệ mới</Text>
 

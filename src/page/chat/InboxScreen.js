@@ -541,11 +541,11 @@ const InboxScreen = ({ route }) => {
       // Nếu không có bản ghi nào được cập nhật
       if (data.upsertedCount === 0) {
         setRole("member");
-        // setReceiver({
-        //   ...receiver,
-        //   permission: member.receiver.permission,
-        //   role: "member",
-        // });
+        setReceiver({
+          ...receiver,
+          permission: member.receiver.permission,
+          role: "member",
+        });
         return;
       }
 
@@ -557,19 +557,19 @@ const InboxScreen = ({ route }) => {
 
       if (member) {
         setRole(member.role);
-        // setReceiver({
-        //   ...receiver,
-        //   permission: member.receiver.permission,
-        //   role: member.role,
-        // });
+        setReceiver({
+          ...receiver,
+          permission: member.receiver.permission,
+          role: member.role,
+        });
       } else {
         if (receiver.role !== "leader") {
           setRole("member");
-          // setReceiver({
-          //   ...receiver,
-          //   permission: member.receiver.permission,
-          //   role: "member",
-          // });
+          setReceiver({
+            ...receiver,
+            permission: member.receiver.permission,
+            role: "member",
+          });
         }
       }
     });
@@ -579,15 +579,24 @@ const InboxScreen = ({ route }) => {
       let member = null;
       if (newLeader?.sender?._id === user._id) {
         member = newLeader;
-      } else if (oldLeader?.sender?._id === user._id) {
-        member = oldLeader;
-      }
+      } 
+      // else if (oldLeader?.sender?._id === user._id) {
+      //   member = oldLeader;
+      // }
 
-      setReceiver({
-        ...receiver,
-        permission: member.receiver.permission,
-        role: member.role,
-      });
+      if (member) {
+        setRole(member.role);
+        setReceiver({
+          ...receiver,
+          role: member.role,
+        });
+      } else {
+        setRole("member");
+        setReceiver({
+          ...receiver,
+          role: "member",
+        });
+      }
     });
   }, []);
   console.log("rolesss: ", role);
