@@ -66,7 +66,7 @@ const ChatTab = ({ route }) => {
   }, [conversationRedux]);
 
   // connect docket -> cmd(IPv4 Address): ipconfig
-  const IPv4 = "192.168.1.10"; // Địa chỉ IP của máy chủ Socket.IO
+  const IPv4 = "192.168.1.33"; // Địa chỉ IP của máy chủ Socket.IO
   useEffect(() => {
     const socket = io.connect(`http://${IPv4}:8080`);
 
