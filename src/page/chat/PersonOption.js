@@ -27,7 +27,6 @@ const ChatInfoScreen = ({ route }) => {
   const [item, setItem] = useState(route.params?.receiver); // click conversation
   const receiver = route.params?.receiver; // click conversation
   const [members, setMembers] = useState([]); // Danh sách thành viên
-  const [showMemberModal, setShowMemberModal] = useState(false); // Trạng thái hiển thị modal
   let socketRef = route.params?.socketRef;
   let onlineUsers = route.params?.onlineUsers;
   const user = useSelector((state) => state.auth.user);
@@ -55,7 +54,6 @@ const ChatInfoScreen = ({ route }) => {
     handleSearch();
   }, []);
 
-
   const toggleReportCalls = () => {
     setIsReportCallsEnabled((previousState) => !previousState);
   };
@@ -70,7 +68,6 @@ const ChatInfoScreen = ({ route }) => {
       try {
         if (receiver?._id) {
           const response = await getRoomChatMembersService(receiver._id);
-          console.log("response", response);
           if (response.EC === 0) {
             setMembers(response.DT);
           } else {
@@ -166,14 +163,14 @@ const ChatInfoScreen = ({ route }) => {
 
   // Handle dissolve group
   const handleDissolveGroup = async () => {
-    debugger
+    debugger;
     try {
       Alert.alert("Thông báo", "Đang giải tán nhóm...");
-  
+
       const response = await dissolveGroupService(item._id);
-  
+
       const { EC, EM } = response || {};
-  
+
       if (EC === 0) {
         Alert.alert("Thành công", "Nhóm đã được giải tán!");
         navigation.reset({
@@ -196,7 +193,6 @@ const ChatInfoScreen = ({ route }) => {
       Alert.alert("Lỗi", "Không thể giải tán nhóm, vui lòng thử lại sau.");
     }
   };
-  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -268,67 +264,6 @@ const ChatInfoScreen = ({ route }) => {
         </View>
 
         <View style={styles.optionsContainer}>
-          <TouchableOpacity
-            style={styles.optionItem}
-            onPress={() => setShowMemberModal(true)}
-          >
-            <Feather
-              name="users"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Thành viên</Text>
-            <Text style={styles.badge}>{members.length}</Text>
-          </TouchableOpacity>
-
-          {/* Modal danh sách thành viên */}
-          <Modal
-            visible={showMemberModal}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setShowMemberModal(false)}
-          >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContainer}>
-                <Text style={styles.modalTitle}>Danh sách thành viên</Text>
-                <FlatList
-                  data={members}
-                  keyExtractor={(item) => item._id.toString()}
-                  renderItem={({ item }) => (
-                    <View style={styles.memberItem}>
-                      <View style={styles.memberInfo}>
-                        <Image
-                          source={{
-                            uri:
-                              item.avatar || "https://via.placeholder.com/40",
-                          }}
-                          style={styles.memberAvatar}
-                        />
-                        <Text style={styles.memberName}>{item.username}</Text>
-                      </View>
-                      {((role === "leader" && item.role != "leader") ||
-                        (role === "deputy" && item.role != "leader")) && (
-                        <TouchableOpacity
-                          style={styles.removeButton}
-                          onPress={() => handleRemoveMember(item._id)}
-                        >
-                          <Text style={styles.removeButtonText}>Xóa</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  )}
-                />
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setShowMemberModal(false)}
-                >
-                  <Text style={styles.closeButtonText}>Đóng</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-
           <TouchableOpacity style={styles.optionItem}>
             <Feather
               name="edit-2"
@@ -494,8 +429,11 @@ const ChatInfoScreen = ({ route }) => {
           </TouchableOpacity>
 
           {/* Thêm nút giải tán nhóm chỉ với leader */}
-          {role === "leader"   && (
-            <TouchableOpacity style={styles.optionItem} onPress={handleDissolveGroup}>
+          {role === "leader" && (
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={handleDissolveGroup}
+            >
               <Feather
                 name="users"
                 size={20}

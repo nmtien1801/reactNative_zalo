@@ -116,7 +116,6 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef }) => {
         setIsSubmitting(true);
         try {
             const response = await addMembersToRoomChatService(roomId, selectedFriends);
-            console.log("response", response);
 
             if (response.EC === 0) {
                 Alert.alert("Thành công", "Thêm thành viên thành công!");

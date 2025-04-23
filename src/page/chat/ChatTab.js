@@ -66,8 +66,6 @@ const ChatTab = ({ route }) => {
 
   // action socket
   useEffect(() => {
-
-
     socketRef.current.on("user-list", (usersList) => {
       setOnlineUsers(usersList); // Lưu danh sách user online
     });
@@ -82,6 +80,10 @@ const ChatTab = ({ route }) => {
       dispatch(getConversations(user._id));
     });
 
+    // remove member group
+    socketRef.current.on("RES_REMOVE_MEMBER", async () => {
+      dispatch(getConversations(user._id));
+    });
   }, []);
 
   return (

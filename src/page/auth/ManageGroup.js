@@ -125,12 +125,15 @@ const ManageGroup = ({ navigation, route }) => {
       >
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate("PersonOption", {
-              receiver: item,
-              socketRef,
-              onlineUsers,
-              conversations,
-            })
+            navigation.navigate(
+              item.type === 2 ? "GroupOption" : "PersonOption",
+              {
+                receiver: item,
+                socketRef,
+                onlineUsers,
+                conversations,
+              }
+            )
           }
         >
           <Feather

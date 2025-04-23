@@ -511,9 +511,8 @@ const InboxScreen = ({ route }) => {
       console.error("Upload thất bại:", error);
       Alert.alert("Lỗi upload", error.message);
     }
+  };
 
-  }
-  
   const forwardMessage = (message) => {
     navigation.navigate("ShareScreen", { message });
   };
@@ -543,7 +542,7 @@ const InboxScreen = ({ route }) => {
         ...receiver,
         permission: member.receiver.permission,
         role: member.role,
-      })
+      });
     });
   }, []);
 
@@ -578,12 +577,15 @@ const InboxScreen = ({ route }) => {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() =>
-              navigation.navigate("GroupOption", {
-                receiver,
-                socketRef,
-                onlineUsers,
-                conversations,
-              })
+              navigation.navigate(
+                receiver.type === 2 ? "GroupOption" : "PersonOption",
+                {
+                  receiver,
+                  socketRef,
+                  onlineUsers,
+                  conversations,
+                }
+              )
             }
           >
             <Ionicons name="menu" size={24} color="white" />
@@ -729,8 +731,8 @@ const InboxScreen = ({ route }) => {
       {/* Input Box */}
       <View style={styles.inputContainer}>
         {receiver?.permission?.includes(3) ||
-          receiver.role === "leader" ||
-          receiver.role === "deputy" ? (
+        receiver.role === "leader" ||
+        receiver.role === "deputy" ? (
           <>
             <TouchableOpacity
               style={{ flexDirection: "row", alignItems: "center" }}
@@ -823,7 +825,7 @@ const InboxScreen = ({ route }) => {
             {/* Menu hành động */}
             <View style={styles.menuOptions}>
               {[
-                { name: "Trả lời", icon: "reply", action: () => { } },
+                { name: "Trả lời", icon: "reply", action: () => {} },
                 {
                   name: "Chia sẻ",
                   icon: "share",
@@ -832,26 +834,26 @@ const InboxScreen = ({ route }) => {
                     setShareModalVisible(true); // Mở modal chia sẻ
                   },
                 },
-                { name: "Lưu Cloud", icon: "save", action: () => { } },
+                { name: "Lưu Cloud", icon: "save", action: () => {} },
                 ...(selectedMessage?.sender._id === user._id &&
-                  (new Date() - new Date(selectedMessage.createdAt)) /
+                (new Date() - new Date(selectedMessage.createdAt)) /
                   (1000 * 60 * 60) <
                   1
                   ? [
-                    {
-                      name: "Thu hồi",
-                      icon: "undo",
-                      action: () => {
-                        handleRecallMessage(selectedMessage),
-                          setModalVisible(false);
+                      {
+                        name: "Thu hồi",
+                        icon: "undo",
+                        action: () => {
+                          handleRecallMessage(selectedMessage),
+                            setModalVisible(false);
+                        },
                       },
-                    },
-                  ]
+                    ]
                   : []),
-                { name: "Sao chép", icon: "copy", action: () => { } },
-                { name: "Ghim", icon: "map-pin", action: () => { } },
-                { name: "Nhắc hẹn", icon: "clock", action: () => { } },
-                { name: "Chọn nhiều", icon: "check-square", action: () => { } },
+                { name: "Sao chép", icon: "copy", action: () => {} },
+                { name: "Ghim", icon: "map-pin", action: () => {} },
+                { name: "Nhắc hẹn", icon: "clock", action: () => {} },
+                { name: "Chọn nhiều", icon: "check-square", action: () => {} },
                 {
                   name: "Xóa ở phía tôi",
                   icon: "trash",
@@ -860,8 +862,17 @@ const InboxScreen = ({ route }) => {
                       setModalVisible(false);
                   },
                 },
-                { name: "Xóa", icon: "trash", action: () => handleDeleteMessageForMe(selectedMessage._id, user._id) },
-                { name: "Chuyển tiếp", icon: "share", action: () => forwardMessage(selectedMessage) },
+                {
+                  name: "Xóa",
+                  icon: "trash",
+                  action: () =>
+                    handleDeleteMessageForMe(selectedMessage._id, user._id),
+                },
+                {
+                  name: "Chuyển tiếp",
+                  icon: "share",
+                  action: () => forwardMessage(selectedMessage),
+                },
               ].map((item, index) => (
                 <TouchableOpacity
                   key={index}
