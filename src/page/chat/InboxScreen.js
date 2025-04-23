@@ -578,7 +578,7 @@ const InboxScreen = ({ route }) => {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() =>
-              navigation.navigate("PersonOption", {
+              navigation.navigate("GroupOption", {
                 receiver,
                 socketRef,
                 onlineUsers,
@@ -729,8 +729,8 @@ const InboxScreen = ({ route }) => {
       {/* Input Box */}
       <View style={styles.inputContainer}>
         {receiver?.permission?.includes(3) ||
-        receiver.role === "leader" ||
-        receiver.role === "deputy" ? (
+          receiver.role === "leader" ||
+          receiver.role === "deputy" ? (
           <>
             <TouchableOpacity
               style={{ flexDirection: "row", alignItems: "center" }}
@@ -823,7 +823,7 @@ const InboxScreen = ({ route }) => {
             {/* Menu hành động */}
             <View style={styles.menuOptions}>
               {[
-                { name: "Trả lời", icon: "reply", action: () => {} },
+                { name: "Trả lời", icon: "reply", action: () => { } },
                 {
                   name: "Chia sẻ",
                   icon: "share",
@@ -832,26 +832,26 @@ const InboxScreen = ({ route }) => {
                     setShareModalVisible(true); // Mở modal chia sẻ
                   },
                 },
-                { name: "Lưu Cloud", icon: "save", action: () => {} },
+                { name: "Lưu Cloud", icon: "save", action: () => { } },
                 ...(selectedMessage?.sender._id === user._id &&
-                (new Date() - new Date(selectedMessage.createdAt)) /
+                  (new Date() - new Date(selectedMessage.createdAt)) /
                   (1000 * 60 * 60) <
                   1
                   ? [
-                      {
-                        name: "Thu hồi",
-                        icon: "undo",
-                        action: () => {
-                          handleRecallMessage(selectedMessage),
-                            setModalVisible(false);
-                        },
+                    {
+                      name: "Thu hồi",
+                      icon: "undo",
+                      action: () => {
+                        handleRecallMessage(selectedMessage),
+                          setModalVisible(false);
                       },
-                    ]
+                    },
+                  ]
                   : []),
-                { name: "Sao chép", icon: "copy", action: () => {} },
-                { name: "Ghim", icon: "map-pin", action: () => {} },
-                { name: "Nhắc hẹn", icon: "clock", action: () => {} },
-                { name: "Chọn nhiều", icon: "check-square", action: () => {} },
+                { name: "Sao chép", icon: "copy", action: () => { } },
+                { name: "Ghim", icon: "map-pin", action: () => { } },
+                { name: "Nhắc hẹn", icon: "clock", action: () => { } },
+                { name: "Chọn nhiều", icon: "check-square", action: () => { } },
                 {
                   name: "Xóa ở phía tôi",
                   icon: "trash",

@@ -24,9 +24,15 @@ const getRoomChatMembersService = async (roomId) => {
 
 // Thêm service mới để gọi API getRoomChatByUsername
 const getRoomChatByUsernameService = (username) => {
-  return customizeAxios.get(
-      `/api/roomChat/${username}`
-  );
+  return customizeAxios.get(`/roomChat/${username}`);
+};
+
+// Thêm thành viên vào nhóm
+const addMembersToRoomChatService = async (roomId, members) => {
+  const response = await customizeAxios.post(`/roomChat/${roomId}/members`, {
+    members,
+  });
+  return response;
 };
 
 export {
@@ -34,5 +40,6 @@ export {
   getRoomChatMembersService,
   getAllMemberGroupService,
   getMemberByPhoneService,
-  getRoomChatByUsernameService
+  getRoomChatByUsernameService,
+  addMembersToRoomChatService,
 };

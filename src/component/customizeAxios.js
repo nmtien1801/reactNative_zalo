@@ -32,7 +32,7 @@ instance.interceptors.request.use(
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`; // Thêm Bearer token vào header
     }
-    console.log("Body:", config.data); 
+    console.log("Body:", config.data);
     return config;
   },
   (error) => {
