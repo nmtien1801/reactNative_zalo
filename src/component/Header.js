@@ -23,7 +23,7 @@ const HEADER_HEIGHT = height * 0.08;
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import AddFriendModal from './AddFriendModal'
 
-export default function SearchHeader({ option , socketRef}) {
+export default function SearchHeader({ option, socketRef, onlineUsers }) {
   const navigation = useNavigation();
   const [showModalAddFriend, setShowModalAddFriend] = useState(false); // modal thêm bạn
  
@@ -53,7 +53,12 @@ export default function SearchHeader({ option , socketRef}) {
           height: HEADER_HEIGHT * 0.6,
           fontSize: 15,
         }}
-        onPress={() => navigation.navigate("SearchScreen")}
+        onFocus={() =>
+          navigation.navigate("SearchScreen", {
+            socketRef,
+            onlineUsers,
+          })
+        }
       />
 
       {option === "person" && (
@@ -93,7 +98,8 @@ export default function SearchHeader({ option , socketRef}) {
                 padding: 10,
               }}
             >
-              <MenuOption onSelect={() => setShowModalAddFriend(true)}>
+              <MenuOption onSelect={() => navigation.navigate("AddFriendScreen", { socketRef,
+            onlineUsers})}>
                 <View
                   style={{
                     flexDirection: "row",
@@ -110,7 +116,7 @@ export default function SearchHeader({ option , socketRef}) {
                   <Text style={{ fontSize: 16 }}>Thêm bạn</Text>
                 </View>
               </MenuOption>
-              <MenuOption onSelect={() => alert("Tạo nhóm")}>
+              <MenuOption onSelect={() => navigation.navigate("CreateGroupTab")}>
                 <View
                   style={{
                     flexDirection: "row",

@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   Modal,
   FlatList,
+  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
@@ -18,9 +19,9 @@ import { useNavigation } from "@react-navigation/native";
 import { useSelector, useDispatch } from "react-redux";
 import InfoAddFriendMModal from "../../component/InfoAddFriendModal";
 import { getRoomChatByPhoneService } from "../../service/roomChatService";
-
 import { getRoomChatMembersService } from "../../service/roomChatService";
 import { removeMemberFromGroupService } from "../../service/chatService";
+import { dissolveGroupService } from "../../service/chatService";
 
 const ChatInfoScreen = ({ route }) => {
   const [item, setItem] = useState(route.params?.receiver); // click conversation
@@ -53,6 +54,7 @@ const ChatInfoScreen = ({ route }) => {
   useEffect(() => {
     handleSearch();
   }, []);
+
 
   const toggleReportCalls = () => {
     setIsReportCallsEnabled((previousState) => !previousState);
@@ -161,6 +163,40 @@ const ChatInfoScreen = ({ route }) => {
       fetchMembers();
     });
   }, []);
+
+  // Handle dissolve group
+  const handleDissolveGroup = async () => {
+    debugger
+    try {
+      Alert.alert("Thông báo", "Đang giải tán nhóm...");
+  
+      const response = await dissolveGroupService(item._id);
+  
+      const { EC, EM } = response || {};
+  
+      if (EC === 0) {
+        Alert.alert("Thành công", "Nhóm đã được giải tán!");
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: "MainTabs",
+              state: {
+                index: 0,
+                routes: [{ name: "Tin nhắn" }],
+              },
+            },
+          ],
+        });
+      } else {
+        Alert.alert("Lỗi", EM || "Không thể giải tán nhóm.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi giải tán nhóm:", error);
+      Alert.alert("Lỗi", "Không thể giải tán nhóm, vui lòng thử lại sau.");
+    }
+  };
+  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -456,6 +492,21 @@ const ChatInfoScreen = ({ route }) => {
               Xóa lịch sử trò chuyện
             </Text>
           </TouchableOpacity>
+
+          {/* Thêm nút giải tán nhóm chỉ với leader */}
+          {role === "leader"   && (
+            <TouchableOpacity style={styles.optionItem} onPress={handleDissolveGroup}>
+              <Feather
+                name="users"
+                size={20}
+                color="#ff3b30"
+                style={styles.optionIcon}
+              />
+              <Text style={[styles.optionText, styles.deleteText]}>
+                Giải tán nhóm
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

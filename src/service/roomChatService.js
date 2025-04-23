@@ -22,9 +22,17 @@ const getRoomChatMembersService = async (roomId) => {
   }
 };
 
+// Thêm service mới để gọi API getRoomChatByUsername
+const getRoomChatByUsernameService = (username) => {
+  return customizeAxios.get(
+      `/api/roomChat/${username}`
+  );
+};
+
 export {
   getRoomChatByPhoneService,
   getRoomChatMembersService,
   getAllMemberGroupService,
   getMemberByPhoneService,
+  getRoomChatByUsernameService
 };

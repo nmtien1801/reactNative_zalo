@@ -8,10 +8,6 @@ const getConversationsService = (sender) => {
   return customizeAxios.get(`/getConversations/${sender}`);
 };
 
-const createConversationGroupService = (data) => {
-  return customizeAxios.post(`/createConversationGroup`, data);
-};
-
 const recallMessageService = (id) => {
   return customizeAxios.put(`/messages/recall/${id}`);
 };
@@ -39,6 +35,19 @@ const removeMemberFromGroupService = async (groupId, memberId) => {
   }
 };
 
+const createConversationGroupService = (nameGroup, avatarGroup, members) => {
+  return customizeAxios.post(`/createConversationGroup`, {
+    nameGroup,
+    avatarGroup,
+    members,
+  });
+};
+
+// Service để giải tán nhóm (chỉ leader)
+const dissolveGroupService = async (groupId) => {
+  return customizeAxios.delete(`/group/${groupId}/dissolve`);
+  
+};
 export {
   loadMessagesService,
   getConversationsService,
@@ -47,4 +56,5 @@ export {
   deleteMessageForMeService,
   updatePermissionService,
   removeMemberFromGroupService,
+  dissolveGroupService,
 };
