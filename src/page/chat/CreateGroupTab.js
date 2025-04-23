@@ -25,7 +25,8 @@ const CreateGroupTab = ({ navigation, route }) => {
   const [selectedContacts, setSelectedContacts] = useState([]);
   const [groupName, setGroupName] = useState("");
   const [searchText, setSearchText] = useState("");
-  const [contacts, setContacts] = useState([]); 
+  const [contacts, setContacts] = useState([]);
+  const socketRef = route.params.socketRef; // Lấy socketRef từ props
 
   const dispatch = useDispatch();
 
@@ -39,13 +40,13 @@ const CreateGroupTab = ({ navigation, route }) => {
       try {
         const response = await getFriendListService();
         if (response.EC === 0 && response.DT) {
-            const formattedContacts = response.DT.map((contact) => ({
-                id: contact._id,
-                username: contact.username,
-                avatar: contact.avatar || "https://i.imgur.com/jUTa2UN.png",
-                phone: contact.phone,
-              }));
-            setContacts(formattedContacts);
+          const formattedContacts = response.DT.map((contact) => ({
+            id: contact._id,
+            username: contact.username,
+            avatar: contact.avatar || "https://i.imgur.com/jUTa2UN.png",
+            phone: contact.phone,
+          }));
+          setContacts(formattedContacts);
         } else {
           setContacts([]); // Không có bạn bè
         }
@@ -55,11 +56,18 @@ const CreateGroupTab = ({ navigation, route }) => {
       }
 
       setSelectedContacts((prev) => {
-        const isUserAlreadyAdded = prev.some((contact) => contact.id === user._id);
-        if (isUserAlreadyAdded) return prev; 
-      
+        const isUserAlreadyAdded = prev.some(
+          (contact) => contact.id === user._id
+        );
+        if (isUserAlreadyAdded) return prev;
+
         return [
-          { id: user._id, username: user.username, phone: user.phone, avatar: user.avatar },
+          {
+            id: user._id,
+            username: user.username,
+            phone: user.phone,
+            avatar: user.avatar,
+          },
           ...prev,
         ];
       });
@@ -74,7 +82,9 @@ const CreateGroupTab = ({ navigation, route }) => {
 
   const toggleSelectContact = (contact) => {
     setSelectedContacts((prev) => {
-      const isAlreadySelected = prev.some((selected) => selected.id === contact.id);
+      const isAlreadySelected = prev.some(
+        (selected) => selected.id === contact.id
+      );
       if (isAlreadySelected) {
         return prev.filter((selected) => selected.id !== contact.id);
       } else {
@@ -119,7 +129,8 @@ const CreateGroupTab = ({ navigation, route }) => {
             setGroupAvatar({
               uri: selectedPhoto.uri,
               type: selectedPhoto.type || "image/jpeg", // Loại ảnh
-              fileName: selectedPhoto.fileName || selectedPhoto.uri.split("/").pop(), // Tên file
+              fileName:
+                selectedPhoto.fileName || selectedPhoto.uri.split("/").pop(), // Tên file
             });
           }
         }
@@ -130,28 +141,24 @@ const CreateGroupTab = ({ navigation, route }) => {
   };
 
   const renderSelectedContactItem = ({ item }) => {
-    
     const contact = item.id ? item : contacts.find((c) => c.id === item);
 
     if (!contact) {
-      return null; 
+      return null;
     }
 
     return (
-        <View style={styles.selectedContactItem}>
-        <Image
-            source={{ uri: contact.avatar }}
-            style={styles.avatarSmall}
-        />
+      <View style={styles.selectedContactItem}>
+        <Image source={{ uri: contact.avatar }} style={styles.avatarSmall} />
         <Text style={styles.selectedContactName}>{contact.username}</Text>
- 
+
         <TouchableOpacity
-            disabled={user._id === contact.id}
-            onPress={() => toggleSelectContact(item)}
+          disabled={user._id === contact.id}
+          onPress={() => toggleSelectContact(item)}
         >
-            <Ionicons name="close-circle" size={24} color="red" />
+          <Ionicons name="close-circle" size={24} color="red" />
         </TouchableOpacity>
-        </View>
+      </View>
     );
   };
 
@@ -177,24 +184,22 @@ const CreateGroupTab = ({ navigation, route }) => {
       // Lấy dữ liệu từ input và danh sách người dùng được chọn
       const nameGroup = groupName.trim(); // Lấy tên nhóm từ state
       const selectedMembers = selectedContacts.map((member) => member.id); // Lấy danh sách ID thành viên
-  
+
       // Kiểm tra dữ liệu đầu vào
       if (!nameGroup) {
         alert("Vui lòng nhập tên nhóm.");
         return;
       }
-  
+
       if (selectedMembers.length < 3) {
         alert("Vui lòng chọn ít nhất ba thành viên.");
         return;
       }
-  
+
       // Xử lý upload avatar nếu có
       let avatarUrl = "";
       if (groupAvatar) {
-          
         try {
-
           const formData = createFormData(groupAvatar);
 
           const response = await dispatch(uploadAvatar(formData)).unwrap();
@@ -208,23 +213,24 @@ const CreateGroupTab = ({ navigation, route }) => {
           alert("Đã xảy ra lỗi khi tải lên ảnh.");
         }
       }
-  
+
       // Nếu không có avatar, sử dụng ảnh mặc định
       if (avatarUrl.trim() === "") {
         avatarUrl = "https://i.imgur.com/jUTa2UN.png";
       }
-  
+
       console.log("Danh sách thành viên:", selectedMembers);
-  
+
       // Gửi yêu cầu đến API tạo nhóm
       const response = await createConversationGroupService(
         nameGroup,
         avatarUrl,
         selectedMembers
       );
-  
+
       if (response.EC === 0) {
         alert("Tạo nhóm thành công!");
+        socketRef.current.emit("REQ_CREATE_GROUP", response.DT);
         navigation.goBack(); // Quay lại màn hình trước
       } else {
         alert(response.EM || "Đã xảy ra lỗi khi tạo nhóm.");
@@ -258,7 +264,7 @@ const CreateGroupTab = ({ navigation, route }) => {
       }
       return;
     }
-  
+
     // Kiểm tra xem query có phải là số điện thoại hay không
     const isPhoneNumber = /^\d+$/.test(query);
     if (!isPhoneNumber) {
@@ -282,7 +288,7 @@ const CreateGroupTab = ({ navigation, route }) => {
       }
       return;
     }
-  
+
     try {
       const response = await getUserByPhoneService(query); // Gọi API
       if (response.EC === 0 && response.DT.DT) {
@@ -346,14 +352,22 @@ const CreateGroupTab = ({ navigation, route }) => {
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Nhóm mới</Text>
-        <Text style={styles.selectedCount}>Đã chọn: {selectedContacts.length}</Text>
+        <Text style={styles.selectedCount}>
+          Đã chọn: {selectedContacts.length}
+        </Text>
       </View>
 
       {/* Group Name Input */}
       <View style={styles.groupNameContainer}>
-        <TouchableOpacity style={styles.avatarPicker} onPress={handlePickAvatar}>
+        <TouchableOpacity
+          style={styles.avatarPicker}
+          onPress={handlePickAvatar}
+        >
           {groupAvatar ? (
-            <Image source={{ uri: groupAvatar.uri }} style={styles.groupAvatar} />
+            <Image
+              source={{ uri: groupAvatar.uri }}
+              style={styles.groupAvatar}
+            />
           ) : (
             <Ionicons name="camera-outline" size={30} color="gray" />
           )}
@@ -419,150 +433,150 @@ const CreateGroupTab = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-      },
-      header: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#007bff",
-        padding: 15,
-      },
-      headerTitle: {
-        flex: 1,
-        color: "white",
-        fontSize: 18,
-        fontWeight: "bold",
-        textAlign: "center",
-      },
-      selectedCount: {
-        color: "white",
-        fontSize: 14,
-      },
-      groupNameContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#f5f5f5",
-        padding: 15,
-      },
-      groupNameInput: {
-        flex: 1,
-        marginLeft: 10,
-        color: "black",
-        fontSize: 16,
-      },
-      searchInput: {
-        backgroundColor: "#f5f5f5",
-        padding: 10,
-        margin: 15,
-        borderRadius: 5,
-        color: "black",
-      },
-      content: {
-        flex: 1,
-        flexDirection: "row",
-      },
-      contactListContainer: {
-        flex: 2, // Chiếm 2/3 màn hình
-      },
-      selectedContactContainer: {
-        flex: 1, // Chiếm 1/3 màn hình
-        backgroundColor: "#f9f9f9",
-        borderLeftWidth: 1,
-        borderLeftColor: "#ccc",
-      },
-      contactList: {
-        padding: 15,
-      },
-      contactItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: "#ccc",
-      },
-      avatar: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        marginRight: 15,
-      },
-      contactInfo: {
-        flex: 1,
-      },
-      contactName: {
-        color: "black",
-        fontSize: 16,
-        fontWeight: "bold",
-      },
-      lastActive: {
-        color: "#666",
-        fontSize: 14,
-      },
-      selectedContactList: {
-        padding: 10,
-      },
-      selectedContactItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 10,
-      },
-      avatarSmall: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        marginRight: 10,
-      },
-      selectedContactName: {
-        color: "black",
-        fontSize: 14,
-      },
-      tabs: {
-        flexDirection: "row",
-        justifyContent: "space-around",
-        borderBottomWidth: 1,
-        borderBottomColor: "#ccc",
-      },
-      tab: {
-        paddingVertical: 10,
-        color: "#666", 
-        fontSize: 16,
-      },
-      activeTab: {
-        color: "#007bff",
-        borderBottomWidth: 2,
-        borderBottomColor: "#007bff",
-      },
-      selectedContactItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between", // Đẩy nút xóa sang bên phải
-        marginBottom: 10,
-      },
-      createGroupButton: {
-        backgroundColor: "#007bff",
-        padding: 15,
-        borderRadius: 10,
-        alignItems: "center",
-        justifyContent: "center",
-        margin: 15,
-      },
-      createGroupButtonText: {
-        color: "white",
-        fontSize: 16,
-        fontWeight: "bold",
-      },
-      avatarPicker: {
-        alignItems: "center",
-        justifyContent: "center",
-        marginVertical: 20,
-      },
-      groupAvatar: {
-        width: 50,
-        height: 50,
-        borderRadius: 50,
-      },
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#007bff",
+    padding: 15,
+  },
+  headerTitle: {
+    flex: 1,
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  selectedCount: {
+    color: "white",
+    fontSize: 14,
+  },
+  groupNameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+    padding: 15,
+  },
+  groupNameInput: {
+    flex: 1,
+    marginLeft: 10,
+    color: "black",
+    fontSize: 16,
+  },
+  searchInput: {
+    backgroundColor: "#f5f5f5",
+    padding: 10,
+    margin: 15,
+    borderRadius: 5,
+    color: "black",
+  },
+  content: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  contactListContainer: {
+    flex: 2, // Chiếm 2/3 màn hình
+  },
+  selectedContactContainer: {
+    flex: 1, // Chiếm 1/3 màn hình
+    backgroundColor: "#f9f9f9",
+    borderLeftWidth: 1,
+    borderLeftColor: "#ccc",
+  },
+  contactList: {
+    padding: 15,
+  },
+  contactItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 15,
+  },
+  contactInfo: {
+    flex: 1,
+  },
+  contactName: {
+    color: "black",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  lastActive: {
+    color: "#666",
+    fontSize: 14,
+  },
+  selectedContactList: {
+    padding: 10,
+  },
+  selectedContactItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  avatarSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  selectedContactName: {
+    color: "black",
+    fontSize: 14,
+  },
+  tabs: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+  },
+  tab: {
+    paddingVertical: 10,
+    color: "#666",
+    fontSize: 16,
+  },
+  activeTab: {
+    color: "#007bff",
+    borderBottomWidth: 2,
+    borderBottomColor: "#007bff",
+  },
+  selectedContactItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between", // Đẩy nút xóa sang bên phải
+    marginBottom: 10,
+  },
+  createGroupButton: {
+    backgroundColor: "#007bff",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    margin: 15,
+  },
+  createGroupButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  avatarPicker: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 20,
+  },
+  groupAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 50,
+  },
 });
 
 export default CreateGroupTab;

@@ -163,7 +163,6 @@ const ChatInfoScreen = ({ route }) => {
 
   // Handle dissolve group
   const handleDissolveGroup = async () => {
-    debugger;
     try {
       Alert.alert("Thông báo", "Đang giải tán nhóm...");
 

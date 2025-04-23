@@ -84,6 +84,11 @@ const ChatTab = ({ route }) => {
     socketRef.current.on("RES_REMOVE_MEMBER", async () => {
       dispatch(getConversations(user._id));
     });
+
+    // create group
+    socketRef.current.on("RES_CREATE_GROUP", (data) => {
+      dispatch(getConversations(user._id));
+    });
   }, []);
 
   return (

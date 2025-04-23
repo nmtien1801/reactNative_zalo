@@ -117,9 +117,17 @@ const ChatInfoScreen = ({ route }) => {
 
   // action socket
   useEffect(() => {
-    socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
-      console.log("datasssss ", data);
+    socketRef.current.on("RES_MEMBER_PERMISSION", (data) => {
+      const member = data.find((item) => item.sender._id === user._id);
 
+      setItem({
+        ...item,
+        permission: member.receiver.permission,
+        role: member.role,
+      });
+    });
+
+    socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
       // Nếu không có bản ghi nào được cập nhật
       if (data.upsertedCount === 0) {
         setRole("member");
@@ -178,7 +186,6 @@ const ChatInfoScreen = ({ route }) => {
 
   // Handle dissolve group
   const handleDissolveGroup = async () => {
-    debugger;
     try {
       Alert.alert("Thông báo", "Đang giải tán nhóm...");
 
@@ -250,7 +257,17 @@ const ChatInfoScreen = ({ route }) => {
             </TouchableOpacity>
             <TouchableOpacity
               style={{ alignItems: "center" }}
-              onPress={() => handleOpenAddMemberModal()} // Show the modal
+              onPress={() => {
+                if (
+                  item.permission.includes(2) ||
+                  item.role === "leader" ||
+                  item.role === "deputy"
+                ) {
+                  handleOpenAddMemberModal();
+                } else {
+                  Alert.alert("Không có quyền thêm");
+                }
+              }}
             >
               <View style={styles.actionIcon}>
                 <Feather name="user-plus" size={24} color="#555" />
