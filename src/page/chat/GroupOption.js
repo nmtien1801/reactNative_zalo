@@ -37,7 +37,6 @@ const ChatInfoScreen = ({ route }) => {
   const [isHiddenChatEnabled, setIsHiddenChatEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [searchResult, setSearchResult] = useState({});
-
   const [showMemberModal, setShowMemberModal] = useState(false); // Trạng thái hiển thị modal
 
   const [showAddMemberModal, setShowAddMemberModal] = useState(false); // State quản lý modal
@@ -105,7 +104,9 @@ const ChatInfoScreen = ({ route }) => {
   };
 
   // ManageGroup
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState(route.params?.role); // click conversation
+  console.log("role", role);
+  
   useEffect(() => {
     const role = conversations.find(
       (conversation) => conversation._id === item._id
@@ -128,6 +129,8 @@ const ChatInfoScreen = ({ route }) => {
     });
 
     socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
+      console.log("RES_UPDATE_DEPUTY", data);
+
       // Nếu không có bản ghi nào được cập nhật
       if (data.upsertedCount === 0) {
         setRole("member");
@@ -142,6 +145,11 @@ const ChatInfoScreen = ({ route }) => {
 
       if (member) {
         setRole(member.role);
+        setItem({
+          ...item,
+          permission: member.receiver.permission,
+          role: member.role,
+        });
       } else {
         if (receiver.role !== "leader") {
           setRole("member");
@@ -183,6 +191,7 @@ const ChatInfoScreen = ({ route }) => {
       fetchMembers();
     });
   }, []);
+  console.log("role", role);
 
   // Handle dissolve group
   const handleDissolveGroup = async () => {
@@ -403,6 +412,7 @@ const ChatInfoScreen = ({ route }) => {
                   socketRef,
                   onlineUsers,
                   conversations,
+                  role,
                 })
               }
             >

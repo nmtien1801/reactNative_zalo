@@ -119,6 +119,11 @@ const ChatInfoScreen = ({ route }) => {
 
       if (member) {
         setRole(member.role);
+        setItem({
+          ...item,
+          permission: member.receiver.permission,
+          role: member.role,
+        })
       } else {
         if (receiver.role !== "leader") {
           setRole("member");

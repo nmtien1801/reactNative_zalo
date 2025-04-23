@@ -50,6 +50,7 @@ const InboxScreen = ({ route }) => {
     receiver: null,
   });
   const [allMsg, setAllMsg] = useState([]);
+  const [role, setRole] = useState(null); // Lưu vai trò của người dùng trong nhóm
   const [showPicker, setShowPicker] = useState(false);
   const ICONS = ["smile", "heart", "thumbs-up", "laugh", "sad-tear"];
 
@@ -102,6 +103,13 @@ const InboxScreen = ({ route }) => {
       </TouchableOpacity>
     </Modal>
   );
+
+  useEffect(() => {
+    const role = conversations.find((item) => item._id === receiver._id);
+    if (role) {
+      setRole(role.role);
+    }
+  }, []);
 
   // handleTypeChat
   useEffect(() => {
@@ -529,6 +537,43 @@ const InboxScreen = ({ route }) => {
       });
     });
 
+    socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
+      // Nếu không có bản ghi nào được cập nhật
+      if (data.upsertedCount === 0) {
+        setRole("member");
+        // setReceiver({
+        //   ...receiver,
+        //   permission: member.receiver.permission,
+        //   role: "member",
+        // });
+        return;
+      }
+
+      // Tìm xem user có phải là sender hoặc receiver không
+      const member = data.find(
+        (item) =>
+          item?.sender?._id === user._id || item?.receiver?._id === user._id
+      );
+
+      if (member) {
+        setRole(member.role);
+        // setReceiver({
+        //   ...receiver,
+        //   permission: member.receiver.permission,
+        //   role: member.role,
+        // });
+      } else {
+        if (receiver.role !== "leader") {
+          setRole("member");
+          // setReceiver({
+          //   ...receiver,
+          //   permission: member.receiver.permission,
+          //   role: "member",
+          // });
+        }
+      }
+    });
+
     socketRef.current.on("RES_TRANS_LEADER", (data) => {
       const { newLeader, oldLeader } = data;
       let member = null;
@@ -545,6 +590,7 @@ const InboxScreen = ({ route }) => {
       });
     });
   }, []);
+  console.log("rolesss: ", role);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -584,6 +630,7 @@ const InboxScreen = ({ route }) => {
                   socketRef,
                   onlineUsers,
                   conversations,
+                  role,
                 }
               )
             }
@@ -730,9 +777,9 @@ const InboxScreen = ({ route }) => {
 
       {/* Input Box */}
       <View style={styles.inputContainer}>
-        {receiver?.permission?.includes(3) ||
-        receiver.role === "leader" ||
-        receiver.role === "deputy" ? (
+        {receiver.permission.includes(3) ||
+        role === "leader" ||
+        role === "deputy" ? (
           <>
             <TouchableOpacity
               style={{ flexDirection: "row", alignItems: "center" }}

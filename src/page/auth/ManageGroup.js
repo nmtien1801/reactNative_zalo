@@ -23,7 +23,8 @@ const ManageGroup = ({ navigation, route }) => {
   const conversations = route.params?.conversations;
   const permissions = useSelector((state) => state.permission.permission);
   const user = useSelector((state) => state.auth.user);
-
+  const role = route.params?.role; // role của người dùng trong nhóm
+  
   const settings = [
     "Chế độ phê duyệt thành viên mới",
     "Cho phép dùng link tham gia nhóm",
