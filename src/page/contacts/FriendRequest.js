@@ -15,7 +15,7 @@ import {
   rejectFriendRequestService,
 } from "../../service/friendRequestService";
 
-const FriendRequest = ({route}) => {
+const FriendRequest = ({ route }) => {
   const [friendRequests, setFriendRequests] = useState([]);
   const userInfo = useSelector((state) => state.auth.userInfo);
   const userId = userInfo ? userInfo.id : null;
@@ -23,13 +23,13 @@ const FriendRequest = ({route}) => {
 
   const fetchFriendRequests = async () => {
     const response = await getFriendRequestsService();
-
     setFriendRequests(response.DT);
 
     // action socket
     // add friend
     socketRef.current.on("RES_ADD_FRIEND", async () => {
       const response = await getFriendRequestsService();
+      console.log("Friend requests:", response.DT);
       setFriendRequests(response.DT);
     });
 

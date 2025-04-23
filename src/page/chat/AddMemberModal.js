@@ -33,7 +33,6 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef }) => {
             try {
                 const friendsResponse = await getAllFriendsService();
                 setFriends(friendsResponse.DT || []);
-
                 const membersResponse = await getRoomChatMembersService(roomId);
                 setMembers(membersResponse.DT || []);
             } catch (error) {
@@ -119,6 +118,7 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef }) => {
             console.log("response", response);
 
             if (response.EC === 0) {
+                socketRef.current.emit("REQ_ADD_GROUP", response.DT);
                 Alert.alert("Thành công", "Thêm thành viên thành công!");
                 handleClose();
             } else {

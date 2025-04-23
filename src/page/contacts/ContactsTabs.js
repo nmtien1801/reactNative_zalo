@@ -1,4 +1,4 @@
-import React, { useState , useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,15 +14,73 @@ import SearchHeader from "../../component/Header";
 import { getConversations } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
+import { getFriendRequestsService, getGroupJoinRequestsService } from "../../service/friendRequestService";
 
 const TopTab = createMaterialTopTabNavigator();
 
-export default function ContactsTabs({route}) {
+export default function ContactsTabs({ route }) {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const conversationRedux = useSelector((state) => state.chat.conversations);
   const user = useSelector((state) => state.auth.user);
   const socketRef = route.params.socketRef;
+  const [friendRequests, setFriendRequests] = useState([]);
+  const [groupRequests, setGroupRequests] = useState([]);
+
+  const fetchFriendRequests = async () => {
+    const response = await getFriendRequestsService();
+    setFriendRequests(response.DT);
+
+    // action socket
+    // add friend
+    socketRef.current.on("RES_ADD_FRIEND", async () => {
+      const response = await getFriendRequestsService();
+      console.log("Friend requests:", response.DT);
+      setFriendRequests(response.DT);
+    });
+
+    // reject friend
+    socketRef.current.on("RES_REJECT_FRIEND", async () => {
+      setFriendRequests([]);
+    });
+
+    // accept friend
+    socketRef.current.on("RES_ACCEPT_FRIEND", async () => {
+      const response = await getFriendRequestsService();
+
+      setFriendRequests(response.DT);
+    });
+  };
+
+  const fetchGroupRequests = async () => {
+    const response = await getGroupJoinRequestsService();
+    setGroupRequests(response.DT);
+
+
+    // action socket
+    // add friend
+    socketRef.current.on("RES_ADD_GROUP", async () => {
+      const response = await getGroupJoinRequestsService();
+      setGroupRequests(response.DT);
+    });
+
+    // reject friend
+    socketRef.current.on("RES_REJECT_FRIEND", async () => {
+      setGroupRequests([]);
+    });
+
+    // accept friend
+    socketRef.current.on("RES_ACCEPT_FRIEND", async () => {
+      const response = await getGroupJoinRequestsService();
+      setGroupRequests(response.DT);
+    });
+  };
+
+  useEffect(() => {
+    fetchFriendRequests();
+    fetchGroupRequests();
+  }, [socketRef]);
+
 
   const [conversations, setConversations] = useState([]);
 
@@ -91,7 +149,7 @@ export default function ContactsTabs({route}) {
               borderBottomWidth: 1,
               borderColor: "#ddd",
             }}
-            onPress={() => navigation.navigate('FriendRequest', {socketRef})}
+            onPress={() => navigation.navigate('FriendRequest', { socketRef })}
           >
             <Icon
               name="person-add-outline"
@@ -99,7 +157,9 @@ export default function ContactsTabs({route}) {
               color="#2196F3"
               style={{ marginRight: 10 }}
             />
-            <Text style={{ fontSize: 16 }}>Lời mời kết bạn (1)</Text>
+            <Text style={{ fontSize: 16 }}>
+              Lời mời kết bạn ({friendRequests.length})
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={{
@@ -203,6 +263,26 @@ export default function ContactsTabs({route}) {
     <FlatList
       ListHeaderComponent={() => (
         <>
+          <TouchableOpacity
+            style={{
+              flexDirection: "row",
+              padding: 10,
+              alignItems: "center",
+              borderBottomWidth: 1,
+              borderColor: "#ddd",
+            }}
+            onPress={() => navigation.navigate("GroupRequest", { socketRef })}
+          >
+            <Icon
+              name="person-add-outline"
+              size={24}
+              color="#2196F3"
+              style={{ marginRight: 10 }}
+            />
+            <Text style={{ fontSize: 16 }}>
+              Lời mời vào nhóm ({groupRequests.length})
+            </Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={{
               flexDirection: "row",
