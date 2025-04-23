@@ -1,12 +1,12 @@
 import customizeAxios from "../component/customizeAxios";
 
 const getFriendRequestsService = async () => {
-    const response = await customizeAxios.get(`/api/getFriendRequests`);
+    const response = await customizeAxios.get(`/getFriendRequests`);
     return response;
 }
 
 const acceptFriendRequestService = async (requestId) => {
-    const response = await customizeAxios.post(`/api/acceptFriendRequest/${requestId}`);
+    const response = await customizeAxios.post(`/acceptFriendRequest/${requestId}`);
     return response;
 }
 
@@ -16,7 +16,7 @@ const sendRequestFriendService = async (data) => {
 }
 
 const rejectFriendRequestService = async (requestId) => {
-    const response = await customizeAxios.post(`/api/rejectFriendRequest/${requestId}`);
+    const response = await customizeAxios.post(`/rejectFriendRequest/${requestId}`);
     return response;
 }
 
@@ -26,7 +26,7 @@ const getFriendRequestByFromUserAndToUserService = async (fromUserId) => {
 }
 
 const cancelFriendRequestService = async (requestId) => {
-    const response = await customizeAxios.post(`/api/cancelFriendRequest/${requestId}`);
+    const response = await customizeAxios.post(`/cancelFriendRequest/${requestId}`);
     return response;
 }
 

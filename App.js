@@ -20,8 +20,8 @@ import InboxScreen from "./src/page/chat/InboxScreen";
 import PersonOption from "./src/page/chat/PersonOption";
 import GroupOption from "./src/page/chat/GroupOption";
 import ResetPassword from "./src/page/auth/ResetPassword";
-import ChangePassword from "./src/component/changePassword"; 
-import Setting from "./src/page/personal/Setting"; 
+import ChangePassword from "./src/component/changePassword";
+import Setting from "./src/page/personal/Setting";
 import InformationAccount from "./src/page/personal/InfomationAccount";
 import FriendRequest from "./src/page/contacts/FriendRequest";
 import io from "socket.io-client";
@@ -102,12 +102,18 @@ const Project = () => {
   // connect socket -> cmd(IPv4 Address): ipconfig
   const socketRef = useRef();
 
-  const IPv4 = "192.168.1.5";
+  const IPv4 = "172.20.10.2";
   useEffect(() => {
     const socket = io.connect(`http://${IPv4}:8080`);
-
     socketRef.current = socket;
   }, []);
+
+  // action socket
+  useEffect(() => {
+    if (user && user._id) {
+      socketRef.current.emit("register", user._id);
+    }
+  }, [user]);
 
   return (
     <MenuProvider>
@@ -125,38 +131,43 @@ const Project = () => {
                 name="SearchScreen"
                 component={SearchScreen}
                 options={{ headerShown: false }}
+                initialParams={{ socketRef }}
               />
 
               <Stack.Screen
                 name="AddFriendScreen"
                 component={AddFriendScreen}
                 options={{ headerShown: false }}
+                initialParams={{ socketRef }}
               />
 
-              <Stack.Screen 
+              <Stack.Screen
                 name="CreateGroupTab"
                 component={CreateGroupTab}
-                options={{headerShown: false}}
+                options={{ headerShown: false }}
+                initialParams={{ socketRef }}
               />
 
               <Stack.Screen
                 name="UserProfileScreen"
                 component={UserProfileScreen}
                 options={{ headerShown: false }}
+                initialParams={{ socketRef }}
               />
-
 
               <Stack.Screen
                 name="InboxScreen"
                 component={InboxScreen}
                 options={{ headerShown: false }}
+                initialParams={{ socketRef }}
               />
               <Stack.Screen
                 name="PersonOption"
                 component={PersonOption}
                 options={{ headerShown: false }}
+                initialParams={{ socketRef }}
               />
-                            <Stack.Screen
+              <Stack.Screen
                 name="GroupOption"
                 component={GroupOption}
                 options={{ headerShown: false }}
@@ -173,7 +184,11 @@ const Project = () => {
                 options={{ headerShown: false }}
                 initialParams={{ socketRef }}
               />
-              <Stack.Screen name="FriendRequest" component={FriendRequest} />
+              <Stack.Screen
+                name="FriendRequest"
+                component={FriendRequest}
+                initialParams={{ socketRef }}
+              />
             </>
           ) : (
             <>

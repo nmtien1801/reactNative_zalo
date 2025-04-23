@@ -13,8 +13,6 @@ import SearchHeader from "../../component/Header";
 import { getConversations } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 
-import io from "socket.io-client";
-
 import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
@@ -66,19 +64,9 @@ const ChatTab = ({ route }) => {
     }
   }, [conversationRedux]);
 
-  // connect docket -> cmd(IPv4 Address): ipconfig
-  const IPv4 = "192.168.1.33"; // Địa chỉ IP của máy chủ Socket.IO
-  useEffect(() => {
-    const socket = io.connect(`http://${IPv4}:8080`);
-
-    socketRef.current = socket;
-    socket.on("connect", () => setIsConnect(true));
-    socket.off("disconnect", () => setIsConnect(false));
-  }, []);
-
   // action socket
   useEffect(() => {
-    socketRef.current.emit("register", user._id);
+
 
     socketRef.current.on("user-list", (usersList) => {
       setOnlineUsers(usersList); // Lưu danh sách user online
@@ -94,16 +82,11 @@ const ChatTab = ({ route }) => {
       dispatch(getConversations(user._id));
     });
 
-    return () => socketRef.current.disconnect();
   }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
-      <SearchHeader
-        option="chatTab"
-        socketRef={socketRef}
-        onlineUsers={onlineUsers}
-      />
+      <SearchHeader option={"chatTab"} socketRef={socketRef} onlineUsers={onlineUsers}/>
       {/* Chat List */}
       <FlatList
         data={conversations}
