@@ -6,5 +6,14 @@ const getRoomChatByPhoneService = (phone) => {
     );
 };
 
+// Thêm service mới để gọi API getRoomChatByUsername
+const getRoomChatByUsernameService = (username) => {
+    return customizeAxios.get(
+        `/api/roomChat/${username}`
+    );
+};
 
-export { getRoomChatByPhoneService };
+export { 
+    getRoomChatByPhoneService,
+    getRoomChatByUsernameService,
+};

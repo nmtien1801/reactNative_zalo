@@ -24,10 +24,16 @@ const createConversationGroupService = (nameGroup, avatarGroup, members) => {
   });
 };
 
+// Service để giải tán nhóm (chỉ leader)
+const dissolveGroupService = async (groupId) => {
+  return customizeAxios.delete(`/group/${groupId}/dissolve`);
+  
+};
 export {
   loadMessagesService,
   getConversationsService,
   createConversationGroupService,
   recallMessageService,
   deleteMessageForMeService,
+  dissolveGroupService,
 };
