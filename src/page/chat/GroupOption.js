@@ -16,12 +16,18 @@ import { Feather } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useSelector, useDispatch } from "react-redux";
 import InfoAddFriendMModal from "../../component/InfoAddFriendModal";
 import { getRoomChatByPhoneService } from "../../service/roomChatService";
 import { getRoomChatMembersService } from "../../service/roomChatService";
 import { removeMemberFromGroupService } from "../../service/chatService";
+import AddMemberModal from "./AddMemberModal";
 import { dissolveGroupService } from "../../service/chatService";
+import { launchImageLibrary } from "react-native-image-picker";
+import { uploadAvatar } from "../../redux/profileSlice.js";
+import { uploadAvatarProfile } from "../../redux/authSlice.js";
+import { Platform } from "react-native";
+import { useSelector, useDispatch } from "react-redux";
+import { uploadAvatarGroup } from '../../redux/profileSlice.js'
 
 const ChatInfoScreen = ({ route }) => {
   const [item, setItem] = useState(route.params?.receiver); // click conversation
@@ -32,11 +38,24 @@ const ChatInfoScreen = ({ route }) => {
   const user = useSelector((state) => state.auth.user);
   const conversations = route.params?.conversations;
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const [isReportCallsEnabled, setIsReportCallsEnabled] = useState(true);
   const [isHiddenChatEnabled, setIsHiddenChatEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [searchResult, setSearchResult] = useState({});
+  const [showMemberModal, setShowMemberModal] = useState(false); // Trạng thái hiển thị modal
+  const [photo, setPhoto] = useState(null);
+  const [uploadedUrl, setUploadedUrl] = useState(null);
 
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false); // State quản lý modal
+
+  const handleOpenAddMemberModal = () => {
+    setShowAddMemberModal(true); // Mở modal
+  };
+
+  const handleCloseAddMemberModal = () => {
+    setShowAddMemberModal(false); // Đóng modal
+  };
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
 
@@ -46,7 +65,8 @@ const ChatInfoScreen = ({ route }) => {
     if (response.EC === 0) {
       setSearchResult(response.DT);
     } else {
-      alert(response.EM);
+      // alert(response.EM);
+      console.log("Lỗi khi tìm kiếm:", response.EM);
     }
   };
 
@@ -61,6 +81,7 @@ const ChatInfoScreen = ({ route }) => {
   const toggleHiddenChat = () => {
     setIsHiddenChatEnabled((previousState) => !previousState);
   };
+  console.log("receiver", receiver);
 
   // Lấy danh sách thành viên nhóm
   useEffect(() => {
@@ -92,7 +113,9 @@ const ChatInfoScreen = ({ route }) => {
   };
 
   // ManageGroup
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState(route.params?.role); // click conversation
+  console.log("role", role);
+
   useEffect(() => {
     const role = conversations.find(
       (conversation) => conversation._id === item._id
@@ -104,7 +127,19 @@ const ChatInfoScreen = ({ route }) => {
 
   // action socket
   useEffect(() => {
+    socketRef.current.on("RES_MEMBER_PERMISSION", (data) => {
+      const member = data.find((item) => item.sender._id === user._id);
+
+      setItem({
+        ...item,
+        permission: member.receiver.permission,
+        role: member.role,
+      });
+    });
+
     socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
+      console.log("RES_UPDATE_DEPUTY", data);
+
       // Nếu không có bản ghi nào được cập nhật
       if (data.upsertedCount === 0) {
         setRole("member");
@@ -123,7 +158,7 @@ const ChatInfoScreen = ({ route }) => {
           ...item,
           permission: member.receiver.permission,
           role: member.role,
-        })
+        });
       } else {
         if (receiver.role !== "leader") {
           setRole("member");
@@ -136,15 +171,26 @@ const ChatInfoScreen = ({ route }) => {
       let member = null;
       if (newLeader?.sender?._id === user._id) {
         member = newLeader;
-      } else if (oldLeader?.sender?._id === user._id) {
-        member = oldLeader;
       }
+      // else if (oldLeader?.sender?._id === user._id) {
+      //   member = oldLeader;
+      //   member.role = "member";
+      // }
+      console.log("memberOLddddd", member);
 
-      setRole(member.role);
-      setItem({
-        ...item,
-        role: member.role,
-      });
+      if (member) {
+        setRole(member.role);
+        setItem({
+          ...item,
+          role: member.role,
+        });
+      } else {
+        setRole("member");
+        setItem({
+          ...item,
+          role: "member",
+        });
+      }
     });
 
     socketRef.current.on("RES_REMOVE_MEMBER", (data) => {
@@ -165,6 +211,7 @@ const ChatInfoScreen = ({ route }) => {
       fetchMembers();
     });
   }, []);
+  console.log("role", role);
 
   // Handle dissolve group
   const handleDissolveGroup = async () => {
@@ -189,12 +236,85 @@ const ChatInfoScreen = ({ route }) => {
             },
           ],
         });
+        socketRef.current.emit("REQ_DISSOLVE_GROUP", item);
       } else {
         Alert.alert("Lỗi", EM || "Không thể giải tán nhóm.");
       }
     } catch (error) {
       console.error("Lỗi khi giải tán nhóm:", error);
       Alert.alert("Lỗi", "Không thể giải tán nhóm, vui lòng thử lại sau.");
+    }
+  };
+
+  useEffect(() => {
+    if (user?.avatar) {
+      setUploadedUrl(user.avatar);
+    }
+  }, [user?.avatar]);
+
+  const createFormData = (photo) => {
+    const data = new FormData();
+    if (Platform.OS === "android" || Platform.OS === "ios") {
+      data.append("avatar", {
+        uri: photo.uri,
+        name: photo.name || "photo.jpg",
+        type: photo.mimeType || "image/jpeg",
+      });
+    } else {
+      data.append("avatar", photo.uri);
+      data.append("fileName", photo.name);
+      data.append("mimeType", photo.mimeType);
+    }
+
+    return data;
+  };
+
+  // Hàm chọn ảnh từ thư viện hoặc camera
+  const pickImage = async () => {
+    launchImageLibrary(
+      { mediaType: "photo", includeBase64: false },
+      async (response) => {
+        if (response.didCancel) {
+          console.log("User cancelled image picker");
+        } else if (response.errorMessage) {
+          console.log("ImagePicker Error: ", response.errorMessage);
+        } else if (response.assets && response.assets.length > 0) {
+          setPhoto(response.assets[0]);
+        }
+      }
+    );
+  };
+
+  useEffect(() => {
+    if (photo) {
+      handleUploadPhoto();
+    }
+  }, [photo]);
+
+  const handleUploadPhoto = async () => {
+    if (!photo) {
+      Alert.alert("Chưa chọn ảnh");
+      return;
+    }
+
+    try {
+      const formData = createFormData(photo);
+      const res = await dispatch(uploadAvatar(formData)).unwrap();
+
+      console.log("Upload thành công:", res);
+      if (res.EC === 0) {
+        setUploadedUrl(res.DT); // link ảnh server trả về
+        let a = await dispatch(
+          uploadAvatarGroup({ groupId: item._id, avatar: res.DT })
+        );
+        console.log("a sac", a);
+        if (a.payload.EC === 0) {
+          Alert.alert("Upload thành công!", `Link: ${res.DT}`);
+        }
+      }
+    } catch (error) {
+      console.error("Upload thất bại:", error);
+      Alert.alert("Lỗi upload", error.message);
     }
   };
 
@@ -221,12 +341,25 @@ const ChatInfoScreen = ({ route }) => {
         <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
             <Image
-              source={{ uri: "https://randomuser.me/api/portraits/men/32.jpg" }}
+              source={{ uri: uploadedUrl || "https://randomuser.me/api/portraits/men/32.jpg" }}
               style={styles.profileImage}
             />
-            <View style={styles.editIconContainer}>
+            <TouchableOpacity
+              style={styles.editIconContainer}
+              onPress={() => {
+                if (
+                  item.permission.includes(2) ||
+                  item.role === "leader" ||
+                  item.role === "deputy"
+                ) {
+                  pickImage()
+                } else {
+                  Alert.alert("Không có quyền thêm");
+                }
+              }}
+            >
               <Feather name="edit-2" size={14} color="#000" />
-            </View>
+            </TouchableOpacity>
           </View>
           <Text style={styles.profileName}>Công nghệ mới</Text>
 
@@ -239,12 +372,24 @@ const ChatInfoScreen = ({ route }) => {
             </TouchableOpacity>
             <TouchableOpacity
               style={{ alignItems: "center" }}
-              onPress={openModal}
+              onPress={() => {
+                if (
+                  item.permission.includes(2) ||
+                  item.role === "leader" ||
+                  item.role === "deputy"
+                ) {
+                  handleOpenAddMemberModal();
+                } else {
+                  Alert.alert("Không có quyền thêm");
+                }
+              }}
             >
               <View style={styles.actionIcon}>
-                <Feather name="user" size={24} color="#555" />
+                <Feather name="user-plus" size={24} color="#555" />
               </View>
-              <Text style={{ fontSize: 12, color: "#555" }}>Xem hồ sơ</Text>
+              <Text style={{ fontSize: 12, color: "#555" }}>
+                Thêm thành viên
+              </Text>
             </TouchableOpacity>
             <InfoAddFriendMModal
               isOpen={isOpen}
@@ -268,6 +413,66 @@ const ChatInfoScreen = ({ route }) => {
         </View>
 
         <View style={styles.optionsContainer}>
+          <TouchableOpacity
+            style={styles.optionItem}
+            onPress={() => setShowMemberModal(true)}
+          >
+            <Feather
+              name="users"
+              size={20}
+              color="#555"
+              style={styles.optionIcon}
+            />
+            <Text style={styles.optionText}>Thành viên</Text>
+            <Text style={styles.badge}>{members.length}</Text>
+          </TouchableOpacity>
+
+          {/* Modal danh sách thành viên */}
+          <Modal
+            visible={showMemberModal}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowMemberModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>Danh sách thành viên</Text>
+                <FlatList
+                  data={members}
+                  keyExtractor={(item) => item._id.toString()}
+                  renderItem={({ item }) => (
+                    <View style={styles.memberItem}>
+                      <View style={styles.memberInfo}>
+                        <Image
+                          source={{
+                            uri:
+                              item.avatar || "https://via.placeholder.com/40",
+                          }}
+                          style={styles.memberAvatar}
+                        />
+                        <Text style={styles.memberName}>{item.username}</Text>
+                      </View>
+                      {((role === "leader" && item.role != "leader") ||
+                        (role === "deputy" && item.role != "leader")) && (
+                        <TouchableOpacity
+                          style={styles.removeButton}
+                          onPress={() => handleRemoveMember(item._id)}
+                        >
+                          <Text style={styles.removeButtonText}>Xóa</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  )}
+                />
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowMemberModal(false)}
+                >
+                  <Text style={styles.closeButtonText}>Đóng</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
           <TouchableOpacity style={styles.optionItem}>
             <Feather
               name="edit-2"
@@ -312,6 +517,7 @@ const ChatInfoScreen = ({ route }) => {
                   socketRef,
                   onlineUsers,
                   conversations,
+                  role,
                 })
               }
             >
@@ -451,6 +657,14 @@ const ChatInfoScreen = ({ route }) => {
           )}
         </View>
       </ScrollView>
+      {/* Modal AddMember */}
+      <AddMemberModal
+        show={showAddMemberModal} // Truyền state hiển thị
+        onHide={handleCloseAddMemberModal} // Truyền hàm đóng modal
+        roomId={item._id} // Truyền roomId của nhóm
+        user={user} // Truyền thông tin người dùng
+        socketRef={socketRef} // Truyền socketRef
+      />
     </SafeAreaView>
   );
 };

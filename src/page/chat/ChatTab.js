@@ -12,22 +12,21 @@ import {
 import SearchHeader from "../../component/Header";
 import { getConversations } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
-import io from "socket.io-client";
+
 import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 const ITEM_HEIGHT = height * 0.1;
 const AVATAR_SIZE = ITEM_HEIGHT * 0.6;
 
-const ChatTab = () => {
+const ChatTab = ({ route }) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const socketRef = useRef();
   const [onlineUsers, setOnlineUsers] = useState([]);
 
   const user = useSelector((state) => state.auth.user);
   const conversationRedux = useSelector((state) => state.chat.conversations);
-  const [isConnect, setIsConnect] = useState(false); // connect socket
+  const socketRef = route.params.socketRef;
 
   const [conversations, setConversations] = useState([
     {
@@ -55,7 +54,9 @@ const ChatTab = () => {
           avatar: item.avatar,
           type: item.type,
           phone: item.receiver.phone,
-          members: item.receiver.members,
+          members: item.members,
+          role: item.role,
+          permission: item.receiver.permission,
         };
       });
 
@@ -63,32 +64,47 @@ const ChatTab = () => {
     }
   }, [conversationRedux]);
 
-  // connect docket -> cmd(IPv4 Address): ipconfig
-  const IPv4 = "192.168.1.5"
-  useEffect(() => {
-    const socket = io.connect(`http://${IPv4}:8080`);
-
-    socketRef.current = socket;
-    socket.on("connect", () => setIsConnect(true));
-    socket.off("disconnect", () => setIsConnect(false));
-  }, []);
-
   // action socket
   useEffect(() => {
-    if (isConnect) {
-      socketRef.current.emit("register", user._id);
+    socketRef.current.on("user-list", (usersList) => {
+      setOnlineUsers(usersList); // Lưu danh sách user online
+    });
 
-      socketRef.current.on("user-list", (usersList) => {
-        setOnlineUsers(usersList); // Lưu danh sách user online
-      });
+    // accept friend
+    socketRef.current.on("RES_ACCEPT_FRIEND", async () => {
+      dispatch(getConversations(user._id));
+    });
 
-      return () => socketRef.current.disconnect();
-    }
-  }, [isConnect]);
+    // delete friend
+    socketRef.current.on("RES_DELETE_FRIEND", async () => {
+      dispatch(getConversations(user._id));
+    });
+
+    // remove member group
+    socketRef.current.on("RES_REMOVE_MEMBER", async () => {
+      dispatch(getConversations(user._id));
+    });
+
+    // create group
+    socketRef.current.on("RES_CREATE_GROUP", (data) => {
+      dispatch(getConversations(user._id));
+    });
+
+    // Dissolve Group
+    socketRef.current.on("RES_DISSOLVE_GROUP", (data) => {
+      dispatch(getConversations(user._id));
+    });
+
+     // add member group
+     socketRef.current.on("RES_ADD_GROUP", (data) => {
+      dispatch(getConversations(user._id));
+    });
+
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
-      <SearchHeader option={"chatTab"} />
+      <SearchHeader option={"chatTab"} socketRef={socketRef} onlineUsers={onlineUsers}/>
       {/* Chat List */}
       <FlatList
         data={conversations}
@@ -108,6 +124,7 @@ const ChatTab = () => {
                 item,
                 socketRef,
                 onlineUsers,
+                conversations,
               })
             }
           >
