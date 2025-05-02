@@ -27,6 +27,7 @@ import { uploadAvatar } from "../../redux/profileSlice.js";
 import { uploadAvatarProfile } from "../../redux/authSlice.js";
 import { Platform } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
+import { uploadAvatarGroup } from '../../redux/profileSlice.js'
 
 const ChatInfoScreen = ({ route }) => {
   const [item, setItem] = useState(route.params?.receiver); // click conversation
@@ -304,7 +305,7 @@ const ChatInfoScreen = ({ route }) => {
       if (res.EC === 0) {
         setUploadedUrl(res.DT); // link ảnh server trả về
         let a = await dispatch(
-          uploadAvatarProfile({ phone: user.phone, avatar: res.DT })
+          uploadAvatarGroup({ groupId: item._id, avatar: res.DT })
         );
         console.log("a sac", a);
         if (a.payload.EC === 0) {
