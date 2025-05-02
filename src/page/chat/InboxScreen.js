@@ -579,7 +579,7 @@ const InboxScreen = ({ route }) => {
       let member = null;
       if (newLeader?.sender?._id === user._id) {
         member = newLeader;
-      } 
+      }
       // else if (oldLeader?.sender?._id === user._id) {
       //   member = oldLeader;
       // }
@@ -883,14 +883,13 @@ const InboxScreen = ({ route }) => {
               {[
                 { name: "Trả lời", icon: "reply", action: () => {} },
                 {
-                  name: "Chia sẻ",
+                  name: "Chuyển tiếp",
                   icon: "share",
                   action: () => {
                     setModalVisible(false); // Đóng modal sau khi chia sẻ
                     setShareModalVisible(true); // Mở modal chia sẻ
                   },
                 },
-                { name: "Lưu Cloud", icon: "save", action: () => {} },
                 ...(selectedMessage?.sender._id === user._id &&
                 (new Date() - new Date(selectedMessage.createdAt)) /
                   (1000 * 60 * 60) <
@@ -906,10 +905,6 @@ const InboxScreen = ({ route }) => {
                       },
                     ]
                   : []),
-                { name: "Sao chép", icon: "copy", action: () => {} },
-                { name: "Ghim", icon: "map-pin", action: () => {} },
-                { name: "Nhắc hẹn", icon: "clock", action: () => {} },
-                { name: "Chọn nhiều", icon: "check-square", action: () => {} },
                 {
                   name: "Xóa ở phía tôi",
                   icon: "trash",
@@ -923,11 +918,6 @@ const InboxScreen = ({ route }) => {
                   icon: "trash",
                   action: () =>
                     handleDeleteMessageForMe(selectedMessage._id, user._id),
-                },
-                {
-                  name: "Chuyển tiếp",
-                  icon: "share",
-                  action: () => forwardMessage(selectedMessage),
                 },
               ].map((item, index) => (
                 <TouchableOpacity
@@ -953,6 +943,12 @@ const InboxScreen = ({ route }) => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
+            <TouchableOpacity
+              onPress={() => setShareModalVisible(false)}
+              style={{ alignSelf: "flex-end", padding: 5 }}
+            >
+              <Text style={{ color: "blue" }}>Đóng</Text>
+            </TouchableOpacity>
             <Text
               style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}
             >
@@ -996,7 +992,7 @@ const InboxScreen = ({ route }) => {
               onPress={handleShareMessage} // Gọi đúng hàm
             >
               <Text style={{ color: "white", textAlign: "center" }}>
-                Chia sẻ
+                Chuyển tiếp
               </Text>
             </TouchableOpacity>
           </View>
