@@ -14,6 +14,7 @@ import {
   Trash2,
   CheckBox,
   TouchableWithoutFeedback,
+  Button,
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +25,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import * as DocumentPicker from "expo-document-picker";
 import { Platform } from "react-native";
+import VideoCallModal from "../../component/VideoCallModal";
 
 import {
   recallMessageService,
@@ -59,6 +61,11 @@ const InboxScreen = ({ route }) => {
   // share mess
   const [shareModalVisible, setShareModalVisible] = useState(false); // Trạng thái cho modal chia sẻ
   const [selectedConversations, setSelectedConversations] = useState([]); // Lưu các conversation được chọn
+
+  // call
+  const [isInitiator, setIsInitiator] = useState(false); // Thêm state để theo dõi người khởi tạo
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [isCalling, setIsCalling] = useState(false);
 
   const toggleConversationSelection = (conversationId) => {
     setSelectedConversations((prev) =>
@@ -544,7 +551,34 @@ const InboxScreen = ({ route }) => {
         role: member.role,
       });
     });
+
+    socketRef.current.on("RES_CALL", (from, to) => {
+      setIncomingCall(from);
+    });
+
+    socketRef.current.on("RES_END_CALL", () => {
+      setIsCalling(false);
+    });
   }, []);
+
+  const handleStartCall = () => {
+    setIsCalling(true); // Mở modal
+    setIsInitiator(true); // Đặt người dùng hiện tại là người khởi tạo
+
+    socketRef.current.emit("REQ_CALL", user, receiver);
+  };
+
+  const acceptCall = () => {
+    setIsCalling(true);
+    setIncomingCall(null);
+  };
+
+  const endCall = () => {
+    socketRef.current.emit("REQ_END_CALL", user, receiver);
+    setIsCalling(false);
+  };
+
+  // console.log("receiver: ", receiver, 'user ', user);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -569,7 +603,7 @@ const InboxScreen = ({ route }) => {
         </View>
 
         <View style={styles.headerIcons}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleStartCall}>
             <Ionicons name="call" size={23} color="white" />
           </TouchableOpacity>
           <TouchableOpacity>
@@ -946,6 +980,29 @@ const InboxScreen = ({ route }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Call Screen Modal */}
+      {!isInitiator && incomingCall && (
+        <View style={styles.centeredOverlay}>
+          <View style={styles.callNotification}>
+            <Text style={styles.callText}>
+              {incomingCall.username} đang gọi bạn...
+            </Text>
+            <Button title="Chấp nhận" onPress={acceptCall} />
+          </View>
+        </View>
+      )}
+
+      <VideoCallModal
+        show={isCalling}
+        onHide={endCall}
+        senderId={user._id}
+        receiverId={receiver._id}
+        callerName={user.username}
+        receiverName={receiver.username}
+        socketRef={socketRef}
+        isInitiator={isInitiator} // Truyền state isInitiator
+      />
     </SafeAreaView>
   );
 };
@@ -1184,6 +1241,31 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: "90%",
     maxHeight: "80%",
+  },
+  centeredOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // nếu bạn muốn nền mờ
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+  },
+  callNotification: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    elevation: 5,
+    alignItems: "center",
+    width: "80%",
+  },
+  callText: {
+    fontSize: 18,
+    marginBottom: 10,
+    textAlign: "center",
   },
 });
 
