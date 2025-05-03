@@ -26,7 +26,7 @@ import { launchImageLibrary } from "react-native-image-picker";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import { Platform } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { uploadAvatarGroup } from '../../redux/profileSlice.js'
+import { uploadAvatarGroup } from "../../redux/profileSlice.js";
 
 const ChatInfoScreen = ({ route }) => {
   const [item, setItem] = useState(route.params?.receiver); // click conversation
@@ -305,9 +305,10 @@ const ChatInfoScreen = ({ route }) => {
         let a = await dispatch(
           uploadAvatarGroup({ groupId: item._id, avatar: res.DT })
         );
-        
+
         if (a.payload.EC === 0) {
           Alert.alert("Upload thành công!", `Link: ${res.DT}`);
+          socketRef.current.emit("REQ_UPDATE_AVATAR", receiver);
         }
       }
     } catch (error) {
@@ -315,6 +316,7 @@ const ChatInfoScreen = ({ route }) => {
       Alert.alert("Lỗi upload", error.message);
     }
   };
+  console.log("receiver ", receiver);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -339,7 +341,11 @@ const ChatInfoScreen = ({ route }) => {
         <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
             <Image
-              source={{ uri: uploadedUrl || "https://randomuser.me/api/portraits/men/32.jpg" }}
+              source={{
+                uri:
+                  uploadedUrl ||
+                  "https://randomuser.me/api/portraits/men/32.jpg",
+              }}
               style={styles.profileImage}
             />
             <TouchableOpacity
@@ -350,7 +356,7 @@ const ChatInfoScreen = ({ route }) => {
                   item.role === "leader" ||
                   item.role === "deputy"
                 ) {
-                  pickImage()
+                  pickImage();
                 } else {
                   Alert.alert("Không có quyền thêm");
                 }

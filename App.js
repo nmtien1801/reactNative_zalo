@@ -177,6 +177,7 @@ const Project = () => {
               <Stack.Screen
                 name="InformationAccount"
                 component={InformationAccount}
+                initialParams={{ socketRef }}
               />
               <Stack.Screen
                 name="ManageGroup"
