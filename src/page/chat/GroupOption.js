@@ -24,7 +24,6 @@ import AddMemberModal from "./AddMemberModal";
 import { dissolveGroupService } from "../../service/chatService";
 import { launchImageLibrary } from "react-native-image-picker";
 import { uploadAvatar } from "../../redux/profileSlice.js";
-import { uploadAvatarProfile } from "../../redux/authSlice.js";
 import { Platform } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatarGroup } from '../../redux/profileSlice.js'
@@ -65,7 +64,6 @@ const ChatInfoScreen = ({ route }) => {
     if (response.EC === 0) {
       setSearchResult(response.DT);
     } else {
-      // alert(response.EM);
       console.log("Lỗi khi tìm kiếm:", response.EM);
     }
   };
@@ -247,10 +245,10 @@ const ChatInfoScreen = ({ route }) => {
   };
 
   useEffect(() => {
-    if (user?.avatar) {
-      setUploadedUrl(user.avatar);
+    if (receiver?.avatar) {
+      setUploadedUrl(receiver.avatar);
     }
-  }, [user?.avatar]);
+  }, [receiver?.avatar]);
 
   const createFormData = (photo) => {
     const data = new FormData();
@@ -307,7 +305,7 @@ const ChatInfoScreen = ({ route }) => {
         let a = await dispatch(
           uploadAvatarGroup({ groupId: item._id, avatar: res.DT })
         );
-        console.log("a sac", a);
+        
         if (a.payload.EC === 0) {
           Alert.alert("Upload thành công!", `Link: ${res.DT}`);
         }

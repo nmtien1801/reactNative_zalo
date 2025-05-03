@@ -41,8 +41,15 @@ const uploadProfileService = (data) => {
   }
 };
 
+const uploadAvatarGroupService = (groupId, avatar) => {
+  console.log(groupId, avatar);
+
+  return customizeAxios.post(`/uploadAvatarGroup`, { groupId, avatar });
+};
+
 export {
   uploadAvatarService,
   uploadAvatarProfileService,
   uploadProfileService,
+  uploadAvatarGroupService,
 };

@@ -599,7 +599,6 @@ const InboxScreen = ({ route }) => {
       }
     });
   }, []);
-  console.log("rolesss: ", role);
 
   return (
     <SafeAreaView style={styles.container}>
