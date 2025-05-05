@@ -1,14 +1,14 @@
 import axios from "axios";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation } from "@react-navigation/native";
 //SEARCH: axios npm github
 
-const URL_ANDROID = "http://192.168.1.5:8080/api"
-URL_WEB="http://localhost:8080/api"
+const URL_ANDROID = "http://192.168.1.2:8080/api";
+URL_WEB = "http://localhost:8080/api";
 
 const baseUrl =
-  Platform.OS === "android"
+  Platform.OS === "android" || Platform.OS === "ios"
     ? URL_ANDROID // URL cho Android và iOS
     : URL_WEB; // URL cho web hoặc môi trường khác
 
@@ -19,7 +19,9 @@ const instance = axios.create({
 });
 
 // Cài đặt header mặc định
-instance.defaults.headers.common["Authorization"] = `Bearer ${AsyncStorage.getItem("access_Token")}`;
+instance.defaults.headers.common[
+  "Authorization"
+] = `Bearer ${AsyncStorage.getItem("access_Token")}`;
 
 // Interceptor cho request
 const getToken = async () => {
@@ -66,7 +68,7 @@ const refreshAccessToken = async () => {
 };
 
 const processQueue = (error, token = null) => {
-  failedQueue.forEach(prom => {
+  failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
@@ -88,9 +90,10 @@ instance.interceptors.response.use(
     switch (status) {
       case 401: {
         const navigation = useNavigation();
-        const currentRoute = navigation.getState().routes[navigation.getState().index].name;
+        const currentRoute =
+          navigation.getState().routes[navigation.getState().index].name;
 
-        if (['Login', 'Register', 'ResetPassword'].includes(currentRoute)) {
+        if (["Login", "Register", "ResetPassword"].includes(currentRoute)) {
           console.warn("401 on auth page, skip refresh");
           return Promise.reject(error);
         }
@@ -100,11 +103,11 @@ instance.interceptors.response.use(
             return new Promise((resolve, reject) => {
               failedQueue.push({ resolve, reject });
             })
-              .then(token => {
-                originalRequest.headers['Authorization'] = 'Bearer ' + token;
+              .then((token) => {
+                originalRequest.headers["Authorization"] = "Bearer " + token;
                 return instance(originalRequest);
               })
-              .catch(err => Promise.reject(err));
+              .catch((err) => Promise.reject(err));
           }
         }
 
@@ -115,20 +118,21 @@ instance.interceptors.response.use(
           let newAccessToken = await refreshAccessToken();
 
           if (!newAccessToken) {
-            navigation.navigate('Login');
+            navigation.navigate("Login");
             return Promise.reject(error);
           }
 
-          instance.defaults.headers['Authorization'] = 'Bearer ' + newAccessToken;
+          instance.defaults.headers["Authorization"] =
+            "Bearer " + newAccessToken;
           processQueue(null, newAccessToken);
 
           return instance(originalRequest);
         } catch (err) {
           processQueue(err, null);
           // handle logout
-          AsyncStorage.removeItem('access_Token');
-          AsyncStorage.removeItem('refresh_Token');
-          navigation.navigate('Login');
+          AsyncStorage.removeItem("access_Token");
+          AsyncStorage.removeItem("refresh_Token");
+          navigation.navigate("Login");
           return Promise.reject(err);
         } finally {
           isRefreshing = false;
