@@ -24,6 +24,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import * as DocumentPicker from "expo-document-picker";
 import { Platform } from "react-native";
+import ImageViewer from "../../component/ImageViewer";
 
 import {
   recallMessageService,
@@ -56,6 +57,7 @@ const InboxScreen = ({ route }) => {
 
   // ImageViewer
   const [previewImages, setPreviewImages] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   // share mess
   const [shareModalVisible, setShareModalVisible] = useState(false); // Trạng thái cho modal chia sẻ
@@ -600,6 +602,34 @@ const InboxScreen = ({ route }) => {
     });
   }, []);
 
+  // Hàm nhấp vào image xem
+  const handleImageClick = (imageUrl) => {
+    setSelectedImage(imageUrl);
+  };
+
+  const handleCloseImageViewer = () => {
+    setSelectedImage(null);
+  };
+
+  const convertTimeAction = (time) => {
+    const now = Date.now();
+    const past = Number(time);
+    const diff = now - past;
+
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (seconds < 60) return "Vừa xong";
+    if (minutes < 60) return `${minutes} phút trước`;
+    if (hours < 24) return `${hours} giờ trước`;
+    if (days === 1) return "Hôm qua";
+
+    const date = new Date(past);
+    return date.toLocaleDateString("vi-VN");
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -617,7 +647,7 @@ const InboxScreen = ({ route }) => {
             <Text style={styles.activeText}>
               {receiver.type === 3
                 ? "Lưu và đồng bộ dữ liệu giữa các thiết bị"
-                : "Hoạt động 18 phút trước"}
+                : `Hoạt động ${convertTimeAction(receiver.time)}`}
             </Text>
           </View>
         </View>
@@ -997,6 +1027,13 @@ const InboxScreen = ({ route }) => {
           </View>
         </View>
       </Modal>
+
+      {selectedImage && (
+        <ImageViewer
+          imageUrl={selectedImage}
+          onClose={handleCloseImageViewer}
+        />
+      )}
     </SafeAreaView>
   );
 };

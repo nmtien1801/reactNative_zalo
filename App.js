@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View } from "react-native";
+import { View, SafeAreaView } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -118,101 +118,106 @@ const Project = () => {
   return (
     <MenuProvider>
       <NavigationContainer>
-        <Stack.Navigator>
-          {isLoggedIn ? (
-            <>
-              <Stack.Screen
-                name="MainTabs"
-                component={MainTabs}
-                initialParams={{ socketRef }}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="SearchScreen"
-                component={SearchScreen}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
+        <SafeAreaView style={{ flex: 1 }}>
+          <Stack.Navigator>
+            {isLoggedIn ? (
+              <>
+                <Stack.Screen
+                  name="MainTabs"
+                  component={MainTabs}
+                  initialParams={{ socketRef }}
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="SearchScreen"
+                  component={SearchScreen}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
 
-              <Stack.Screen
-                name="AddFriendScreen"
-                component={AddFriendScreen}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
+                <Stack.Screen
+                  name="AddFriendScreen"
+                  component={AddFriendScreen}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
 
-              <Stack.Screen
-                name="CreateGroupTab"
-                component={CreateGroupTab}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
+                <Stack.Screen
+                  name="CreateGroupTab"
+                  component={CreateGroupTab}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
 
-              <Stack.Screen
-                name="UserProfileScreen"
-                component={UserProfileScreen}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
+                <Stack.Screen
+                  name="UserProfileScreen"
+                  component={UserProfileScreen}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
 
-              <Stack.Screen
-                name="InboxScreen"
-                component={InboxScreen}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
-              <Stack.Screen
-                name="PersonOption"
-                component={PersonOption}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
-              <Stack.Screen
-                name="GroupOption"
-                component={GroupOption}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen name="ChangePassword" component={ChangePassword} />
-              <Stack.Screen name="Setting" component={Setting} />
-              <Stack.Screen
-                name="InformationAccount"
-                component={InformationAccount}
-                initialParams={{ socketRef }}
-              />
-              <Stack.Screen
-                name="ManageGroup"
-                component={ManageGroup}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
-              <Stack.Screen
-                name="FriendRequest"
-                component={FriendRequest}
-                initialParams={{ socketRef }}
-              />
-            </>
-          ) : (
-            <>
-              <Stack.Screen
-                name="Login"
-                component={LoginForm}
-                options={{ headerShown: false }}
-              />
+                <Stack.Screen
+                  name="InboxScreen"
+                  component={InboxScreen}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
+                <Stack.Screen
+                  name="PersonOption"
+                  component={PersonOption}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
+                <Stack.Screen
+                  name="GroupOption"
+                  component={GroupOption}
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="ChangePassword"
+                  component={ChangePassword}
+                />
+                <Stack.Screen name="Setting" component={Setting} />
+                <Stack.Screen
+                  name="InformationAccount"
+                  component={InformationAccount}
+                  initialParams={{ socketRef }}
+                />
+                <Stack.Screen
+                  name="ManageGroup"
+                  component={ManageGroup}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
+                <Stack.Screen
+                  name="FriendRequest"
+                  component={FriendRequest}
+                  initialParams={{ socketRef }}
+                />
+              </>
+            ) : (
+              <>
+                <Stack.Screen
+                  name="Login"
+                  component={LoginForm}
+                  options={{ headerShown: false }}
+                />
 
-              <Stack.Screen
-                name="Register"
-                component={RegisterForm}
-                options={{ headerShown: false }}
-              />
+                <Stack.Screen
+                  name="Register"
+                  component={RegisterForm}
+                  options={{ headerShown: false }}
+                />
 
-              <Stack.Screen
-                name="ResetPassword"
-                component={ResetPassword}
-                options={{ headerShown: false }}
-              />
-            </>
-          )}
-        </Stack.Navigator>
+                <Stack.Screen
+                  name="ResetPassword"
+                  component={ResetPassword}
+                  options={{ headerShown: false }}
+                />
+              </>
+            )}
+          </Stack.Navigator>
+        </SafeAreaView>
       </NavigationContainer>
     </MenuProvider>
   );

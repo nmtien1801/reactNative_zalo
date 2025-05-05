@@ -39,6 +39,25 @@ const ChatTab = ({ route }) => {
     },
   ]);
 
+  const convertTime = (time) => {
+    const now = Date.now();
+    const past = Number(time);
+    const diff = now - past;
+
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (seconds < 60) return "Vừa xong";
+    if (minutes < 60) return `${minutes} phút trước`;
+    if (hours < 24) return `${hours} giờ trước`;
+    if (days === 1) return "Hôm qua";
+
+    const date = new Date(past);
+    return date.toLocaleDateString("vi-VN");
+  };
+
   useEffect(() => {
     dispatch(getConversations(user._id));
   }, []);
@@ -95,21 +114,24 @@ const ChatTab = ({ route }) => {
       dispatch(getConversations(user._id));
     });
 
-     // add member group
-     socketRef.current.on("RES_ADD_GROUP", (data) => {
+    // add member group
+    socketRef.current.on("RES_ADD_GROUP", (data) => {
       dispatch(getConversations(user._id));
     });
 
-     // update avatar
-     socketRef.current.on("RES_UPDATE_AVATAR", (data) => {
+    // update avatar
+    socketRef.current.on("RES_UPDATE_AVATAR", (data) => {
       dispatch(getConversations(user._id));
     });
-
   }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
-      <SearchHeader option={"chatTab"} socketRef={socketRef} onlineUsers={onlineUsers}/>
+      <SearchHeader
+        option={"chatTab"}
+        socketRef={socketRef}
+        onlineUsers={onlineUsers}
+      />
       {/* Chat List */}
       <FlatList
         data={conversations}
@@ -134,7 +156,7 @@ const ChatTab = ({ route }) => {
             }
           >
             <Image
-              source={item.avatar}
+              source={{ uri: item.avatar }}
               style={{
                 width: AVATAR_SIZE,
                 height: AVATAR_SIZE,
@@ -149,7 +171,7 @@ const ChatTab = ({ route }) => {
               <Text style={{ color: "gray" }}>{item.message}</Text>
             </View>
             {item.time ? (
-              <Text style={{ color: "gray" }}>{item.time}</Text>
+              <Text style={{ color: "gray" }}>{convertTime(item.time)}</Text>
             ) : null}
           </TouchableOpacity>
         )}
