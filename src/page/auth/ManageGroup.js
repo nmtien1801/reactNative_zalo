@@ -99,25 +99,7 @@ const ManageGroup = ({ navigation, route }) => {
     setSettingSwitches(updated);
   };
 
-  // action socket
-  useEffect(() => {
-    socketRef.current.on("RES_TRANS_LEADER", (data) => {
-      const { newLeader, oldLeader } = data;
-      let member = null;
-      if (newLeader?.sender?._id === user._id) {
-        member = newLeader;
-      } else if (oldLeader?.sender?._id === user._id) {
-        member = oldLeader;
-      }
-
-      navigation.navigate("InboxScreen", {
-        item: item,
-        socketRef,
-        onlineUsers,
-        conversations,
-      });
-    });
-  }, []);
+ 
 
   // Handle dissolve group
   const handleDissolveGroup = async () => {
@@ -153,8 +135,20 @@ const ManageGroup = ({ navigation, route }) => {
       Alert.alert("Lỗi", "Không thể giải tán nhóm, vui lòng thử lại sau.");
     }
   };
-  console.log("itemzzzzzzzzz", item);
 
+    // action socket
+    useEffect(() => {
+      socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
+        if(data.length === 0){
+          navigation.navigate('InboxScreen', {
+            item,
+            socketRef,
+            onlineUsers,
+          });
+        }
+      });
+    }, []);
+    
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "#fff", padding: 16 }}>
       {/* Header */}

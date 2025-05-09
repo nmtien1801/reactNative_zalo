@@ -27,6 +27,7 @@ import { uploadAvatar } from "../../redux/profileSlice.js";
 import { Platform } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatarGroup } from "../../redux/profileSlice.js";
+import { transLeaderService } from "../../service/permissionService";
 
 const ChatInfoScreen = ({ route }) => {
   const [item, setItem] = useState(route.params?.receiver); // click conversation
@@ -79,7 +80,6 @@ const ChatInfoScreen = ({ route }) => {
   const toggleHiddenChat = () => {
     setIsHiddenChatEnabled((previousState) => !previousState);
   };
-  console.log("receiver", receiver);
 
   // Lấy danh sách thành viên nhóm
   useEffect(() => {
@@ -102,17 +102,33 @@ const ChatInfoScreen = ({ route }) => {
   }, [receiver?._id]);
 
   const handleRemoveMember = async (memberId) => {
-    if (memberId === user._id) {
-      alert("Không thể xóa chính mình khỏi nhóm!");
-      return;
+    // Chuyển quyền trưởng nhóm
+    if (receiver.role === "leader") {
+      const otherMembers = receiver.members.filter((m) => m !== user._id);
+
+      if (otherMembers.length > 0) {
+        // Chọn ngẫu nhiên 1 người trong danh sách
+        const randomIndex = Math.floor(Math.random() * otherMembers.length);
+        const newLeaderId = otherMembers[randomIndex];
+
+        // Gọi API chuyển quyền
+        let response = await transLeaderService(receiver._id, newLeaderId);
+
+        if (response.EC === 0) {
+          socketRef.current.emit("REQ_TRANS_LEADER", response.DT);
+        }
+      }
     }
+
     let res = await removeMemberFromGroupService(receiver._id, memberId);
+    navigation.navigate("MainTabs", {
+      socketRef,
+    });
     socketRef.current.emit("REQ_REMOVE_MEMBER", members);
   };
 
   // ManageGroup
-  const [role, setRole] = useState(route.params?.role); // click conversation
-  console.log("role", role);
+  const [role, setRole] = useState(route.params.role); // click conversation
 
   useEffect(() => {
     const role = conversations.find(
@@ -136,10 +152,8 @@ const ChatInfoScreen = ({ route }) => {
     });
 
     socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
-      console.log("RES_UPDATE_DEPUTY", data);
-
       // Nếu không có bản ghi nào được cập nhật
-      if (data.upsertedCount === 0) {
+      if (data.length === 0) {
         setRole("member");
         return;
       }
@@ -169,12 +183,9 @@ const ChatInfoScreen = ({ route }) => {
       let member = null;
       if (newLeader?.sender?._id === user._id) {
         member = newLeader;
+      } else if (oldLeader?.sender?._id === user._id) {
+        member = oldLeader;
       }
-      // else if (oldLeader?.sender?._id === user._id) {
-      //   member = oldLeader;
-      //   member.role = "member";
-      // }
-      console.log("memberOLddddd", member);
 
       if (member) {
         setRole(member.role);
@@ -316,7 +327,6 @@ const ChatInfoScreen = ({ route }) => {
       Alert.alert("Lỗi upload", error.message);
     }
   };
-  console.log("receiver ", receiver);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -639,6 +649,21 @@ const ChatInfoScreen = ({ route }) => {
             />
             <Text style={[styles.optionText, styles.deleteText]}>
               Xóa lịch sử trò chuyện
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.optionItem}
+            onPress={() => handleRemoveMember(user._id)}
+          >
+            <Feather
+              name="log-out"
+              size={20}
+              color="#ff3b30"
+              style={styles.optionIcon}
+            />
+            <Text style={[styles.optionText, styles.deleteText]}>
+              rời khỏi nhóm
             </Text>
           </TouchableOpacity>
 

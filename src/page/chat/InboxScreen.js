@@ -35,7 +35,10 @@ const InboxScreen = ({ route }) => {
   const [receiver, setReceiver] = useState(route.params?.item || null); // click conversation
   let socketRef = route.params?.socketRef;
   let onlineUsers = route.params?.onlineUsers;
-  let conversations = route.params?.conversations; // Nhận conversations từ route.params
+  const [conversations, setConversations] = useState(
+    route.params?.conversations || [] // Nhận conversations từ route.params
+  ); 
+  const conversationRedux = useSelector((state) => state.chat.conversations);
 
   const dispatch = useDispatch();
   const navigation = useNavigation();
@@ -111,7 +114,28 @@ const InboxScreen = ({ route }) => {
     if (role) {
       setRole(role.role);
     }
-  }, []);
+  }, [conversations]);
+
+  useEffect(() => {
+    if (conversationRedux) {
+      let _conversations = conversationRedux.map((item) => {
+        return {
+          _id: item.receiver._id,
+          username: item.receiver.username,
+          message: item.message,
+          time: item.time,
+          avatar: item.avatar,
+          type: item.type,
+          phone: item.receiver.phone,
+          members: item.members,
+          role: item.role,
+          permission: item.receiver.permission,
+        };
+      });
+
+      setConversations(_conversations);
+    }
+  }, [conversationRedux]);
 
   // handleTypeChat
   useEffect(() => {
@@ -541,11 +565,10 @@ const InboxScreen = ({ route }) => {
 
     socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
       // Nếu không có bản ghi nào được cập nhật
-      if (data.upsertedCount === 0) {
+      if (data.length === 0) {
         setRole("member");
         setReceiver({
           ...receiver,
-          permission: member.receiver.permission,
           role: "member",
         });
         return;
@@ -581,10 +604,9 @@ const InboxScreen = ({ route }) => {
       let member = null;
       if (newLeader?.sender?._id === user._id) {
         member = newLeader;
+      } else if (oldLeader?.sender?._id === user._id) {
+        member = oldLeader;
       }
-      // else if (oldLeader?.sender?._id === user._id) {
-      //   member = oldLeader;
-      // }
 
       if (member) {
         setRole(member.role);
@@ -600,7 +622,7 @@ const InboxScreen = ({ route }) => {
         });
       }
     });
-  }, []);
+  }, [conversations]);
 
   // Hàm nhấp vào image xem
   const handleImageClick = (imageUrl) => {

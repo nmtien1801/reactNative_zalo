@@ -112,6 +112,9 @@ const ChatTab = ({ route }) => {
     // Dissolve Group
     socketRef.current.on("RES_DISSOLVE_GROUP", (data) => {
       dispatch(getConversations(user._id));
+      navigation.navigate('MainTabs', {
+        socketRef
+      });
     });
 
     // add member group
@@ -121,6 +124,16 @@ const ChatTab = ({ route }) => {
 
     // update avatar
     socketRef.current.on("RES_UPDATE_AVATAR", (data) => {
+      dispatch(getConversations(user._id));
+    });
+
+    // update deputy
+    socketRef.current.on("RES_UPDATE_DEPUTY", (data) => { 
+      dispatch(getConversations(user._id));
+    });
+
+    // transfer leader
+    socketRef.current.on("RES_TRANS_LEADER", (data) => {
       dispatch(getConversations(user._id));
     });
   }, []);
