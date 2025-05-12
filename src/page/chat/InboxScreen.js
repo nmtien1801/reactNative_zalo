@@ -37,7 +37,7 @@ const InboxScreen = ({ route }) => {
   let onlineUsers = route.params?.onlineUsers;
   const [conversations, setConversations] = useState(
     route.params?.conversations || [] // Nhận conversations từ route.params
-  ); 
+  );
   const conversationRedux = useSelector((state) => state.chat.conversations);
 
   const dispatch = useDispatch();
@@ -619,6 +619,14 @@ const InboxScreen = ({ route }) => {
         setReceiver({
           ...receiver,
           role: "member",
+        });
+      }
+    });
+
+    socketRef.current.on("RES_REMOVE_MEMBER", (data) => {
+      if (receiver.role !== "leader" && data.member === user._id) {
+        navigation.navigate("MainTabs", {
+          socketRef,
         });
       }
     });

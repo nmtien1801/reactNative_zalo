@@ -103,7 +103,7 @@ const ChatInfoScreen = ({ route }) => {
 
   const handleRemoveMember = async (memberId) => {
     // Chuyển quyền trưởng nhóm
-    if (receiver.role === "leader") {
+    if (receiver.role === "leader" && memberId === user._id) {
       const otherMembers = receiver.members.filter((m) => m !== user._id);
 
       if (otherMembers.length > 0) {
@@ -118,13 +118,18 @@ const ChatInfoScreen = ({ route }) => {
           socketRef.current.emit("REQ_TRANS_LEADER", response.DT);
         }
       }
+
+      navigation.navigate("MainTabs", {
+        socketRef,
+      });
     }
 
     let res = await removeMemberFromGroupService(receiver._id, memberId);
-    navigation.navigate("MainTabs", {
-      socketRef,
-    });
-    socketRef.current.emit("REQ_REMOVE_MEMBER", members);
+    let req = {
+      member: memberId,
+      all: members,
+    }
+    socketRef.current.emit("REQ_REMOVE_MEMBER", req);
   };
 
   // ManageGroup
@@ -203,6 +208,30 @@ const ChatInfoScreen = ({ route }) => {
     });
 
     socketRef.current.on("RES_REMOVE_MEMBER", (data) => {
+      if (receiver.role !== "leader" && data.member === user._id) {
+        navigation.navigate("MainTabs", {
+          socketRef,
+        });
+      }
+      const fetchMembers = async () => {
+        try {
+          if (receiver?._id) {
+            const response = await getRoomChatMembersService(receiver._id);
+            if (response.EC === 0) {
+              setMembers(response.DT); // Lưu danh sách thành viên vào state
+            } else {
+              console.error("Lỗi khi lấy danh sách thành viên:", response.EM);
+            }
+          }
+        } catch (error) {
+          console.error("Lỗi khi gọi API getRoomChatMembersService:", error);
+        }
+      };
+      fetchMembers();
+    });
+
+    // add member group
+    socketRef.current.on("RES_ADD_GROUP", (data) => {
       const fetchMembers = async () => {
         try {
           if (receiver?._id) {
