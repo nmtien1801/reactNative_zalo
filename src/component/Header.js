@@ -7,23 +7,43 @@ import {
   Image,
   StyleSheet,
   Dimensions,
+  Modal,
+  ScrollView,
 } from "react-native";
-import { Menu } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
-const { width, height } = Dimensions.get("window");
-const HEADER_HEIGHT = height * 0.08;
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import AddFriendModal from "./AddFriendModal";
+
+const { width, height } = Dimensions.get("window");
+const HEADER_HEIGHT = height * 0.08;
 
 export default function SearchHeader({ option, socketRef, onlineUsers }) {
   const navigation = useNavigation();
   const [showModalAddFriend, setShowModalAddFriend] = useState(false); // Modal thêm bạn
-  const [menuVisible, setMenuVisible] = useState(false); // Trạng thái điều khiển hiển thị Menu
+  const [modalVisible, setModalVisible] = useState(false); // Trạng thái điều khiển modal tùy chọn
 
-  const openMenu = () => setMenuVisible(true);
-  const closeMenu = () => setMenuVisible(false);
+  const options = [
+    {
+      icon: "person-add",
+      iconLibrary: "Ionicons",
+      text: "Thêm bạn",
+      action: () => {
+        setShowModalAddFriend(true);
+        setModalVisible(false);
+      },
+    },
+    {
+      icon: "users",
+      iconLibrary: "FontAwesome5",
+      text: "Tạo nhóm",
+      action: () => {
+        navigation.navigate("CreateGroupTab");
+        setModalVisible(false);
+      },
+    },
+  ];
 
   return (
     <View
@@ -79,72 +99,79 @@ export default function SearchHeader({ option, socketRef, onlineUsers }) {
             />
           </TouchableOpacity>
 
-          <Menu
-            visible={menuVisible}
-            onDismiss={closeMenu}
-            anchor={
-              <TouchableOpacity onPress={openMenu}>
-                <Icon
-                  name="add"
-                  size={HEADER_HEIGHT * 0.5}
-                  color="white"
-                  style={{ marginLeft: 10 }}
-                />
-              </TouchableOpacity>
-            }
-            contentStyle={{
-              backgroundColor: "white",
-              borderRadius: 10,
-              padding: 10,
-              width: 240,
-            }}
+          <TouchableOpacity onPress={() => setModalVisible(true)}>
+            <Icon
+              name="add"
+              size={HEADER_HEIGHT * 0.5}
+              color="white"
+              style={{ marginLeft: 10 }}
+            />
+          </TouchableOpacity>
+
+          <Modal
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
           >
-            <Menu.Item
-              onPress={() => {
-                setShowModalAddFriend(true);
-                closeMenu();
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.5)",
               }}
-              title={
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                  }}
-                >
-                  <Icon
-                    name="person-add"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text style={{ fontSize: 16 }}>Thêm bạn</Text>
-                </View>
-              }
-            />
-            <Menu.Item
-              onPress={() => {
-                navigation.navigate("CreateGroupTab");
-                closeMenu();
-              }}
-              title={
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                  }}
-                >
-                  <FontAwesome5
-                    name="users"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                    solid
-                  />
-                  <Text style={{ fontSize: 16 }}>Tạo nhóm</Text>
-                </View>
-              }
-            />
-          </Menu>
+              activeOpacity={1}
+              onPress={() => setModalVisible(false)} // Đóng modal khi nhấn bên ngoài
+            >
+              <View
+                style={{
+                  position: "absolute",
+                  top: HEADER_HEIGHT, // Đặt ngay dưới header
+                  right: 15, // Căn lề phải
+                  backgroundColor: "white",
+                  borderRadius: 10,
+                  padding: 10,
+                  width: 240,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 3.84,
+                  elevation: 5,
+                }}
+              >
+                <ScrollView>
+                  {options.map((opt, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 10,
+                        paddingHorizontal: 10,
+                      }}
+                      onPress={opt.action}
+                    >
+                      {opt.iconLibrary === "Ionicons" ? (
+                        <Icon
+                          name={opt.icon}
+                          size={20}
+                          color="black"
+                          style={{ marginRight: 10 }}
+                        />
+                      ) : (
+                        <FontAwesome5
+                          name={opt.icon}
+                          size={20}
+                          color="black"
+                          style={{ marginRight: 10 }}
+                          solid
+                        />
+                      )}
+                      <Text style={{ fontSize: 16 }}>{opt.text}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </TouchableOpacity>
+          </Modal>
 
           <AddFriendModal
             show={showModalAddFriend}

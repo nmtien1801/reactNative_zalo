@@ -3,7 +3,6 @@ import { View, SafeAreaView } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { Provider as PaperProvider } from "react-native-paper";
 import ContactsTabs from "./src/page/contacts/ContactsTabs";
 import DiscoveryTabs from "./src/page/Discovery/DiscoveryTabs";
 import LogTabs from "./src/page/log/LogTabs";
@@ -116,7 +115,6 @@ const Project = () => {
   }, [user]);
 
   return (
-    <PaperProvider>
       <NavigationContainer>
         <SafeAreaView style={{ flex: 1 }}>
           <Stack.Navigator>
@@ -213,7 +211,6 @@ const Project = () => {
           </Stack.Navigator>
         </SafeAreaView>
       </NavigationContainer>
-    </PaperProvider>
   );
 };
 
