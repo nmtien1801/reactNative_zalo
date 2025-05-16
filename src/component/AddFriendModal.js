@@ -36,7 +36,7 @@ const AddFriendModal = ({ show, onHide, socketRef }) => {
           <View style={styles.inputRow}>
             <TextInput
               style={styles.input}
-              placeholder="Số điện thoại"
+              placeholder="số tài khoản"
               keyboardType="phone-pad"
               value={searchQuery}
               onChangeText={(text) => {

@@ -265,10 +265,10 @@ const CreateGroupTab = ({ navigation, route }) => {
       return;
     }
 
-    // Kiểm tra xem query có phải là số điện thoại hay không
+    // Kiểm tra xem query có phải là số tài khoản hay không
     const isPhoneNumber = /^\d+$/.test(query);
     if (!isPhoneNumber) {
-      // Nếu không phải số điện thoại, lấy danh sách bạn bè
+      // Nếu không phải số tài khoản, lấy danh sách bạn bè
       try {
         const response = await getFriendListService();
         if (response.EC === 0 && response.DT) {
@@ -339,7 +339,7 @@ const CreateGroupTab = ({ navigation, route }) => {
         }
       }
     } catch (error) {
-      console.error("Lỗi khi tìm kiếm số điện thoại:", error);
+      console.error("Lỗi khi tìm kiếm số tài khoản:", error);
       setContacts([]); // Xóa kết quả nếu có lỗi
     }
   };
@@ -383,7 +383,7 @@ const CreateGroupTab = ({ navigation, route }) => {
 
       {/* Search Input */}
       <TextInput
-        placeholder="Tìm số điện thoại"
+        placeholder="Tìm số tài khoản"
         placeholderTextColor="gray"
         style={styles.searchInput}
         value={searchText}

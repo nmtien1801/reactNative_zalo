@@ -216,7 +216,7 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef }) => {
           {/* Search input */}
           <TextInput
             style={styles.searchInput}
-            placeholder="Nhập tên hoặc số điện thoại"
+            placeholder="Nhập tên hoặc số tài khoản"
             value={searchTerm}
             onChangeText={setSearchTerm}
           />

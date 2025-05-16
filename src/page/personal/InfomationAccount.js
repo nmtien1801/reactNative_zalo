@@ -148,11 +148,11 @@ const InformationAccount = ({route}) => {
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Số điện thoại:</Text>
+          <Text style={styles.label}>số tài khoản:</Text>
           <TextInput
             style={styles.input}
             value={userUpdate.phone}
-            placeholder="Nhập số điện thoại"
+            placeholder="Nhập số tài khoản"
             keyboardType="phone-pad"
           />
         </View>
