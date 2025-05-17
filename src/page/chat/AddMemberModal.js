@@ -19,8 +19,10 @@ import {
   getRoomChatByPhoneService,
   getRoomChatMembersService,
 } from "../../service/roomChatService";
+import { updatePermission } from "../../redux/chatSlice";
+import { useSelector, useDispatch } from "react-redux";
 
-const AddMemberModal = ({ show, onHide, roomId, user, socketRef }) => {
+const AddMemberModal = ({ show, onHide, roomId, user, socketRef, roomData}) => {
   const [friends, setFriends] = useState([]); // Friends list
   const [members, setMembers] = useState([]); // Room members list
   const [selectedFriends, setSelectedFriends] = useState([]); // Selected friends
@@ -28,6 +30,7 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef }) => {
   const [searchResults, setSearchResults] = useState([]); // Search results by phone
   const [isSubmitting, setIsSubmitting] = useState(false); // Submission state
   const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
 
   // Fetch friends and members when modal opens
   useEffect(() => {
@@ -135,6 +138,16 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef }) => {
       if (response.EC === 0) {
         socketRef.current.emit("REQ_ADD_GROUP", response.DT);
         Alert.alert("Thành công", "Thêm thành viên thành công!");
+
+        // update permission
+        let res = await dispatch(
+          updatePermission({
+            groupId: roomId,
+            newPermission: roomData.receiver.permission,
+          })
+        );
+        socketRef.current.emit("REQ_MEMBER_PERMISSION", res.payload.DT);
+
         handleClose();
       } else {
         Alert.alert("Lỗi", response.EM || "Có lỗi xảy ra khi thêm thành viên.");

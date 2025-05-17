@@ -112,8 +112,8 @@ const ChatTab = ({ route }) => {
     // Dissolve Group
     socketRef.current.on("RES_DISSOLVE_GROUP", (data) => {
       dispatch(getConversations(user._id));
-      navigation.navigate('MainTabs', {
-        socketRef
+      navigation.navigate("MainTabs", {
+        socketRef,
       });
     });
 
@@ -128,12 +128,17 @@ const ChatTab = ({ route }) => {
     });
 
     // update deputy
-    socketRef.current.on("RES_UPDATE_DEPUTY", (data) => { 
+    socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
       dispatch(getConversations(user._id));
     });
 
     // transfer leader
     socketRef.current.on("RES_TRANS_LEADER", (data) => {
+      dispatch(getConversations(user._id));
+    });
+
+    // update permission
+    socketRef.current.on("RES_MEMBER_PERMISSION", (data) => {
       dispatch(getConversations(user._id));
     });
   }, []);

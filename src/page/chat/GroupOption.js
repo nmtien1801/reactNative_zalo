@@ -39,8 +39,6 @@ const ChatInfoScreen = ({ route }) => {
   const conversations = route.params?.conversations;
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const [isReportCallsEnabled, setIsReportCallsEnabled] = useState(true);
-  const [isHiddenChatEnabled, setIsHiddenChatEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [searchResult, setSearchResult] = useState({});
   const [showMemberModal, setShowMemberModal] = useState(false); // Trạng thái hiển thị modal
@@ -48,6 +46,10 @@ const ChatInfoScreen = ({ route }) => {
   const [uploadedUrl, setUploadedUrl] = useState(null);
 
   const [showAddMemberModal, setShowAddMemberModal] = useState(false); // State quản lý modal
+  const roomData = {
+    receiver: route.params.receiver,
+    room: "group",
+  };
 
   const handleOpenAddMemberModal = () => {
     setShowAddMemberModal(true); // Mở modal
@@ -72,14 +74,6 @@ const ChatInfoScreen = ({ route }) => {
   useEffect(() => {
     handleSearch();
   }, []);
-
-  const toggleReportCalls = () => {
-    setIsReportCallsEnabled((previousState) => !previousState);
-  };
-
-  const toggleHiddenChat = () => {
-    setIsHiddenChatEnabled((previousState) => !previousState);
-  };
 
   // Lấy danh sách thành viên nhóm
   useEffect(() => {
@@ -128,7 +122,7 @@ const ChatInfoScreen = ({ route }) => {
     let req = {
       member: memberId,
       all: members,
-    }
+    };
     socketRef.current.emit("REQ_REMOVE_MEMBER", req);
   };
 
@@ -516,15 +510,6 @@ const ChatInfoScreen = ({ route }) => {
               </View>
             </View>
           </Modal>
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="edit-2"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Đổi tên gợi nhớ</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity style={styles.optionItem}>
             <Feather
@@ -573,101 +558,6 @@ const ChatInfoScreen = ({ route }) => {
               <Text style={styles.optionText}>Quản lý nhóm</Text>
             </TouchableOpacity>
           )}
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="eye-off"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Ẩn trò chuyện</Text>
-            <Switch
-              trackColor={{ false: "#d1d1d1", true: "#81b0ff" }}
-              thumbColor={isHiddenChatEnabled ? "#2196F3" : "#f4f3f4"}
-              ios_backgroundColor="#d1d1d1"
-              onValueChange={toggleHiddenChat}
-              value={isHiddenChatEnabled}
-              style={styles.switch}
-            />
-          </TouchableOpacity>
-
-          <View style={styles.optionItem}>
-            <Feather
-              name="phone-incoming"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Báo cáo cuộc gọi đến</Text>
-            <Switch
-              trackColor={{ false: "#d1d1d1", true: "#81b0ff" }}
-              thumbColor={isReportCallsEnabled ? "#2196F3" : "#f4f3f4"}
-              ios_backgroundColor="#d1d1d1"
-              onValueChange={toggleReportCalls}
-              value={isReportCallsEnabled}
-              style={styles.switch}
-            />
-          </View>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="clock"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <View style={styles.optionContent}>
-              <Text style={styles.optionText}>Tin nhắn tự xóa</Text>
-              <Text style={styles.optionSubtext}>Không bao giờ</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="user"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Cài đặt cá nhân</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="alert-triangle"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Báo xấu</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="slash"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Quản lý chặn</Text>
-            <Feather
-              name="chevron-right"
-              size={20}
-              color="#555"
-              style={styles.arrowIcon}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="database"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Dung lượng trò chuyện</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity style={styles.optionItem}>
             <Feather
@@ -722,6 +612,7 @@ const ChatInfoScreen = ({ route }) => {
         roomId={item._id} // Truyền roomId của nhóm
         user={user} // Truyền thông tin người dùng
         socketRef={socketRef} // Truyền socketRef
+        roomData={roomData}
       />
     </SafeAreaView>
   );
