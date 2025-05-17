@@ -56,6 +56,26 @@ export default function ContactsTabs({ route }) {
     socketRef.current.on("user-list", (usersList) => {
       setOnlineUsers(usersList);
     });
+
+    // accept friend
+    socketRef.current.on("RES_ACCEPT_FRIEND", async () => {
+      dispatch(getConversations(user._id));
+    });
+
+    // delete friend
+    socketRef.current.on("RES_DELETE_FRIEND", async () => {
+      dispatch(getConversations(user._id));
+    });
+
+    // remove member group
+    socketRef.current.on("RES_REMOVE_MEMBER", async () => {
+      dispatch(getConversations(user._id));
+    });
+
+    // add member group
+    socketRef.current.on("RES_ADD_GROUP", (data) => {
+      dispatch(getConversations(user._id));
+    });
   }, []);
 
   const handleFriendClick = (item) => {
