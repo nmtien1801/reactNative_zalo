@@ -28,16 +28,7 @@ const ChatTab = ({ route }) => {
   const conversationRedux = useSelector((state) => state.chat.conversations);
   const socketRef = route.params.socketRef;
 
-  const [conversations, setConversations] = useState([
-    {
-      _id: 1,
-      username: "Cloud",
-      message: "[Thông báo] Giới thiệu về Trường Kha...",
-      time: "26/07/24",
-      avatar: require("../../../assets/man.png"),
-      type: 3,
-    },
-  ]);
+  const [conversations, setConversations] = useState([]);
 
   const convertTime = (time) => {
     const now = Date.now();
@@ -141,6 +132,11 @@ const ChatTab = ({ route }) => {
     socketRef.current.on("RES_MEMBER_PERMISSION", (data) => {
       dispatch(getConversations(user._id));
     });
+
+    // receiver msg - update message in conversation
+    socketRef.current.on("RECEIVED_MSG", (data) => {
+      dispatch(getConversations(user._id));
+    });
   }, []);
 
   return (
@@ -186,7 +182,13 @@ const ChatTab = ({ route }) => {
               <Text style={{ fontWeight: "bold", fontSize: 16 }}>
                 {item.username}
               </Text>
-              <Text style={{ color: "gray" }}>{item.message}</Text>
+              <Text
+                style={{ color: "gray" }}
+                numberOfLines={1} // 👈 Cắt dòng
+                ellipsizeMode="tail" // 👈 Thêm dấu "..."
+              >
+                {item.message}
+              </Text>
             </View>
             {item.time ? (
               <Text style={{ color: "gray" }}>{convertTime(item.time)}</Text>
