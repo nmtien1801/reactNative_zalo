@@ -16,13 +16,18 @@ import { Feather } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useSelector, useDispatch } from "react-redux";
 import InfoAddFriendMModal from "../../component/InfoAddFriendModal";
 import { getRoomChatByPhoneService } from "../../service/roomChatService";
 import { getRoomChatMembersService } from "../../service/roomChatService";
 import { removeMemberFromGroupService } from "../../service/chatService";
 import AddMemberModal from "./AddMemberModal";
 import { dissolveGroupService } from "../../service/chatService";
+import { launchImageLibrary } from "react-native-image-picker";
+import { uploadAvatar } from "../../redux/profileSlice.js";
+import { Platform } from "react-native";
+import { useSelector, useDispatch } from "react-redux";
+import { uploadAvatarGroup } from "../../redux/profileSlice.js";
+import { transLeaderService } from "../../service/permissionService";
 
 const ChatInfoScreen = ({ route }) => {
   const [item, setItem] = useState(route.params?.receiver); // click conversation
@@ -33,14 +38,18 @@ const ChatInfoScreen = ({ route }) => {
   const user = useSelector((state) => state.auth.user);
   const conversations = route.params?.conversations;
   const navigation = useNavigation();
-  const [isReportCallsEnabled, setIsReportCallsEnabled] = useState(true);
-  const [isHiddenChatEnabled, setIsHiddenChatEnabled] = useState(false);
+  const dispatch = useDispatch();
   const [isOpen, setIsOpen] = useState(false);
   const [searchResult, setSearchResult] = useState({});
-
   const [showMemberModal, setShowMemberModal] = useState(false); // Trạng thái hiển thị modal
+  const [photo, setPhoto] = useState(null);
+  const [uploadedUrl, setUploadedUrl] = useState(null);
 
   const [showAddMemberModal, setShowAddMemberModal] = useState(false); // State quản lý modal
+  const roomData = {
+    receiver: route.params.receiver,
+    room: "group",
+  };
 
   const handleOpenAddMemberModal = () => {
     setShowAddMemberModal(true); // Mở modal
@@ -58,7 +67,6 @@ const ChatInfoScreen = ({ route }) => {
     if (response.EC === 0) {
       setSearchResult(response.DT);
     } else {
-      // alert(response.EM);
       console.log("Lỗi khi tìm kiếm:", response.EM);
     }
   };
@@ -66,14 +74,6 @@ const ChatInfoScreen = ({ route }) => {
   useEffect(() => {
     handleSearch();
   }, []);
-
-  const toggleReportCalls = () => {
-    setIsReportCallsEnabled((previousState) => !previousState);
-  };
-
-  const toggleHiddenChat = () => {
-    setIsHiddenChatEnabled((previousState) => !previousState);
-  };
 
   // Lấy danh sách thành viên nhóm
   useEffect(() => {
@@ -96,16 +96,39 @@ const ChatInfoScreen = ({ route }) => {
   }, [receiver?._id]);
 
   const handleRemoveMember = async (memberId) => {
-    if (memberId === user._id) {
-      alert("Không thể xóa chính mình khỏi nhóm!");
-      return;
+    // Chuyển quyền trưởng nhóm
+    if (receiver.role === "leader" && memberId === user._id) {
+      const otherMembers = receiver.members.filter((m) => m !== user._id);
+
+      if (otherMembers.length > 0) {
+        // Chọn ngẫu nhiên 1 người trong danh sách
+        const randomIndex = Math.floor(Math.random() * otherMembers.length);
+        const newLeaderId = otherMembers[randomIndex];
+
+        // Gọi API chuyển quyền
+        let response = await transLeaderService(receiver._id, newLeaderId);
+
+        if (response.EC === 0) {
+          socketRef.current.emit("REQ_TRANS_LEADER", response.DT);
+        }
+      }
+
+      navigation.navigate("MainTabs", {
+        socketRef,
+      });
     }
+
     let res = await removeMemberFromGroupService(receiver._id, memberId);
-    socketRef.current.emit("REQ_REMOVE_MEMBER", members);
+    let req = {
+      member: memberId,
+      all: members,
+    };
+    socketRef.current.emit("REQ_REMOVE_MEMBER", req);
   };
 
   // ManageGroup
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState(route.params.role); // click conversation
+
   useEffect(() => {
     const role = conversations.find(
       (conversation) => conversation._id === item._id
@@ -129,7 +152,7 @@ const ChatInfoScreen = ({ route }) => {
 
     socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
       // Nếu không có bản ghi nào được cập nhật
-      if (data.upsertedCount === 0) {
+      if (data.length === 0) {
         setRole("member");
         return;
       }
@@ -142,6 +165,11 @@ const ChatInfoScreen = ({ route }) => {
 
       if (member) {
         setRole(member.role);
+        setItem({
+          ...item,
+          permission: member.receiver.permission,
+          role: member.role,
+        });
       } else {
         if (receiver.role !== "leader") {
           setRole("member");
@@ -158,14 +186,46 @@ const ChatInfoScreen = ({ route }) => {
         member = oldLeader;
       }
 
-      setRole(member.role);
-      setItem({
-        ...item,
-        role: member.role,
-      });
+      if (member) {
+        setRole(member.role);
+        setItem({
+          ...item,
+          role: member.role,
+        });
+      } else {
+        setRole("member");
+        setItem({
+          ...item,
+          role: "member",
+        });
+      }
     });
 
     socketRef.current.on("RES_REMOVE_MEMBER", (data) => {
+      if (receiver.role !== "leader" && data.member === user._id) {
+        navigation.navigate("MainTabs", {
+          socketRef,
+        });
+      }
+      const fetchMembers = async () => {
+        try {
+          if (receiver?._id) {
+            const response = await getRoomChatMembersService(receiver._id);
+            if (response.EC === 0) {
+              setMembers(response.DT); // Lưu danh sách thành viên vào state
+            } else {
+              console.error("Lỗi khi lấy danh sách thành viên:", response.EM);
+            }
+          }
+        } catch (error) {
+          console.error("Lỗi khi gọi API getRoomChatMembersService:", error);
+        }
+      };
+      fetchMembers();
+    });
+
+    // add member group
+    socketRef.current.on("RES_ADD_GROUP", (data) => {
       const fetchMembers = async () => {
         try {
           if (receiver?._id) {
@@ -183,6 +243,7 @@ const ChatInfoScreen = ({ route }) => {
       fetchMembers();
     });
   }, []);
+  console.log("role", role);
 
   // Handle dissolve group
   const handleDissolveGroup = async () => {
@@ -217,6 +278,79 @@ const ChatInfoScreen = ({ route }) => {
     }
   };
 
+  useEffect(() => {
+    if (receiver?.avatar) {
+      setUploadedUrl(receiver.avatar);
+    }
+  }, [receiver?.avatar]);
+
+  const createFormData = (photo) => {
+    const data = new FormData();
+    if (Platform.OS === "android" || Platform.OS === "ios") {
+      data.append("avatar", {
+        uri: photo.uri,
+        name: photo.name || "photo.jpg",
+        type: photo.mimeType || "image/jpeg",
+      });
+    } else {
+      data.append("avatar", photo.uri);
+      data.append("fileName", photo.name);
+      data.append("mimeType", photo.mimeType);
+    }
+
+    return data;
+  };
+
+  // Hàm chọn ảnh từ thư viện hoặc camera
+  const pickImage = async () => {
+    launchImageLibrary(
+      { mediaType: "photo", includeBase64: false },
+      async (response) => {
+        if (response.didCancel) {
+          console.log("User cancelled image picker");
+        } else if (response.errorMessage) {
+          console.log("ImagePicker Error: ", response.errorMessage);
+        } else if (response.assets && response.assets.length > 0) {
+          setPhoto(response.assets[0]);
+        }
+      }
+    );
+  };
+
+  useEffect(() => {
+    if (photo) {
+      handleUploadPhoto();
+    }
+  }, [photo]);
+
+  const handleUploadPhoto = async () => {
+    if (!photo) {
+      Alert.alert("Chưa chọn ảnh");
+      return;
+    }
+
+    try {
+      const formData = createFormData(photo);
+      const res = await dispatch(uploadAvatar(formData)).unwrap();
+
+      console.log("Upload thành công:", res);
+      if (res.EC === 0) {
+        setUploadedUrl(res.DT); // link ảnh server trả về
+        let a = await dispatch(
+          uploadAvatarGroup({ groupId: item._id, avatar: res.DT })
+        );
+
+        if (a.payload.EC === 0) {
+          Alert.alert("Upload thành công!", `Link: ${res.DT}`);
+          socketRef.current.emit("REQ_UPDATE_AVATAR", receiver);
+        }
+      }
+    } catch (error) {
+      console.error("Upload thất bại:", error);
+      Alert.alert("Lỗi upload", error.message);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView}>
@@ -240,12 +374,29 @@ const ChatInfoScreen = ({ route }) => {
         <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
             <Image
-              source={{ uri: "https://randomuser.me/api/portraits/men/32.jpg" }}
+              source={{
+                uri:
+                  uploadedUrl ||
+                  "https://randomuser.me/api/portraits/men/32.jpg",
+              }}
               style={styles.profileImage}
             />
-            <View style={styles.editIconContainer}>
+            <TouchableOpacity
+              style={styles.editIconContainer}
+              onPress={() => {
+                if (
+                  item.permission.includes(2) ||
+                  item.role === "leader" ||
+                  item.role === "deputy"
+                ) {
+                  pickImage();
+                } else {
+                  Alert.alert("Không có quyền thêm");
+                }
+              }}
+            >
               <Feather name="edit-2" size={14} color="#000" />
-            </View>
+            </TouchableOpacity>
           </View>
           <Text style={styles.profileName}>Công nghệ mới</Text>
 
@@ -359,15 +510,6 @@ const ChatInfoScreen = ({ route }) => {
               </View>
             </View>
           </Modal>
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="edit-2"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Đổi tên gợi nhớ</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity style={styles.optionItem}>
             <Feather
@@ -403,6 +545,7 @@ const ChatInfoScreen = ({ route }) => {
                   socketRef,
                   onlineUsers,
                   conversations,
+                  role,
                 })
               }
             >
@@ -418,101 +561,6 @@ const ChatInfoScreen = ({ route }) => {
 
           <TouchableOpacity style={styles.optionItem}>
             <Feather
-              name="eye-off"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Ẩn trò chuyện</Text>
-            <Switch
-              trackColor={{ false: "#d1d1d1", true: "#81b0ff" }}
-              thumbColor={isHiddenChatEnabled ? "#2196F3" : "#f4f3f4"}
-              ios_backgroundColor="#d1d1d1"
-              onValueChange={toggleHiddenChat}
-              value={isHiddenChatEnabled}
-              style={styles.switch}
-            />
-          </TouchableOpacity>
-
-          <View style={styles.optionItem}>
-            <Feather
-              name="phone-incoming"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Báo cáo cuộc gọi đến</Text>
-            <Switch
-              trackColor={{ false: "#d1d1d1", true: "#81b0ff" }}
-              thumbColor={isReportCallsEnabled ? "#2196F3" : "#f4f3f4"}
-              ios_backgroundColor="#d1d1d1"
-              onValueChange={toggleReportCalls}
-              value={isReportCallsEnabled}
-              style={styles.switch}
-            />
-          </View>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="clock"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <View style={styles.optionContent}>
-              <Text style={styles.optionText}>Tin nhắn tự xóa</Text>
-              <Text style={styles.optionSubtext}>Không bao giờ</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="user"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Cài đặt cá nhân</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="alert-triangle"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Báo xấu</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="slash"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Quản lý chặn</Text>
-            <Feather
-              name="chevron-right"
-              size={20}
-              color="#555"
-              style={styles.arrowIcon}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="database"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Dung lượng trò chuyện</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
               name="trash-2"
               size={20}
               color="#ff3b30"
@@ -520,6 +568,21 @@ const ChatInfoScreen = ({ route }) => {
             />
             <Text style={[styles.optionText, styles.deleteText]}>
               Xóa lịch sử trò chuyện
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.optionItem}
+            onPress={() => handleRemoveMember(user._id)}
+          >
+            <Feather
+              name="log-out"
+              size={20}
+              color="#ff3b30"
+              style={styles.optionIcon}
+            />
+            <Text style={[styles.optionText, styles.deleteText]}>
+              rời khỏi nhóm
             </Text>
           </TouchableOpacity>
 
@@ -549,6 +612,7 @@ const ChatInfoScreen = ({ route }) => {
         roomId={item._id} // Truyền roomId của nhóm
         user={user} // Truyền thông tin người dùng
         socketRef={socketRef} // Truyền socketRef
+        roomData={roomData}
       />
     </SafeAreaView>
   );

@@ -23,7 +23,6 @@ const UserProfileScreen = ({ route }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [friendRequestContent, setFriendRequestContent] = useState('');
   const [hasSentRequest, setHasSentRequest] = useState(false);
-
   const [currentUserId, setCurrentUserId] = useState(null);
   const idUser = user?._id;
 

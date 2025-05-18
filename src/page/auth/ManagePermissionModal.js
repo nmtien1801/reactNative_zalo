@@ -21,6 +21,7 @@ import {
   transLeaderService,
 } from "../../service/permissionService";
 import { Search } from "lucide-react-native";
+import { useNavigation } from "@react-navigation/native";
 
 const ManagePermissionModal = ({ closeModal, receiver, socketRef }) => {
   const user = useSelector((state) => state.auth.user);
@@ -28,7 +29,8 @@ const ManagePermissionModal = ({ closeModal, receiver, socketRef }) => {
   const [members, setMembers] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [selectedTab, setSelectedTab] = useState("Thêm phó nhóm");
-
+  const navigation = useNavigation();
+  
   const fetchAllMembers = async () => {
     try {
       const response = await getAllMemberGroupService(receiver._id);
@@ -121,6 +123,12 @@ const ManagePermissionModal = ({ closeModal, receiver, socketRef }) => {
 
       if (res.EC === 0) {
         closeModal();
+        if (res.DT.newLeader.role === "leader") {
+          navigation.navigate("MainTabs", {
+            socketRef,
+          });
+        }
+
         socketRef.current.emit("REQ_TRANS_LEADER", res.DT);
       }
     }

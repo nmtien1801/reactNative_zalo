@@ -26,6 +26,7 @@ import { uploadAvatar } from "../../redux/profileSlice.js";
 import * as DocumentPicker from "expo-document-picker";
 import { Platform } from "react-native";
 import VideoCallModal from "../../component/VideoCallModal";
+import ImageViewer from "../../component/ImageViewer";
 
 import {
   recallMessageService,
@@ -36,7 +37,10 @@ const InboxScreen = ({ route }) => {
   const [receiver, setReceiver] = useState(route.params?.item || null); // click conversation
   let socketRef = route.params?.socketRef;
   let onlineUsers = route.params?.onlineUsers;
-  let conversations = route.params?.conversations; // Nhận conversations từ route.params
+  const [conversations, setConversations] = useState(
+    route.params?.conversations || [] // Nhận conversations từ route.params
+  );
+  const conversationRedux = useSelector((state) => state.chat.conversations);
 
   const dispatch = useDispatch();
   const navigation = useNavigation();
@@ -52,11 +56,13 @@ const InboxScreen = ({ route }) => {
     receiver: null,
   });
   const [allMsg, setAllMsg] = useState([]);
+  const [role, setRole] = useState(null); // Lưu vai trò của người dùng trong nhóm
   const [showPicker, setShowPicker] = useState(false);
   const ICONS = ["smile", "heart", "thumbs-up", "laugh", "sad-tear"];
 
   // ImageViewer
   const [previewImages, setPreviewImages] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   // share mess
   const [shareModalVisible, setShareModalVisible] = useState(false); // Trạng thái cho modal chia sẻ
@@ -109,6 +115,34 @@ const InboxScreen = ({ route }) => {
       </TouchableOpacity>
     </Modal>
   );
+
+  useEffect(() => {
+    const role = conversations.find((item) => item._id === receiver._id);
+    if (role) {
+      setRole(role.role);
+    }
+  }, [conversations]);
+
+  useEffect(() => {
+    if (conversationRedux) {
+      let _conversations = conversationRedux.map((item) => {
+        return {
+          _id: item.receiver._id,
+          username: item.receiver.username,
+          message: item.message,
+          time: item.time,
+          avatar: item.avatar,
+          type: item.type,
+          phone: item.receiver.phone,
+          members: item.members,
+          role: item.role,
+          permission: item.receiver.permission,
+        };
+      });
+
+      setConversations(_conversations);
+    }
+  }, [conversationRedux]);
 
   // handleTypeChat
   useEffect(() => {
@@ -536,6 +570,42 @@ const InboxScreen = ({ route }) => {
       });
     });
 
+    socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
+      // Nếu không có bản ghi nào được cập nhật
+      if (data.length === 0) {
+        setRole("member");
+        setReceiver({
+          ...receiver,
+          role: "member",
+        });
+        return;
+      }
+
+      // Tìm xem user có phải là sender hoặc receiver không
+      const member = data.find(
+        (item) =>
+          item?.sender?._id === user._id || item?.receiver?._id === user._id
+      );
+
+      if (member) {
+        setRole(member.role);
+        setReceiver({
+          ...receiver,
+          permission: member.receiver.permission,
+          role: member.role,
+        });
+      } else {
+        if (receiver.role !== "leader") {
+          setRole("member");
+          setReceiver({
+            ...receiver,
+            permission: member.receiver.permission,
+            role: "member",
+          });
+        }
+      }
+    });
+
     socketRef.current.on("RES_TRANS_LEADER", (data) => {
       const { newLeader, oldLeader } = data;
       let member = null;
@@ -545,21 +615,68 @@ const InboxScreen = ({ route }) => {
         member = oldLeader;
       }
 
-      setReceiver({
-        ...receiver,
-        permission: member.receiver.permission,
-        role: member.role,
-      });
+      if (member) {
+        setRole(member.role);
+        setReceiver({
+          ...receiver,
+          role: member.role,
+        });
+      } else {
+        setRole("member");
+        setReceiver({
+          ...receiver,
+          role: "member",
+        });
+      }
     });
 
-    socketRef.current.on("RES_CALL", (from, to) => {
+    socketRef.current.on("RES_REMOVE_MEMBER", (data) => {
+      if (receiver.role !== "leader" && data.member === user._id) {
+        navigation.navigate("MainTabs", {
+          socketRef,
+        });
+      }
+    });
+  }, [conversations]);
+
+  // Hàm nhấp vào image xem
+  const handleImageClick = (imageUrl) => {
+    setSelectedImage(imageUrl);
+  };
+
+  const handleCloseImageViewer = () => {
+    setSelectedImage(null);
+  };
+
+  const convertTimeAction = (time) => {
+    const now = Date.now();
+    const past = Number(time);
+    const diff = now - past;
+
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (seconds < 60) return "Vừa xong";
+    if (minutes < 60) return `${minutes} phút trước`;
+    if (hours < 24) return `${hours} giờ trước`;
+    if (days === 1) return "Hôm qua";
+
+    const date = new Date(past);
+    return date.toLocaleDateString("vi-VN");
+  };
+
+  // call 
+  useEffect(()=>{
+     socketRef.current.on("RES_CALL", (from, to) => {
       setIncomingCall(from);
     });
 
     socketRef.current.on("RES_END_CALL", () => {
       setIsCalling(false);
     });
-  }, []);
+  },[])
 
   const handleStartCall = () => {
     setIsCalling(true); // Mở modal
@@ -597,7 +714,7 @@ const InboxScreen = ({ route }) => {
             <Text style={styles.activeText}>
               {receiver.type === 3
                 ? "Lưu và đồng bộ dữ liệu giữa các thiết bị"
-                : "Hoạt động 18 phút trước"}
+                : `Hoạt động ${convertTimeAction(receiver.time)}`}
             </Text>
           </View>
         </View>
@@ -618,6 +735,7 @@ const InboxScreen = ({ route }) => {
                   socketRef,
                   onlineUsers,
                   conversations,
+                  role,
                 }
               )
             }
@@ -764,9 +882,9 @@ const InboxScreen = ({ route }) => {
 
       {/* Input Box */}
       <View style={styles.inputContainer}>
-        {receiver?.permission?.includes(3) ||
-        receiver.role === "leader" ||
-        receiver.role === "deputy" ? (
+        {receiver.permission.includes(3) ||
+        role === "leader" ||
+        role === "deputy" ? (
           <>
             <TouchableOpacity
               style={{ flexDirection: "row", alignItems: "center" }}
@@ -861,14 +979,13 @@ const InboxScreen = ({ route }) => {
               {[
                 { name: "Trả lời", icon: "reply", action: () => {} },
                 {
-                  name: "Chia sẻ",
+                  name: "Chuyển tiếp",
                   icon: "share",
                   action: () => {
                     setModalVisible(false); // Đóng modal sau khi chia sẻ
                     setShareModalVisible(true); // Mở modal chia sẻ
                   },
                 },
-                { name: "Lưu Cloud", icon: "save", action: () => {} },
                 ...(selectedMessage?.sender._id === user._id &&
                 (new Date() - new Date(selectedMessage.createdAt)) /
                   (1000 * 60 * 60) <
@@ -884,10 +1001,6 @@ const InboxScreen = ({ route }) => {
                       },
                     ]
                   : []),
-                { name: "Sao chép", icon: "copy", action: () => {} },
-                { name: "Ghim", icon: "map-pin", action: () => {} },
-                { name: "Nhắc hẹn", icon: "clock", action: () => {} },
-                { name: "Chọn nhiều", icon: "check-square", action: () => {} },
                 {
                   name: "Xóa ở phía tôi",
                   icon: "trash",
@@ -901,11 +1014,6 @@ const InboxScreen = ({ route }) => {
                   icon: "trash",
                   action: () =>
                     handleDeleteMessageForMe(selectedMessage._id, user._id),
-                },
-                {
-                  name: "Chuyển tiếp",
-                  icon: "share",
-                  action: () => forwardMessage(selectedMessage),
                 },
               ].map((item, index) => (
                 <TouchableOpacity
@@ -931,6 +1039,12 @@ const InboxScreen = ({ route }) => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
+            <TouchableOpacity
+              onPress={() => setShareModalVisible(false)}
+              style={{ alignSelf: "flex-end", padding: 5 }}
+            >
+              <Text style={{ color: "blue" }}>Đóng</Text>
+            </TouchableOpacity>
             <Text
               style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}
             >
@@ -974,7 +1088,7 @@ const InboxScreen = ({ route }) => {
               onPress={handleShareMessage} // Gọi đúng hàm
             >
               <Text style={{ color: "white", textAlign: "center" }}>
-                Chia sẻ
+                Chuyển tiếp
               </Text>
             </TouchableOpacity>
           </View>
@@ -1003,6 +1117,13 @@ const InboxScreen = ({ route }) => {
         socketRef={socketRef}
         isInitiator={isInitiator} // Truyền state isInitiator
       />
+
+      {selectedImage && (
+        <ImageViewer
+          imageUrl={selectedImage}
+          onClose={handleCloseImageViewer}
+        />
+      )}
     </SafeAreaView>
   );
 };

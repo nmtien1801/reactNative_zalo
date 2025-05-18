@@ -23,6 +23,7 @@ const ManageGroup = ({ navigation, route }) => {
   const conversations = route.params?.conversations;
   const permissions = useSelector((state) => state.permission.permission);
   const user = useSelector((state) => state.auth.user);
+  const role = route.params?.role; // role của người dùng trong nhóm
 
   const settings = [
     "Chế độ phê duyệt thành viên mới",
@@ -98,25 +99,7 @@ const ManageGroup = ({ navigation, route }) => {
     setSettingSwitches(updated);
   };
 
-  // action socket
-  useEffect(() => {
-    socketRef.current.on("RES_TRANS_LEADER", (data) => {
-      const { newLeader, oldLeader } = data;
-      let member = null;
-      if (newLeader?.sender?._id === user._id) {
-        member = newLeader;
-      } else if (oldLeader?.sender?._id === user._id) {
-        member = oldLeader;
-      }
-
-      navigation.navigate("PersonOption", {
-        receiver: member,
-        socketRef,
-        onlineUsers,
-        conversations,
-      });
-    });
-  }, []);
+ 
 
   // Handle dissolve group
   const handleDissolveGroup = async () => {
@@ -153,6 +136,19 @@ const ManageGroup = ({ navigation, route }) => {
     }
   };
 
+    // action socket
+    useEffect(() => {
+      socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
+        if(data.length === 0){
+          navigation.navigate('InboxScreen', {
+            item,
+            socketRef,
+            onlineUsers,
+          });
+        }
+      });
+    }, []);
+    
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "#fff", padding: 16 }}>
       {/* Header */}

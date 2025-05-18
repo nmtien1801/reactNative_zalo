@@ -14,10 +14,11 @@ import { Platform } from "react-native";
 import { launchImageLibrary } from "react-native-image-picker";
 import { useNavigation } from "@react-navigation/native";
 
-const InformationAccount = () => {
+const InformationAccount = ({route}) => {
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
   const navigation = useNavigation();
+  const socketRef = route.params.socketRef;
 
   const [avatarUrl, setAvatarUrl] = useState("");
   const [photo, setPhoto] = useState(null);
@@ -103,6 +104,7 @@ const InformationAccount = () => {
 
     let res = await dispatch(uploadProfile(data));
     if (res.payload.EC === 0) {
+      socketRef.current.emit("REQ_UPDATE_AVATAR");
       navigation.goBack();
     }
   };
@@ -146,11 +148,11 @@ const InformationAccount = () => {
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Số điện thoại:</Text>
+          <Text style={styles.label}>số tài khoản:</Text>
           <TextInput
             style={styles.input}
             value={userUpdate.phone}
-            placeholder="Nhập số điện thoại"
+            placeholder="Nhập số tài khoản"
             keyboardType="phone-pad"
           />
         </View>

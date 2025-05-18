@@ -106,7 +106,7 @@ const ChatInfoScreen = ({ route }) => {
   useEffect(() => {
     socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
       // Nếu không có bản ghi nào được cập nhật
-      if (data.upsertedCount === 0) {
+      if (data.length === 0) {
         setRole("member");
         return;
       }
@@ -119,6 +119,11 @@ const ChatInfoScreen = ({ route }) => {
 
       if (member) {
         setRole(member.role);
+        setItem({
+          ...item,
+          permission: member.receiver.permission,
+          role: member.role,
+        })
       } else {
         if (receiver.role !== "leader") {
           setRole("member");

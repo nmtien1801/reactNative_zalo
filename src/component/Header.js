@@ -3,30 +3,48 @@ import {
   View,
   Text,
   TextInput,
-  FlatList,
   TouchableOpacity,
   Image,
   StyleSheet,
   Dimensions,
+  Modal,
+  ScrollView,
 } from "react-native";
-import {
-  Menu,
-  MenuOptions,
-  MenuOption,
-  MenuTrigger,
-} from "react-native-popup-menu";
 import { Ionicons } from "@expo/vector-icons";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
+import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
+import AddFriendModal from "./AddFriendModal";
+
 const { width, height } = Dimensions.get("window");
 const HEADER_HEIGHT = height * 0.08;
-import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
-import AddFriendModal from './AddFriendModal'
 
 export default function SearchHeader({ option, socketRef, onlineUsers }) {
   const navigation = useNavigation();
-  const [showModalAddFriend, setShowModalAddFriend] = useState(false); // modal thêm bạn
- 
+  const [showModalAddFriend, setShowModalAddFriend] = useState(false); // Modal thêm bạn
+  const [modalVisible, setModalVisible] = useState(false); // Trạng thái điều khiển modal tùy chọn
+
+  const options = [
+    {
+      icon: "person-add",
+      iconLibrary: "Ionicons",
+      text: "Thêm bạn",
+      action: () => {
+        setShowModalAddFriend(true);
+        setModalVisible(false);
+      },
+    },
+    {
+      icon: "users",
+      iconLibrary: "FontAwesome5",
+      text: "Tạo nhóm",
+      action: () => {
+        navigation.navigate("CreateGroupTab");
+        setModalVisible(false);
+      },
+    },
+  ];
+
   return (
     <View
       style={{
@@ -81,133 +99,80 @@ export default function SearchHeader({ option, socketRef, onlineUsers }) {
             />
           </TouchableOpacity>
 
-          <Menu>
-            <MenuTrigger>
-              <Icon
-                name="add"
-                size={HEADER_HEIGHT * 0.5}
-                color="white"
-                style={{ marginLeft: 10 }}
-              />
-            </MenuTrigger>
-            <MenuOptions
-              optionsContainerStyle={{
-                width: 240,
-                borderRadius: 10,
-                backgroundColor: "white",
-                padding: 10,
+          <TouchableOpacity onPress={() => setModalVisible(true)}>
+            <Icon
+              name="add"
+              size={HEADER_HEIGHT * 0.5}
+              color="white"
+              style={{ marginLeft: 10 }}
+            />
+          </TouchableOpacity>
+
+          <Modal
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.5)",
               }}
+              activeOpacity={1}
+              onPress={() => setModalVisible(false)} // Đóng modal khi nhấn bên ngoài
             >
-              <MenuOption onSelect={() => navigation.navigate("AddFriendScreen", { socketRef,
-            onlineUsers})}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 10,
-                  }}
-                >
-                  <Icon
-                    name="person-add"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text style={{ fontSize: 16 }}>Thêm bạn</Text>
-                </View>
-              </MenuOption>
-              <MenuOption onSelect={() => navigation.navigate("CreateGroupTab")}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 10,
-                  }}
-                >
-                  <FontAwesome5
-                    name="users"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                    solid
-                  />
-                  <Text style={{ fontSize: 16 }}>Tạo nhóm</Text>
-                </View>
-              </MenuOption>
-              <MenuOption onSelect={() => alert("Gửi danh bạ")}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 10,
-                  }}
-                >
-                  <FontAwesome5
-                    name="address-book"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                    solid
-                  />
-                  <Text style={{ fontSize: 16 }}>Gửi danh bạ</Text>
-                </View>
-              </MenuOption>
-              <MenuOption onSelect={() => alert("Lịch Zalo")}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 10,
-                  }}
-                >
-                  <FontAwesome5
-                    name="calendar-alt"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                    solid
-                  />
-                  <Text style={{ fontSize: 16 }}>Lịch Zalo</Text>
-                </View>
-              </MenuOption>
-              <MenuOption onSelect={() => alert("Tạo cuộc gọi nhóm")}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 10,
-                  }}
-                >
-                  <FontAwesome5
-                    name="phone"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                    solid
-                  />
-                  <Text style={{ fontSize: 16 }}>Tạo cuộc gọi nhóm</Text>
-                </View>
-              </MenuOption>
-              <MenuOption onSelect={() => alert("Thiết bị đăng nhập")}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 10,
-                  }}
-                >
-                  <FontAwesome5
-                    name="laptop"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                    solid
-                  />
-                  <Text style={{ fontSize: 16 }}>Thiết bị đăng nhập</Text>
-                </View>
-              </MenuOption>
-            </MenuOptions>
-          </Menu>
+              <View
+                style={{
+                  position: "absolute",
+                  top: HEADER_HEIGHT, // Đặt ngay dưới header
+                  right: 15, // Căn lề phải
+                  backgroundColor: "white",
+                  borderRadius: 10,
+                  padding: 10,
+                  width: 240,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 3.84,
+                  elevation: 5,
+                }}
+              >
+                <ScrollView>
+                  {options.map((opt, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 10,
+                        paddingHorizontal: 10,
+                      }}
+                      onPress={opt.action}
+                    >
+                      {opt.iconLibrary === "Ionicons" ? (
+                        <Icon
+                          name={opt.icon}
+                          size={20}
+                          color="black"
+                          style={{ marginRight: 10 }}
+                        />
+                      ) : (
+                        <FontAwesome5
+                          name={opt.icon}
+                          size={20}
+                          color="black"
+                          style={{ marginRight: 10 }}
+                          solid
+                        />
+                      )}
+                      <Text style={{ fontSize: 16 }}>{opt.text}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </TouchableOpacity>
+          </Modal>
+
           <AddFriendModal
             show={showModalAddFriend}
             onHide={() => setShowModalAddFriend(false)}

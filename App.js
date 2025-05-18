@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View } from "react-native";
+import { View, SafeAreaView } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { MenuProvider } from "react-native-popup-menu";
 import ContactsTabs from "./src/page/contacts/ContactsTabs";
 import DiscoveryTabs from "./src/page/Discovery/DiscoveryTabs";
 import LogTabs from "./src/page/log/LogTabs";
@@ -12,8 +11,7 @@ import ChatTab from "./src/page/chat/ChatTab";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginForm from "./src/page/auth/login";
 import { store } from "./src/redux/store";
-import { Provider } from "react-redux";
-import { useSelector, useDispatch } from "react-redux";
+import { Provider, useSelector, useDispatch  } from "react-redux";
 import { doGetAccount } from "./src/redux/authSlice";
 import RegisterForm from "./src/page/auth/register";
 import InboxScreen from "./src/page/chat/InboxScreen";
@@ -102,7 +100,7 @@ const Project = () => {
   // connect socket -> cmd(IPv4 Address): ipconfig
   const socketRef = useRef();
 
-  const IPv4 = "192.168.1.5";
+  const IPv4 = "192.168.1.6";
   useEffect(() => {
     const socket = io.connect(`http://${IPv4}:8080`);
     socketRef.current = socket;
@@ -116,104 +114,102 @@ const Project = () => {
   }, [user]);
 
   return (
-    <MenuProvider>
       <NavigationContainer>
-        <Stack.Navigator>
-          {isLoggedIn ? (
-            <>
-              <Stack.Screen
-                name="MainTabs"
-                component={MainTabs}
-                initialParams={{ socketRef }}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen
-                name="SearchScreen"
-                component={SearchScreen}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
-
-              <Stack.Screen
-                name="AddFriendScreen"
-                component={AddFriendScreen}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
-
-              <Stack.Screen
-                name="CreateGroupTab"
-                component={CreateGroupTab}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
-
-              <Stack.Screen
-                name="UserProfileScreen"
-                component={UserProfileScreen}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
-
-              <Stack.Screen
-                name="InboxScreen"
-                component={InboxScreen}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
-              <Stack.Screen
-                name="PersonOption"
-                component={PersonOption}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
-              <Stack.Screen
-                name="GroupOption"
-                component={GroupOption}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen name="ChangePassword" component={ChangePassword} />
-              <Stack.Screen name="Setting" component={Setting} />
-              <Stack.Screen
-                name="InformationAccount"
-                component={InformationAccount}
-              />
-              <Stack.Screen
-                name="ManageGroup"
-                component={ManageGroup}
-                options={{ headerShown: false }}
-                initialParams={{ socketRef }}
-              />
-              <Stack.Screen
-                name="FriendRequest"
-                component={FriendRequest}
-                initialParams={{ socketRef }}
-              />
-            </>
-          ) : (
-            <>
-              <Stack.Screen
-                name="Login"
-                component={LoginForm}
-                options={{ headerShown: false }}
-              />
-
-              <Stack.Screen
-                name="Register"
-                component={RegisterForm}
-                options={{ headerShown: false }}
-              />
-
-              <Stack.Screen
-                name="ResetPassword"
-                component={ResetPassword}
-                options={{ headerShown: false }}
-              />
-            </>
-          )}
-        </Stack.Navigator>
+        <SafeAreaView style={{ flex: 1 }}>
+          <Stack.Navigator>
+            {isLoggedIn ? (
+              <>
+                <Stack.Screen
+                  name="MainTabs"
+                  component={MainTabs}
+                  initialParams={{ socketRef }}
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="SearchScreen"
+                  component={SearchScreen}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
+                <Stack.Screen
+                  name="AddFriendScreen"
+                  component={AddFriendScreen}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
+                <Stack.Screen
+                  name="CreateGroupTab"
+                  component={CreateGroupTab}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
+                <Stack.Screen
+                  name="UserProfileScreen"
+                  component={UserProfileScreen}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
+                <Stack.Screen
+                  name="InboxScreen"
+                  component={InboxScreen}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
+                <Stack.Screen
+                  name="PersonOption"
+                  component={PersonOption}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
+                <Stack.Screen
+                  name="GroupOption"
+                  component={GroupOption}
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="ChangePassword"
+                  component={ChangePassword}
+                />
+                <Stack.Screen name="Setting" component={Setting} />
+                <Stack.Screen
+                  name="InformationAccount"
+                  component={InformationAccount}
+                  initialParams={{ socketRef }}
+                />
+                <Stack.Screen
+                  name="ManageGroup"
+                  component={ManageGroup}
+                  options={{ headerShown: false }}
+                  initialParams={{ socketRef }}
+                />
+                <Stack.Screen
+                  name="FriendRequest"
+                  component={FriendRequest}
+                  initialParams={{ socketRef }}
+                />
+              </>
+            ) : (
+              <>
+                <Stack.Screen
+                  name="Login"
+                  component={LoginForm}
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="Register"
+                  component={RegisterForm}
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="ResetPassword"
+                  component={ResetPassword}
+                  options={{ headerShown: false }}
+                />
+              </>
+            )}
+          </Stack.Navigator>
+        </SafeAreaView>
       </NavigationContainer>
-    </MenuProvider>
   );
 };
 

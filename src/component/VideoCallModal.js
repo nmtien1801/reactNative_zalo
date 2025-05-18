@@ -6,7 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-import { WebView } from "react-native-webview";
+// import { WebView } from "react-native-webview";
 import { Ionicons } from "@expo/vector-icons";
 
 const VideoCallModal = ({ show, onHide, socketRef }) => {
@@ -18,8 +18,7 @@ const VideoCallModal = ({ show, onHide, socketRef }) => {
       const members = to.members || [];
       const membersString = members.join("-");
       setJitsiUrl(`https://meet.jit.si/${membersString}`);
-      console.log('from ', from, 'to ', to);
-      
+      console.log("from ", from, "to ", to);
     });
   }, []);
 
@@ -35,13 +34,19 @@ const VideoCallModal = ({ show, onHide, socketRef }) => {
           <TouchableOpacity style={styles.closeButton} onPress={onHide}>
             <Ionicons name="close" size={28} color="#fff" />
           </TouchableOpacity>
+          <iframe
+            src={jitsiUrl}
+            allow="camera; microphone; fullscreen; display-capture"
+            style={{ width: "100%", height: "100%", border: "none" }}
+            sandbox="allow-scripts allow-same-origin allow-forms" // Cho phép các quyền iframe cụ thể
+          />
 
-          {Platform.OS === "web" ? (
+          {/* {Platform.OS === "web" ? (
             <iframe
               src={jitsiUrl}
               allow="camera; microphone; fullscreen; display-capture"
               style={{ width: "100%", height: "100%", border: "none" }}
-              sandbox="allow-scripts allow-same-origin allow-forms" // Cho phép các quyền iframe cụ thể
+              sandbox="allow-scripts allow-same-origin allow-forms"
             />
           ) : (
             <WebView
@@ -64,7 +69,7 @@ const VideoCallModal = ({ show, onHide, socketRef }) => {
               }}
               style={styles.webView}
             />
-          )}
+          )} */}
         </View>
       </View>
     </Modal>
