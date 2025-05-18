@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-// import { WebView } from "react-native-webview";
 import { Ionicons } from "@expo/vector-icons";
 
 const VideoCallModal = ({ show, onHide, socketRef }) => {

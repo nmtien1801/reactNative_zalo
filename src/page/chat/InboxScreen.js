@@ -68,11 +68,6 @@ const InboxScreen = ({ route }) => {
   const [shareModalVisible, setShareModalVisible] = useState(false); // Trạng thái cho modal chia sẻ
   const [selectedConversations, setSelectedConversations] = useState([]); // Lưu các conversation được chọn
 
-  // call
-  const [isInitiator, setIsInitiator] = useState(false); // Thêm state để theo dõi người khởi tạo
-  const [incomingCall, setIncomingCall] = useState(null);
-  const [isCalling, setIsCalling] = useState(false);
-
   const toggleConversationSelection = (conversationId) => {
     setSelectedConversations((prev) =>
       prev.includes(conversationId)
@@ -667,16 +662,20 @@ const InboxScreen = ({ route }) => {
     return date.toLocaleDateString("vi-VN");
   };
 
-  // call 
-  useEffect(()=>{
-     socketRef.current.on("RES_CALL", (from, to) => {
+  // call
+  const [isInitiator, setIsInitiator] = useState(false); // Thêm state để theo dõi người khởi tạo
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [isCalling, setIsCalling] = useState(false);
+
+  useEffect(() => {
+    socketRef.current.on("RES_CALL", (from, to) => {
       setIncomingCall(from);
     });
 
     socketRef.current.on("RES_END_CALL", () => {
       setIsCalling(false);
     });
-  },[])
+  }, []);
 
   const handleStartCall = () => {
     setIsCalling(true); // Mở modal
@@ -1102,7 +1101,20 @@ const InboxScreen = ({ route }) => {
             <Text style={styles.callText}>
               {incomingCall.username} đang gọi bạn...
             </Text>
-            <Button title="Chấp nhận" onPress={acceptCall} />
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.rejectButton}
+                onPress={endCall}
+              >
+                <Text style={styles.buttonText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.acceptButton}
+                onPress={acceptCall}
+              >
+                <Text style={styles.buttonText}>Chấp nhận</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       )}
@@ -1387,6 +1399,32 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 10,
     textAlign: "center",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  acceptButton: {
+    backgroundColor: "#4CAF50",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    flex: 1,
+    marginLeft: 5,
+  },
+  rejectButton: {
+    backgroundColor: "#f44336",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    flex: 1,
+    marginRight: 5,
+  },
+  buttonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
   },
 });
 
