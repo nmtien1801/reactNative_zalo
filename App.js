@@ -30,6 +30,9 @@ import SearchScreen from "./src/page/chat/SearchScreen";
 import UserProfileScreen from "./src/page/personal/UserProfileScreen";
 import CreateGroupTab from "./src/page/chat/CreateGroupTab";
 
+import MediaFilesLinksScreen from "./src/page/chat/MediaFilesLinksScreen";
+import MediaViewer from "./src/page/chat/MediaViewer";
+
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
@@ -167,6 +170,24 @@ const Project = () => {
                   component={GroupOption}
                   options={{ headerShown: false }}
                 />
+
+                <Stack.Screen
+                  name="MediaFilesLinksScreen"
+                  component={MediaFilesLinksScreen}
+                  options={{
+                    headerTitle: "Ảnh, video, file, link", // Đặt tiêu đề cho header
+                    headerShown: true, // Hiển thị header nếu chưa được bật
+                  }}
+                />
+                <Stack.Screen
+                  name="MediaViewer"
+                  component={MediaViewer}
+                  options={{
+                    headerTitle: "Xem chi tiết",
+                    headerShown: true,
+                  }}
+                />
+
                 <Stack.Screen
                   name="ChangePassword"
                   component={ChangePassword}

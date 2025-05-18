@@ -37,6 +37,11 @@ const ChatInfoScreen = ({ route }) => {
   let onlineUsers = route.params?.onlineUsers;
   const user = useSelector((state) => state.auth.user);
   const conversations = route.params?.conversations;
+
+  const mediaMessages = route.params?.mediaMessages;
+  const fileMessages = route.params?.fileMessages;
+  const linkMessages = route.params?.linkMessages;
+
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const [isOpen, setIsOpen] = useState(false);
@@ -511,7 +516,17 @@ const ChatInfoScreen = ({ route }) => {
             </View>
           </Modal>
 
-          <TouchableOpacity style={styles.optionItem}>
+
+          <TouchableOpacity
+            style={styles.optionItem}
+            onPress={() =>
+              navigation.navigate("MediaFilesLinksScreen", {
+                mediaMessages,
+                fileMessages,
+                linkMessages,
+              })
+            }
+          >
             <Feather
               name="image"
               size={20}
@@ -519,12 +534,15 @@ const ChatInfoScreen = ({ route }) => {
               style={styles.optionIcon}
             />
             <View style={styles.optionContent}>
-              <Text style={styles.optionText}>File, ảnh, Video</Text>
+              <Text style={styles.optionText}>Ảnh, video, file, link</Text>
               <Text style={styles.optionSubtext}>
-                Chưa có File nào được chia sẻ trong hội thoại này
+                {mediaMessages.length > 0 || fileMessages.length > 0 || linkMessages.length > 0
+                  ? "Xem các nội dung đã chia sẻ"
+                  : "Chưa có nội dung nào được chia sẻ"}
               </Text>
             </View>
           </TouchableOpacity>
+
 
           <TouchableOpacity style={styles.optionItem}>
             <Feather
