@@ -15,7 +15,7 @@ import {
   CheckBox,
   TouchableWithoutFeedback,
 } from "react-native";
-import { Video } from "expo-av";
+import { Video, Audio } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { useNavigation } from "@react-navigation/native";
@@ -25,6 +25,8 @@ import { uploadAvatar } from "../../redux/profileSlice.js";
 import * as DocumentPicker from "expo-document-picker";
 import { Platform } from "react-native";
 import ImageViewer from "../../component/ImageViewer";
+import * as FileSystem from "expo-file-system";
+import CallVoiceModal from "../../component/CallVoiceModal.js";
 
 import {
   recallMessageService,
@@ -660,6 +662,78 @@ const InboxScreen = ({ route }) => {
     return date.toLocaleDateString("vi-VN");
   };
 
+  // call voice
+  const recordingRef = useRef(null);
+  const [callModalVisible, setCallModalVisible] = useState(false);
+
+  async function prepareAudio() {
+    const INTERRUPTION_MODE_IOS_DUCK_OTHERS = 2;
+
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      interruptionModeIOS: INTERRUPTION_MODE_IOS_DUCK_OTHERS,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+    });
+  }
+
+  useEffect(() => {
+    socketRef.current.on("RES_VOICE", async (base64Audio) => {
+      const path = FileSystem.documentDirectory + "received.wav";
+      await FileSystem.writeAsStringAsync(path, base64Audio, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const { sound } = await Audio.Sound.createAsync({ uri: path });
+      await sound.playAsync();
+    });
+
+    return () => socketRef.current.off("RES_VOICE");
+  }, []);
+
+  const startRecording = async () => {
+    setCallModalVisible(true);
+    try {
+      const permission = await Audio.requestPermissionsAsync();
+      if (permission.status !== "granted") {
+        alert("Bạn cần cấp quyền microphone!");
+        setCallModalVisible(false);
+        return;
+      }
+
+      await prepareAudio();
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
+      );
+
+      recordingRef.current = recording;
+
+    } catch (e) {
+      console.error("Lỗi ghi âm:", e);
+      setCallModalVisible(false);
+    }
+  };
+
+  const stopRecording = async () => {
+    setCallModalVisible(false);
+    const recording = recordingRef.current;
+    if (!recording) return;
+
+    try {
+      await recording.stopAndUnloadAsync();
+
+      const uri = recording.getURI();
+      const base64Audio = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      socketRef.current.emit("REQ_VOICE", { to: receiver, audio: base64Audio });
+    } catch (e) {
+      console.error("Lỗi khi kết thúc ghi:", e);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -683,9 +757,14 @@ const InboxScreen = ({ route }) => {
         </View>
 
         <View style={styles.headerIcons}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={startRecording}>
             <Ionicons name="call" size={23} color="white" />
           </TouchableOpacity>
+          <CallVoiceModal
+            receiver={receiver}
+            callModalVisible={callModalVisible}
+            handleCancelCall={stopRecording}
+          />
           <TouchableOpacity>
             <Ionicons name="videocam" size={24} color="white" />
           </TouchableOpacity>
