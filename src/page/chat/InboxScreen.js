@@ -11,10 +11,8 @@ import {
   Modal,
   Image,
   Linking,
-  Trash2,
   CheckBox,
   TouchableWithoutFeedback,
-  Button,
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,9 +23,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import * as DocumentPicker from "expo-document-picker";
 import { Platform } from "react-native";
-import VideoCallModal from "../../component/VideoCallModal";
 import ImageViewer from "../../component/ImageViewer";
-
 import {
   recallMessageService,
   deleteMessageForMeService,
@@ -202,13 +198,11 @@ const InboxScreen = ({ route }) => {
     if (socketRef.current) {
       let sender = { ...user };
       sender.socketId = socketRef.current.id;
-      console.log("roomDataaa: ", roomData);
 
       // Lấy socketId của receiver từ danh sách onlineUsers
       const receiverOnline = onlineUsers.find(
         (u) => u.userId === roomData.receiver?._id
       );
-
       let msg;
       if (typeof message === "string") {
         if (!message.trim()) {
@@ -236,30 +230,21 @@ const InboxScreen = ({ route }) => {
         sender,
         type: type, // 1 - text , 2 - image, 3 - video, 4 - file, 5 - icon
       };
-      console.log("data: ", data);
-
       socketRef.current.emit("SEND_MSG", data);
     }
-
     setInput("");
   };
 
   // Hàm gửi tin nhắn đến các cuộc trò chuyện được chọn
 
   const handleShareMessage = () => {
-    console.log("Selected conversations:", selectedConversations); // Log danh sách các cuộc trò chuyện được chọn
-    console.log("Selected message:", selectedMessage); // Log tin nhắn được chọn
-
     if (!selectedMessage) {
       Alert.alert("Lỗi", "Không có tin nhắn nào được chọn để chia sẻ!");
       return;
     }
 
     if (selectedConversations.length === 0) {
-      Alert.alert(
-        "Lỗi",
-        "Vui lòng chọn ít nhất một cuộc trò chuyện để chia sẻ!"
-      );
+      Alert.alert("Lỗi", "Vui lòng chọn ít nhất một cuộc trò chuyện để chia sẻ!");
       return;
     }
 
@@ -272,16 +257,12 @@ const InboxScreen = ({ route }) => {
     selectedConversations.forEach((conversationId) => {
       const conversation = conversations.find((c) => c._id === conversationId);
       if (!conversation) {
-        console.error(
-          `Không tìm thấy cuộc trò chuyện với ID: ${conversationId}`
-        );
+        console.error(`Không tìm thấy cuộc trò chuyện với ID: ${conversationId}`);
         return;
       }
-
       const receiverOnline = onlineUsers.find(
         (u) => u.userId === conversation._id
       );
-
       const data = {
         msg: selectedMessage.msg, // Nội dung tin nhắn
         receiver: {
@@ -304,10 +285,7 @@ const InboxScreen = ({ route }) => {
     // Đóng modal sau khi gửi
     setShareModalVisible(false);
     setSelectedConversations([]);
-    Alert.alert(
-      "Thành công",
-      "Tin nhắn đã được chia sẻ đến người nhận online!"
-    );
+    Alert.alert("Thành công", "Tin nhắn đã được chia sẻ đến người nhận online!");
   };
 
   const convertTime = (time) => {
@@ -333,11 +311,9 @@ const InboxScreen = ({ route }) => {
       data.append("fileName", photo[0].name);
       data.append("mimeType", photo[0].mimeType);
     }
-
     return data;
   };
 
-  // Hàm chọn ảnh - video - file từ thư viện hoặc camera
   const pickMedia = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -345,7 +321,6 @@ const InboxScreen = ({ route }) => {
         multiple: false,
         copyToCacheDirectory: true,
       });
-
       setPhoto(result.assets);
     } catch (err) {
       console.log("Error picking file:", err);
@@ -363,10 +338,7 @@ const InboxScreen = ({ route }) => {
       Alert.alert("Chưa chọn ảnh or video");
       return;
     }
-
     try {
-      console.log("photo: ", photo);
-
       const formData = createFormData(photo);
       const res = await dispatch(uploadAvatar(formData)).unwrap();
 
@@ -406,21 +378,14 @@ const InboxScreen = ({ route }) => {
   useEffect(() => {
     if (socketRef.current) {
       socketRef.current.on("RECEIVED_MSG", (data) => {
-        console.log("Received message from socket:", data);
-
         // Kiểm tra xem tin nhắn có thuộc về cuộc trò chuyện hiện tại không
         if (
           data.receiver._id === roomData.receiver?._id ||
           data.sender._id === roomData.receiver?._id
         ) {
           setAllMsg((prevState) => [...prevState, data]);
-        } else {
-          console.log(
-            "Tin nhắn không thuộc về cuộc trò chuyện hiện tại, bỏ qua."
-          );
         }
       });
-
       socketRef.current.on("RECALL_MSG", (data) => {
         setAllMsg((prevMsgs) =>
           prevMsgs.map((msg) =>
@@ -430,7 +395,6 @@ const InboxScreen = ({ route }) => {
           )
         );
       });
-
       socketRef.current.on("DELETED_MSG", (data) => {
         setAllMsg((prevState) =>
           prevState.filter((item) => item._id != data.msg._id)
@@ -443,8 +407,6 @@ const InboxScreen = ({ route }) => {
     try {
       const response = await recallMessageService(message._id);
       if (response && response.EC === 0) {
-        console.log("Tin nhắn đã được thu hồi:", response.DT);
-
         socketRef.current.emit("RECALL", message);
       } else {
         console.error("Thu hồi tin nhắn thất bại:", response.EM);
@@ -468,8 +430,6 @@ const InboxScreen = ({ route }) => {
 
       const response = await deleteMessageForMeService(messageId, member);
       if (response && response.EC === 0) {
-        console.log("Tin nhắn đã được xóa chỉ ở phía tôi:", response.DT);
-
         setAllMsg((prevMessages) =>
           prevMessages.filter((msg) => msg._id !== messageId)
         );
@@ -489,14 +449,11 @@ const InboxScreen = ({ route }) => {
         multiple: true,
         copyToCacheDirectory: true,
       });
-
       if (!result.assets || result.assets.length === 0) return;
-
       if (result.assets.length > 10) {
         alert("Chỉ được chọn tối đa 10 ảnh.");
         return;
       }
-
       setPreviewImages(result.assets);
     } catch (err) {
       console.log("Error picking file:", err);
@@ -514,7 +471,6 @@ const InboxScreen = ({ route }) => {
       console.log("Chưa chọn ảnh, video hoặc file");
       return;
     }
-
     try {
       const listUrlImage = [];
       for (const file of previewImages) {
@@ -530,9 +486,7 @@ const InboxScreen = ({ route }) => {
           formData.append("fileName", file.name);
           formData.append("mimeType", file.mimeType);
         }
-
         const res = await dispatch(uploadAvatar(formData)).unwrap();
-        console.log("Upload thành công:", res);
         if (res.EC === 0) {
           listUrlImage.push(res.DT);
         } else {
@@ -663,38 +617,7 @@ const InboxScreen = ({ route }) => {
   };
 
   // call
-  const [isInitiator, setIsInitiator] = useState(false); // Thêm state để theo dõi người khởi tạo
-  const [incomingCall, setIncomingCall] = useState(null);
-  const [isCalling, setIsCalling] = useState(false);
-
-  useEffect(() => {
-    socketRef.current.on("RES_CALL", (from, to) => {
-      setIncomingCall(from);
-    });
-
-    socketRef.current.on("RES_END_CALL", () => {
-      setIsCalling(false);
-    });
-  }, []);
-
-  const handleStartCall = () => {
-    setIsCalling(true); // Mở modal
-    setIsInitiator(true); // Đặt người dùng hiện tại là người khởi tạo
-
-    socketRef.current.emit("REQ_CALL", user, receiver);
-  };
-
-  const acceptCall = () => {
-    setIsCalling(true);
-    setIncomingCall(null);
-  };
-
-  const endCall = () => {
-    socketRef.current.emit("REQ_END_CALL", user, receiver);
-    setIsCalling(false);
-  };
-
-  // console.log("receiver: ", receiver, 'user ', user);
+  const handleStartCall = route.params?.handleStartCall;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -719,7 +642,7 @@ const InboxScreen = ({ route }) => {
         </View>
 
         <View style={styles.headerIcons}>
-          <TouchableOpacity onPress={handleStartCall}>
+          <TouchableOpacity onPress={() => handleStartCall(user, receiver)}>
             <Ionicons name="call" size={23} color="white" />
           </TouchableOpacity>
           <TouchableOpacity>
@@ -994,8 +917,8 @@ const InboxScreen = ({ route }) => {
                         name: "Thu hồi",
                         icon: "undo",
                         action: () => {
-                          handleRecallMessage(selectedMessage),
-                            setModalVisible(false);
+                          handleRecallMessage(selectedMessage);
+                          setModalVisible(false);
                         },
                       },
                     ]
@@ -1004,8 +927,8 @@ const InboxScreen = ({ route }) => {
                   name: "Xóa ở phía tôi",
                   icon: "trash",
                   action: () => {
-                    handleDeleteMessageForMe(selectedMessage._id, user._id),
-                      setModalVisible(false);
+                    handleDeleteMessageForMe(selectedMessage._id, user._id);
+                    setModalVisible(false);
                   },
                 },
                 {
@@ -1084,7 +1007,7 @@ const InboxScreen = ({ route }) => {
                 borderRadius: 5,
                 marginTop: 10,
               }}
-              onPress={handleShareMessage} // Gọi đúng hàm
+              onPress={handleShareMessage}
             >
               <Text style={{ color: "white", textAlign: "center" }}>
                 Chuyển tiếp
@@ -1093,42 +1016,6 @@ const InboxScreen = ({ route }) => {
           </View>
         </View>
       </Modal>
-
-      {/* Call Screen Modal */}
-      {!isInitiator && incomingCall && (
-        <View style={styles.centeredOverlay}>
-          <View style={styles.callNotification}>
-            <Text style={styles.callText}>
-              {incomingCall.username} đang gọi bạn...
-            </Text>
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={styles.rejectButton}
-                onPress={endCall}
-              >
-                <Text style={styles.buttonText}>Hủy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.acceptButton}
-                onPress={acceptCall}
-              >
-                <Text style={styles.buttonText}>Chấp nhận</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )}
-
-      <VideoCallModal
-        show={isCalling}
-        onHide={endCall}
-        senderId={user._id}
-        receiverId={receiver._id}
-        callerName={user.username}
-        receiverName={receiver.username}
-        socketRef={socketRef}
-        isInitiator={isInitiator} // Truyền state isInitiator
-      />
 
       {selectedImage && (
         <ImageViewer
@@ -1154,10 +1041,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#007bff",
     justifyContent: "space-between",
     alignItems: "center",
-    flexDirection: "row", // Để chứa cả icon
+    flexDirection: "row",
     paddingHorizontal: 10,
-    zIndex: 1000, // Giúp header luôn trên cùng
-    elevation: 5, // Cho Android
+    zIndex: 1000,
+    elevation: 5,
   },
   headerText: {
     color: "white",
@@ -1226,12 +1113,10 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     gap: 15,
   },
-
   inputWrapper: {
     flex: 1,
     marginHorizontal: 10,
   },
-
   input: {
     borderWidth: 1,
     borderColor: "#555",
@@ -1240,11 +1125,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     color: "black",
   },
-
   iconWrapper: {
     paddingHorizontal: 8,
   },
-
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.2)",
@@ -1257,7 +1140,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     width: "80%",
     alignItems: "center",
-    elevation: 10, // Tạo hiệu ứng nổi
+    elevation: 10,
   },
   highlightedMessage: {
     backgroundColor: "#f0f0f0",
@@ -1299,7 +1182,7 @@ const styles = StyleSheet.create({
   gridContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10, // nếu dùng React Native Web, có thể dùng gap; nếu không, dùng margin
+    gap: 10,
     marginVertical: 10,
   },
   gridItem: {
@@ -1312,119 +1195,6 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 10,
     backgroundColor: "transparent",
-  },
-  previewContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8, // nếu bạn dùng React Native Web. Nếu không:
-    marginTop: 8,
-  },
-  previewItem: {
-    position: "relative",
-    margin: 4,
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 8,
-  },
-  removeButton: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    backgroundColor: "red",
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1,
-  },
-  clearAllButton: {
-    color: "red",
-    marginTop: 10,
-    textDecorationLine: "underline",
-  },
-  odalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContainer: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 10,
-    width: "90%",
-    maxHeight: "80%",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContainer: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 10,
-    width: "90%",
-    maxHeight: "80%",
-  },
-  centeredOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // nếu bạn muốn nền mờ
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 999,
-  },
-  callNotification: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
-    elevation: 5,
-    alignItems: "center",
-    width: "80%",
-  },
-  callText: {
-    fontSize: 18,
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  acceptButton: {
-    backgroundColor: "#4CAF50",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    flex: 1,
-    marginLeft: 5,
-  },
-  rejectButton: {
-    backgroundColor: "#f44336",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    flex: 1,
-    marginRight: 5,
-  },
-  buttonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "bold",
   },
 });
 

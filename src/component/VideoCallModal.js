@@ -8,19 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-const VideoCallModal = ({ show, onHide, socketRef }) => {
-  const [jitsiUrl, setJitsiUrl] = useState(null);
-
-  // action socket
-  useEffect(() => {
-    socketRef.current.on("RES_CALL", (from, to) => {
-      const members = to.members || [];
-      const membersString = members.join("-");
-      setJitsiUrl(`https://meet.jit.si/${membersString}`);
-      console.log("from ", from, "to ", to);
-    });
-  }, []);
-
+const VideoCallModal = ({ show, onHide, socketRef, jitsiUrl }) => {
   return (
     <Modal
       visible={show}
@@ -35,9 +23,9 @@ const VideoCallModal = ({ show, onHide, socketRef }) => {
           </TouchableOpacity>
           <iframe
             src={jitsiUrl}
-            allow="camera; microphone; fullscreen; display-capture"
+            allow="camera; microphone; fullscreen; display-capture; screen-wake-lock"
             style={{ width: "100%", height: "100%", border: "none" }}
-            sandbox="allow-scripts allow-same-origin allow-forms" // Cho phép các quyền iframe cụ thể
+            sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation" // Cho phép các quyền iframe cụ thể
           />
 
           {/* {Platform.OS === "web" ? (

@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, SafeAreaView } from "react-native";
+import {
+  View,
+  SafeAreaView,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+} from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -11,7 +17,7 @@ import ChatTab from "./src/page/chat/ChatTab";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginForm from "./src/page/auth/login";
 import { store } from "./src/redux/store";
-import { Provider, useSelector, useDispatch  } from "react-redux";
+import { Provider, useSelector, useDispatch } from "react-redux";
 import { doGetAccount } from "./src/redux/authSlice";
 import RegisterForm from "./src/page/auth/register";
 import InboxScreen from "./src/page/chat/InboxScreen";
@@ -28,6 +34,7 @@ import AddFriendScreen from "./src/page/chat/AddFriendScreen";
 import SearchScreen from "./src/page/chat/SearchScreen";
 import UserProfileScreen from "./src/page/personal/UserProfileScreen";
 import CreateGroupTab from "./src/page/chat/CreateGroupTab";
+import VideoCallModal from "./src/component/VideoCallModal";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -84,12 +91,19 @@ const MainTabs = ({ route }) => (
 
 const Project = () => {
   const dispatch = useDispatch();
-  let isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
+  const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const user = useSelector((state) => state.auth.user);
+
+  // Trạng thái cuộc gọi
+  const [isCalling, setIsCalling] = useState(false);
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [isInitiator, setIsInitiator] = useState(false);
+  const [receiver, setReceiver] = useState(null);
+  const [jitsiUrl, setJitsiUrl] = useState(null);
 
   const fetchDataAccount = async () => {
     if (!user || !user?.access_Token) {
-      await dispatch(doGetAccount()); // Gọi API
+      await dispatch(doGetAccount());
     }
   };
 
@@ -99,8 +113,7 @@ const Project = () => {
 
   // connect socket -> cmd(IPv4 Address): ipconfig
   const socketRef = useRef();
-
-  const IPv4 = "192.168.1.6";
+  const IPv4 = "192.168.1.5";
   useEffect(() => {
     const socket = io.connect(`http://${IPv4}:8080`);
     socketRef.current = socket;
@@ -108,108 +121,181 @@ const Project = () => {
 
   // action socket
   useEffect(() => {
-    if (user && user._id) {
+    if (user && user._id && socketRef.current) {
       socketRef.current.emit("register", user._id);
     }
+
+    socketRef.current.on("RES_CALL", (from, to) => {
+      setIncomingCall(from);
+      setReceiver(to);
+
+      const members = to.members || [];
+      const membersString = members.join("-");
+      setJitsiUrl(`https://meet.jit.si/${membersString}`);
+    });
+
+    socketRef.current.on("RES_END_CALL", () => {
+      setIsCalling(false);
+      setIncomingCall(null);
+      setIsInitiator(false);
+      setReceiver(null);
+    });
+
+    return () => {
+      socketRef.current.off("RES_CALL");
+      socketRef.current.off("RES_END_CALL");
+    };
   }, [user]);
 
+  // Hàm xử lý cuộc gọi
+  const handleStartCall = (caller, callee) => {
+    setIsCalling(true);
+    setIsInitiator(true);
+    setReceiver(callee);
+    socketRef.current.emit("REQ_CALL", caller, callee);
+  };
+
+  const acceptCall = () => {
+    setIsCalling(true);
+    setIncomingCall(null);
+  };
+
+  const endCall = () => {
+    socketRef.current.emit("REQ_END_CALL", user, receiver);
+    setIsCalling(false);
+    setIncomingCall(null);
+    setIsInitiator(false);
+    setReceiver(null);
+  };
+
   return (
-      <NavigationContainer>
-        <SafeAreaView style={{ flex: 1 }}>
-          <Stack.Navigator>
-            {isLoggedIn ? (
-              <>
-                <Stack.Screen
-                  name="MainTabs"
-                  component={MainTabs}
-                  initialParams={{ socketRef }}
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="SearchScreen"
-                  component={SearchScreen}
-                  options={{ headerShown: false }}
-                  initialParams={{ socketRef }}
-                />
-                <Stack.Screen
-                  name="AddFriendScreen"
-                  component={AddFriendScreen}
-                  options={{ headerShown: false }}
-                  initialParams={{ socketRef }}
-                />
-                <Stack.Screen
-                  name="CreateGroupTab"
-                  component={CreateGroupTab}
-                  options={{ headerShown: false }}
-                  initialParams={{ socketRef }}
-                />
-                <Stack.Screen
-                  name="UserProfileScreen"
-                  component={UserProfileScreen}
-                  options={{ headerShown: false }}
-                  initialParams={{ socketRef }}
-                />
-                <Stack.Screen
-                  name="InboxScreen"
-                  component={InboxScreen}
-                  options={{ headerShown: false }}
-                  initialParams={{ socketRef }}
-                />
-                <Stack.Screen
-                  name="PersonOption"
-                  component={PersonOption}
-                  options={{ headerShown: false }}
-                  initialParams={{ socketRef }}
-                />
-                <Stack.Screen
-                  name="GroupOption"
-                  component={GroupOption}
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="ChangePassword"
-                  component={ChangePassword}
-                />
-                <Stack.Screen name="Setting" component={Setting} />
-                <Stack.Screen
-                  name="InformationAccount"
-                  component={InformationAccount}
-                  initialParams={{ socketRef }}
-                />
-                <Stack.Screen
-                  name="ManageGroup"
-                  component={ManageGroup}
-                  options={{ headerShown: false }}
-                  initialParams={{ socketRef }}
-                />
-                <Stack.Screen
-                  name="FriendRequest"
-                  component={FriendRequest}
-                  initialParams={{ socketRef }}
-                />
-              </>
-            ) : (
-              <>
-                <Stack.Screen
-                  name="Login"
-                  component={LoginForm}
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="Register"
-                  component={RegisterForm}
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="ResetPassword"
-                  component={ResetPassword}
-                  options={{ headerShown: false }}
-                />
-              </>
-            )}
-          </Stack.Navigator>
-        </SafeAreaView>
-      </NavigationContainer>
+    <NavigationContainer>
+      <SafeAreaView style={{ flex: 1 }}>
+        <Stack.Navigator>
+          {isLoggedIn ? (
+            <>
+              <Stack.Screen
+                name="MainTabs"
+                component={MainTabs}
+                initialParams={{ socketRef, handleStartCall }}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="SearchScreen"
+                component={SearchScreen}
+                options={{ headerShown: false }}
+                initialParams={{ socketRef }}
+              />
+              <Stack.Screen
+                name="AddFriendScreen"
+                component={AddFriendScreen}
+                options={{ headerShown: false }}
+                initialParams={{ socketRef }}
+              />
+              <Stack.Screen
+                name="CreateGroupTab"
+                component={CreateGroupTab}
+                options={{ headerShown: false }}
+                initialParams={{ socketRef }}
+              />
+              <Stack.Screen
+                name="UserProfileScreen"
+                component={UserProfileScreen}
+                options={{ headerShown: false }}
+                initialParams={{ socketRef }}
+              />
+              <Stack.Screen
+                name="InboxScreen"
+                component={InboxScreen}
+                options={{ headerShown: false }}
+                initialParams={{
+                  socketRef,
+                  handleStartCall,
+                }}
+              />
+              <Stack.Screen
+                name="PersonOption"
+                component={PersonOption}
+                options={{ headerShown: false }}
+                initialParams={{ socketRef }}
+              />
+              <Stack.Screen
+                name="GroupOption"
+                component={GroupOption}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen name="ChangePassword" component={ChangePassword} />
+              <Stack.Screen name="Setting" component={Setting} />
+              <Stack.Screen
+                name="InformationAccount"
+                component={InformationAccount}
+                initialParams={{ socketRef }}
+              />
+              <Stack.Screen
+                name="ManageGroup"
+                component={ManageGroup}
+                options={{ headerShown: false }}
+                initialParams={{ socketRef }}
+              />
+              <Stack.Screen
+                name="FriendRequest"
+                component={FriendRequest}
+                initialParams={{ socketRef }}
+              />
+            </>
+          ) : (
+            <>
+              <Stack.Screen
+                name="Login"
+                component={LoginForm}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Register"
+                component={RegisterForm}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ResetPassword"
+                component={ResetPassword}
+                options={{ headerShown: false }}
+              />
+            </>
+          )}
+        </Stack.Navigator>
+      </SafeAreaView>
+
+      {!isInitiator && incomingCall && (
+        <View style={styles.centeredOverlay}>
+          <View style={styles.callNotification}>
+            <Text style={styles.callText}>
+              {incomingCall.username} đang gọi bạn...
+            </Text>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity style={styles.rejectButton} onPress={endCall}>
+                <Text style={styles.buttonText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.acceptButton}
+                onPress={acceptCall}
+              >
+                <Text style={styles.buttonText}>Chấp nhận</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {isCalling && (
+        <VideoCallModal
+          show={isCalling}
+          onHide={endCall}
+          jitsiUrl={jitsiUrl}
+          socketRef={socketRef}
+          isInitiator={isInitiator}
+        />
+      )}
+    </NavigationContainer>
   );
 };
 
@@ -220,3 +306,77 @@ export default function App() {
     </Provider>
   );
 }
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    width: "90%",
+    maxHeight: "80%",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    width: "90%",
+    maxHeight: "80%",
+  },
+  centeredOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // nếu bạn muốn nền mờ
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+  },
+  callNotification: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    elevation: 5,
+    alignItems: "center",
+    width: "80%",
+  },
+  callText: {
+    fontSize: 18,
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  acceptButton: {
+    backgroundColor: "#4CAF50",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    flex: 1,
+    marginLeft: 5,
+  },
+  rejectButton: {
+    backgroundColor: "#f44336",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    flex: 1,
+    marginRight: 5,
+  },
+  buttonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+});
