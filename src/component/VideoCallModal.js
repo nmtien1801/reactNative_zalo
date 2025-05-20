@@ -1,14 +1,26 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect } from "react";
 import {
   Modal,
-  Platform,
   View,
   StyleSheet,
   TouchableOpacity,
+  Platform,
+  Linking,
+  Text,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-const VideoCallModal = ({ show, onHide, socketRef, jitsiUrl }) => {
+const VideoCallModal = ({ show, onHide, jitsiUrl }) => {
+  useEffect(() => {
+    if (show && Platform.OS !== "web" && jitsiUrl) {
+      // Mở bằng trình duyệt ngoài (tránh redirect qua app)
+      const fullUrl = `${jitsiUrl}#config.disableDeepLinking=true`;
+      Linking.openURL(fullUrl).catch((err) =>
+        console.error("Lỗi mở Jitsi:", err)
+      );
+    }
+  }, [show, jitsiUrl]);
+
   return (
     <Modal
       visible={show}
@@ -21,42 +33,19 @@ const VideoCallModal = ({ show, onHide, socketRef, jitsiUrl }) => {
           <TouchableOpacity style={styles.closeButton} onPress={onHide}>
             <Ionicons name="close" size={28} color="#fff" />
           </TouchableOpacity>
-          <iframe
-            src={jitsiUrl}
-            allow="camera; microphone; fullscreen; display-capture; screen-wake-lock"
-            style={{ width: "100%", height: "100%", border: "none" }}
-            sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation allow-popups" // Cho phép các quyền iframe cụ thể
-          />
 
-          {/* {Platform.OS === "web" ? (
+          {Platform.OS === "web" ? (
             <iframe
               src={jitsiUrl}
-              allow="camera; microphone; fullscreen; display-capture"
+              allow="camera; microphone; fullscreen; display-capture; screen-wake-lock"
               style={{ width: "100%", height: "100%", border: "none" }}
-              sandbox="allow-scripts allow-same-origin allow-forms"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation allow-popups" // Cho phép các quyền iframe cụ thể
             />
           ) : (
-            <WebView
-              originWhitelist={["*"]}
-              javaScriptEnabled
-              allowsInlineMediaPlayback
-              mediaPlaybackRequiresUserAction={false}
-              allowUniversalAccessFromFileURLs={true}
-              source={{
-                html: `
-                <html>
-                  <body style="margin:0;padding:0;">
-                    <iframe 
-                      src="${jitsiUrl}"
-                      style="width:100%; height:100%; border:none;"
-                      allow="camera; microphone; fullscreen; display-capture"
-                    ></iframe>
-                  </body>
-                </html>`,
-              }}
-              style={styles.webView}
-            />
-          )} */}
+            <Text style={styles.infoText}>
+              Cuộc gọi đang mở bằng trình duyệt...
+            </Text>
+          )}
         </View>
       </View>
     </Modal>
@@ -77,9 +66,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
   },
-  webView: {
-    flex: 1,
-  },
   closeButton: {
     position: "absolute",
     top: 10,
@@ -88,6 +74,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.6)",
     padding: 6,
     borderRadius: 20,
+  },
+  infoText: {
+    color: "#fff",
+    fontSize: 16,
+    marginTop: 40,
+    textAlign: "center",
   },
 });
 

@@ -235,12 +235,6 @@ const cleanFileName = (fileName) => {
     return fileName.replace(/^\d+_|^\d+-/, ""); // Loại bỏ số và dấu gạch dưới hoặc gạch ngang ở đầu
   };
 
-  console.log("mediaMessages: ", mediaMessages);
-  console.log("fileMessages: ", fileMessages);
-  console.log("linkMessages: ", linkMessages);
-
-// // nghiem
-
   const sendMessage = (message, type) => {
     if (socketRef.current) {
       let sender = { ...user };

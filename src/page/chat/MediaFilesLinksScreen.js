@@ -16,10 +16,6 @@ const MediaFilesLinksScreen = ({ route, navigation }) => {
   const fileMessages = route.params?.fileMessages;
   const linkMessages = route.params?.linkMessages;
 
-  console.log("mediaMessages", mediaMessages);
-  console.log("fileMessages", fileMessages);
-  console.log("linkMessages", linkMessages);
-
   const [index, setIndex] = useState(0);
   const [routes] = useState([
     { key: "media", title: "Ảnh/Video" },
