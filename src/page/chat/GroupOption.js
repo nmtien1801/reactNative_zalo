@@ -516,7 +516,6 @@ const ChatInfoScreen = ({ route }) => {
             </View>
           </Modal>
 
-
           <TouchableOpacity
             style={styles.optionItem}
             onPress={() =>
@@ -536,7 +535,9 @@ const ChatInfoScreen = ({ route }) => {
             <View style={styles.optionContent}>
               <Text style={styles.optionText}>Ảnh, video, file, link</Text>
               <Text style={styles.optionSubtext}>
-                {mediaMessages.length > 0 || fileMessages.length > 0 || linkMessages.length > 0
+                {mediaMessages.length > 0 ||
+                fileMessages.length > 0 ||
+                linkMessages.length > 0
                   ? "Xem các nội dung đã chia sẻ"
                   : "Chưa có nội dung nào được chia sẻ"}
               </Text>
@@ -553,6 +554,9 @@ const ChatInfoScreen = ({ route }) => {
                   onlineUsers,
                   conversations,
                   role,
+                  mediaMessages, // Truyền mediaMessages
+                  fileMessages, // Truyền fileMessages
+                  linkMessages,
                 })
               }
             >

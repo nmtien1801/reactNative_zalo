@@ -25,7 +25,7 @@ const VideoCallModal = ({ show, onHide, socketRef, jitsiUrl }) => {
             src={jitsiUrl}
             allow="camera; microphone; fullscreen; display-capture; screen-wake-lock"
             style={{ width: "100%", height: "100%", border: "none" }}
-            sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation" // Cho phép các quyền iframe cụ thể
+            sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation allow-popups" // Cho phép các quyền iframe cụ thể
           />
 
           {/* {Platform.OS === "web" ? (

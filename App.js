@@ -128,6 +128,8 @@ const Project = () => {
     }
 
     socketRef.current.on("RES_CALL", (from, to) => {
+      console.log('ssssssssssssssssss');
+      
       setIncomingCall(from);
       setReceiver(to);
 
@@ -143,10 +145,10 @@ const Project = () => {
       setReceiver(null);
     });
 
-    return () => {
-      socketRef.current.off("RES_CALL");
-      socketRef.current.off("RES_END_CALL");
-    };
+    // return () => {
+    //   socketRef.current.off("RES_CALL");
+    //   socketRef.current.off("RES_END_CALL");
+    // };
   }, [user]);
 
   // Hàm xử lý cuộc gọi

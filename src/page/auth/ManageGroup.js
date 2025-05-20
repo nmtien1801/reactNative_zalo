@@ -24,6 +24,9 @@ const ManageGroup = ({ navigation, route }) => {
   const permissions = useSelector((state) => state.permission.permission);
   const user = useSelector((state) => state.auth.user);
   const role = route.params?.role; // role của người dùng trong nhóm
+  const mediaMessages = route.params?.mediaMessages;
+  const fileMessages = route.params?.fileMessages;
+  const linkMessages = route.params?.linkMessages;
 
   const settings = [
     "Chế độ phê duyệt thành viên mới",
@@ -99,8 +102,6 @@ const ManageGroup = ({ navigation, route }) => {
     setSettingSwitches(updated);
   };
 
- 
-
   // Handle dissolve group
   const handleDissolveGroup = async () => {
     try {
@@ -136,19 +137,19 @@ const ManageGroup = ({ navigation, route }) => {
     }
   };
 
-    // action socket
-    useEffect(() => {
-      socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
-        if(data.length === 0){
-          navigation.navigate('InboxScreen', {
-            item,
-            socketRef,
-            onlineUsers,
-          });
-        }
-      });
-    }, []);
-    
+  // action socket
+  useEffect(() => {
+    socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
+      if (data.length === 0) {
+        navigation.navigate("InboxScreen", {
+          item,
+          socketRef,
+          onlineUsers,
+        });
+      }
+    });
+  }, []);
+
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "#fff", padding: 16 }}>
       {/* Header */}
@@ -164,6 +165,10 @@ const ManageGroup = ({ navigation, route }) => {
                 socketRef,
                 onlineUsers,
                 conversations,
+                role,
+                mediaMessages, // Truyền mediaMessages
+                fileMessages, // Truyền fileMessages
+                linkMessages, // Truyền linkMessages
               }
             )
           }
