@@ -3,26 +3,47 @@ import {
   View,
   Text,
   TextInput,
-  FlatList,
   TouchableOpacity,
   Image,
   StyleSheet,
   Dimensions,
+  Modal,
+  ScrollView,
 } from "react-native";
-import {
-  Menu,
-  MenuOptions,
-  MenuOption,
-  MenuTrigger,
-} from "react-native-popup-menu";
 import { Ionicons } from "@expo/vector-icons";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
+import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
+import AddFriendModal from "./AddFriendModal";
+
 const { width, height } = Dimensions.get("window");
 const HEADER_HEIGHT = height * 0.08;
 
-export default function SearchHeader({ option }) {
+export default function SearchHeader({ option, socketRef, onlineUsers }) {
   const navigation = useNavigation();
+  const [showModalAddFriend, setShowModalAddFriend] = useState(false); // Modal thêm bạn
+  const [modalVisible, setModalVisible] = useState(false); // Trạng thái điều khiển modal tùy chọn
+
+  const options = [
+    {
+      icon: "person-add",
+      iconLibrary: "Ionicons",
+      text: "Thêm bạn",
+      action: () => {
+        setShowModalAddFriend(true);
+        setModalVisible(false);
+      },
+    },
+    {
+      icon: "users",
+      iconLibrary: "FontAwesome5",
+      text: "Tạo nhóm",
+      action: () => {
+        navigation.navigate("CreateGroupTab");
+        setModalVisible(false);
+      },
+    },
+  ];
 
   return (
     <View
@@ -50,11 +71,16 @@ export default function SearchHeader({ option }) {
           height: HEADER_HEIGHT * 0.6,
           fontSize: 15,
         }}
-        onPress={() => navigation.navigate("SearchScreen")}
+        onFocus={() =>
+          navigation.navigate("SearchScreen", {
+            socketRef,
+            onlineUsers,
+          })
+        }
       />
 
       {option === "person" && (
-        <TouchableOpacity onPress={()=>navigation.navigate("Setting")}>
+        <TouchableOpacity onPress={() => navigation.navigate("Setting")}>
           <Ionicons
             name="settings-outline"
             size={24}
@@ -73,127 +99,85 @@ export default function SearchHeader({ option }) {
             />
           </TouchableOpacity>
 
-          <Menu>
-            <MenuTrigger>
-              <Icon
-                name="add"
-                size={HEADER_HEIGHT * 0.5}
-                color="white"
-                style={{ marginLeft: 10 }}
-              />
-            </MenuTrigger>
-            <MenuOptions
-              optionsContainerStyle={{
-                width: 240,
-                borderRadius: 10,
-                backgroundColor: "white",
-                padding: 10,
+          <TouchableOpacity onPress={() => setModalVisible(true)}>
+            <Icon
+              name="add"
+              size={HEADER_HEIGHT * 0.5}
+              color="white"
+              style={{ marginLeft: 10 }}
+            />
+          </TouchableOpacity>
+
+          <Modal
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.5)",
               }}
+              activeOpacity={1}
+              onPress={() => setModalVisible(false)} // Đóng modal khi nhấn bên ngoài
             >
-              <MenuOption onSelect={() => alert("Thêm bạn")}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 10,
-                  }}
-                >
-                  <Icon
-                    name="person-add"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text style={{ fontSize: 16 }}>Thêm bạn</Text>
-                </View>
-              </MenuOption>
-              <MenuOption onSelect={() => alert("Tạo nhóm")}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 10,
-                  }}
-                >
-                  <Icon
-                    name="group-add"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text style={{ fontSize: 16 }}>Tạo nhóm</Text>
-                </View>
-              </MenuOption>
-              <MenuOption onSelect={() => alert("Gửi danh bạ")}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 10,
-                  }}
-                >
-                  <Icon
-                    name="contacts"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text style={{ fontSize: 16 }}>Gửi danh bạ</Text>
-                </View>
-              </MenuOption>
-              <MenuOption onSelect={() => alert("Lịch Zalo")}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 10,
-                  }}
-                >
-                  <Icon
-                    name="event"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text style={{ fontSize: 16 }}>Lịch Zalo</Text>
-                </View>
-              </MenuOption>
-              <MenuOption onSelect={() => alert("Tạo cuộc gọi nhóm")}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 10,
-                  }}
-                >
-                  <Icon
-                    name="call"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text style={{ fontSize: 16 }}>Tạo cuộc gọi nhóm</Text>
-                </View>
-              </MenuOption>
-              <MenuOption onSelect={() => alert("Thiết bị đăng nhập")}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    padding: 10,
-                  }}
-                >
-                  <Icon
-                    name="devices"
-                    size={20}
-                    color="black"
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text style={{ fontSize: 16 }}>Thiết bị đăng nhập</Text>
-                </View>
-              </MenuOption>
-            </MenuOptions>
-          </Menu>
+              <View
+                style={{
+                  position: "absolute",
+                  top: HEADER_HEIGHT, // Đặt ngay dưới header
+                  right: 15, // Căn lề phải
+                  backgroundColor: "white",
+                  borderRadius: 10,
+                  padding: 10,
+                  width: 240,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 3.84,
+                  elevation: 5,
+                }}
+              >
+                <ScrollView>
+                  {options.map((opt, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 10,
+                        paddingHorizontal: 10,
+                      }}
+                      onPress={opt.action}
+                    >
+                      {opt.iconLibrary === "Ionicons" ? (
+                        <Icon
+                          name={opt.icon}
+                          size={20}
+                          color="black"
+                          style={{ marginRight: 10 }}
+                        />
+                      ) : (
+                        <FontAwesome5
+                          name={opt.icon}
+                          size={20}
+                          color="black"
+                          style={{ marginRight: 10 }}
+                          solid
+                        />
+                      )}
+                      <Text style={{ fontSize: 16 }}>{opt.text}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </TouchableOpacity>
+          </Modal>
+
+          <AddFriendModal
+            show={showModalAddFriend}
+            onHide={() => setShowModalAddFriend(false)}
+            socketRef={socketRef}
+          />
         </View>
       )}
     </View>

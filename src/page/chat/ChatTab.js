@@ -12,33 +12,42 @@ import {
 import SearchHeader from "../../component/Header";
 import { getConversations } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
-import io from "socket.io-client";
+
 import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 const ITEM_HEIGHT = height * 0.1;
 const AVATAR_SIZE = ITEM_HEIGHT * 0.6;
 
-const ChatTab = () => {
+const ChatTab = ({ route }) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const socketRef = useRef();
   const [onlineUsers, setOnlineUsers] = useState([]);
 
   const user = useSelector((state) => state.auth.user);
   const conversationRedux = useSelector((state) => state.chat.conversations);
-  const [isConnect, setIsConnect] = useState(false); // connect socket
+  const socketRef = route.params.socketRef;
 
-  const [conversations, setConversations] = useState([
-    {
-      _id: 1,
-      username: "Cloud",
-      message: "[Thông báo] Giới thiệu về Trường Kha...",
-      time: "26/07/24",
-      avatar: require("../../../assets/man.png"),
-      type: 3,
-    },
-  ]);
+  const [conversations, setConversations] = useState([]);
+
+  const convertTime = (time) => {
+    const now = Date.now();
+    const past = Number(time);
+    const diff = now - past;
+
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (seconds < 60) return "Vừa xong";
+    if (minutes < 60) return `${minutes} phút trước`;
+    if (hours < 24) return `${hours} giờ trước`;
+    if (days === 1) return "Hôm qua";
+
+    const date = new Date(past);
+    return date.toLocaleDateString("vi-VN");
+  };
 
   useEffect(() => {
     dispatch(getConversations(user._id));
@@ -55,7 +64,9 @@ const ChatTab = () => {
           avatar: item.avatar,
           type: item.type,
           phone: item.receiver.phone,
-          members: item.receiver.members,
+          members: item.members,
+          role: item.role,
+          permission: item.receiver.permission,
         };
       });
 
@@ -63,32 +74,78 @@ const ChatTab = () => {
     }
   }, [conversationRedux]);
 
-  // connect docket -> cmd(IPv4 Address): ipconfig
-  const IPv4 = "192.168.1.5"
-  useEffect(() => {
-    const socket = io.connect(`http://${IPv4}:8080`);
-
-    socketRef.current = socket;
-    socket.on("connect", () => setIsConnect(true));
-    socket.off("disconnect", () => setIsConnect(false));
-  }, []);
-
   // action socket
   useEffect(() => {
-    if (isConnect) {
-      socketRef.current.emit("register", user._id);
+    socketRef.current.on("user-list", (usersList) => {
+      setOnlineUsers(usersList); // Lưu danh sách user online
+    });
 
-      socketRef.current.on("user-list", (usersList) => {
-        setOnlineUsers(usersList); // Lưu danh sách user online
+    // accept friend
+    socketRef.current.on("RES_ACCEPT_FRIEND", async () => {
+      dispatch(getConversations(user._id));
+    });
+
+    // delete friend
+    socketRef.current.on("RES_DELETE_FRIEND", async () => {
+      dispatch(getConversations(user._id));
+    });
+
+    // remove member group
+    socketRef.current.on("RES_REMOVE_MEMBER", async () => {
+      dispatch(getConversations(user._id));
+    });
+
+    // create group
+    socketRef.current.on("RES_CREATE_GROUP", (data) => {
+      dispatch(getConversations(user._id));
+    });
+
+    // Dissolve Group
+    socketRef.current.on("RES_DISSOLVE_GROUP", (data) => {
+      dispatch(getConversations(user._id));
+      navigation.navigate("MainTabs", {
+        socketRef,
       });
+    });
 
-      return () => socketRef.current.disconnect();
-    }
-  }, [isConnect]);
+    // add member group
+    socketRef.current.on("RES_ADD_GROUP", (data) => {
+      dispatch(getConversations(user._id));
+    });
+
+    // update avatar
+    socketRef.current.on("RES_UPDATE_AVATAR", (data) => {
+      dispatch(getConversations(user._id));
+    });
+
+    // update deputy
+    socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
+      dispatch(getConversations(user._id));
+    });
+
+    // transfer leader
+    socketRef.current.on("RES_TRANS_LEADER", (data) => {
+      dispatch(getConversations(user._id));
+    });
+
+    // update permission
+    socketRef.current.on("RES_MEMBER_PERMISSION", (data) => {
+      dispatch(getConversations(user._id));
+    });
+
+    // receiver msg - update message in conversation
+    socketRef.current.on("RECEIVED_MSG", (data) => {
+      dispatch(getConversations(user._id));
+    });
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
-      <SearchHeader option={"chatTab"} />
+      <SearchHeader
+        option={"chatTab"}
+        socketRef={socketRef}
+        onlineUsers={onlineUsers}
+      />
       {/* Chat List */}
       <FlatList
         data={conversations}
@@ -108,11 +165,12 @@ const ChatTab = () => {
                 item,
                 socketRef,
                 onlineUsers,
+                conversations,
               })
             }
           >
             <Image
-              source={item.avatar}
+              source={{ uri: item.avatar }}
               style={{
                 width: AVATAR_SIZE,
                 height: AVATAR_SIZE,
@@ -124,10 +182,16 @@ const ChatTab = () => {
               <Text style={{ fontWeight: "bold", fontSize: 16 }}>
                 {item.username}
               </Text>
-              <Text style={{ color: "gray" }}>{item.message}</Text>
+              <Text
+                style={{ color: "gray" }}
+                numberOfLines={1} // 👈 Cắt dòng
+                ellipsizeMode="tail" // 👈 Thêm dấu "..."
+              >
+                {item.message}
+              </Text>
             </View>
             {item.time ? (
-              <Text style={{ color: "gray" }}>{item.time}</Text>
+              <Text style={{ color: "gray" }}>{convertTime(item.time)}</Text>
             ) : null}
           </TouchableOpacity>
         )}

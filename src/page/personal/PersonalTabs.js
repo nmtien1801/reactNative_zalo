@@ -18,7 +18,8 @@ import { FontAwesome } from "@expo/vector-icons";
 import { Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-export default function PersonalTabs() {
+export default function PersonalTabs({route}) {
+  const socketRef = route.params.socketRef;
   const personal = [
     {
       id: "1",
@@ -112,8 +113,9 @@ export default function PersonalTabs() {
         let a = await dispatch(
           uploadAvatarProfile({ phone: user.phone, avatar: res.DT })
         );
-        console.log("a sac", a);
+
         if (a.payload.EC === 0) {
+          socketRef.current.emit("REQ_UPDATE_AVATAR");
           Alert.alert("Upload thành công!", `Link: ${res.DT}`);
         }
       }
@@ -152,7 +154,7 @@ export default function PersonalTabs() {
                   <FontAwesome name="camera" size={20} color="#fff" />
                 </TouchableOpacity>
               </View>
-              <Text style={styles.userName}>{user?.name || "Lộc lá"}</Text>
+              <Text style={styles.userName}>{user?.username || "Lộc lá"}</Text>
             </View>
             <Icon name="swap-horizontal-outline" size={24} color="#2196F3" />
           </TouchableOpacity>
