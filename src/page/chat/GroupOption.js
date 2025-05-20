@@ -543,17 +543,6 @@ const ChatInfoScreen = ({ route }) => {
             </View>
           </TouchableOpacity>
 
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Feather
-              name="users"
-              size={20}
-              color="#555"
-              style={styles.optionIcon}
-            />
-            <Text style={styles.optionText}>Xem nhóm chung (14)</Text>
-          </TouchableOpacity>
-
           {(role === "leader" || role === "deputy") && (
             <TouchableOpacity
               style={styles.optionItem}
