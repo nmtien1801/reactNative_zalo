@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  RefreshControl,
 } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -25,6 +26,18 @@ export default function ContactsTabs({ route }) {
   const socketRef = route.params.socketRef;
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [conversations, setConversations] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    dispatch(getConversations(user._id))
+      .then(() => {
+        setRefreshing(false);
+      })
+      .catch(() => {
+        setRefreshing(false);
+      });
+  };
 
   useEffect(() => {
     dispatch(getConversations(user._id));
@@ -112,34 +125,46 @@ export default function ContactsTabs({ route }) {
     return (
       <FlatList
         style={{ flex: 1, backgroundColor: "#fff" }}
-        ListHeaderComponent={() => (
-          <>
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                padding: 10,
-                alignItems: "center",
-                borderBottomWidth: 1,
-                borderColor: "#ddd",
-              }}
-              onPress={() =>
-                navigation.navigate("FriendRequest", { socketRef })
-              }
-            >
-              <Icon
-                name="person-add-outline"
-                size={24}
-                color="#2196F3"
-                style={{ marginRight: 10 }}
-              />
-              <Text style={{ fontSize: 16 }}>Lời mời kết bạn (1)</Text>
-            </TouchableOpacity>
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            colors={["#2196F3"]} 
+            tintColor="#2196F3" 
+            title="Đang tải dữ liệu..." 
+            titleColor="#2196F3"
+          />
+        }
+        ListHeaderComponent={
+          () => (
+            <>
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  padding: 10,
+                  alignItems: "center",
+                  borderBottomWidth: 1,
+                  borderColor: "#ddd",
+                }}
+                onPress={() =>
+                  navigation.navigate("FriendRequest", { socketRef })
+                }
+              >
+                <Icon
+                  name="person-add-outline"
+                  size={24}
+                  color="#2196F3"
+                  style={{ marginRight: 10 }}
+                />
+                <Text style={{ fontSize: 16 }}>Lời mời kết bạn (1)</Text>
+              </TouchableOpacity>
 
-            <Text style={{ margin: 10, fontSize: 18, fontWeight: "bold" }}>
-              Danh sách bạn bè
-            </Text>
-          </>
-        )}
+              <Text style={{ margin: 10, fontSize: 18, fontWeight: "bold" }}>
+                Danh sách bạn bè
+              </Text>
+            </>
+          )
+        }
         data={friends}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => <FriendItem friend={item} />}
@@ -178,64 +203,76 @@ export default function ContactsTabs({ route }) {
 
     return (
       <FlatList
-        ListHeaderComponent={() => (
-          <>
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                padding: 10,
-                alignItems: "center",
-                borderBottomWidth: 1,
-                borderColor: "#ddd",
-              }}
-              onPress={() =>
-                navigation.navigate("FriendRequest", { socketRef })
-              }
-            >
-              <Icon
-                name="person-add-outline"
-                size={24}
-                color="#2196F3"
-                style={{ marginRight: 10 }}
-              />
-              <Text style={{ fontSize: 16 }}>Lời mời tham gia nhóm (1)</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                padding: 10,
-                alignItems: "center",
-                borderBottomWidth: 1,
-                borderColor: "#ddd",
-              }}
-            >
-              <Icon
-                name="person-add-outline"
-                size={24}
-                color="#2196F3"
-                style={{ marginRight: 10 }}
-              />
-              <Text style={{ fontSize: 16 }}>Tạo nhóm mới</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                padding: 10,
-                alignItems: "center",
-                borderColor: "#ddd",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text style={{ margin: 10, fontSize: 18, fontWeight: "bold" }}>
-                Nhóm đang tham gia(4)
-              </Text>
-              <TouchableOpacity>
-                <Icon name="funnel-outline" size={24} color="#2196F3" />
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            colors={["#2196F3"]} 
+            tintColor="#2196F3" 
+            title="Đang tải dữ liệu..." 
+            titleColor="#2196F3"
+          />
+        }
+        ListHeaderComponent={
+          () => (
+            <>
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  padding: 10,
+                  alignItems: "center",
+                  borderBottomWidth: 1,
+                  borderColor: "#ddd",
+                }}
+                onPress={() =>
+                  navigation.navigate("FriendRequest", { socketRef })
+                }
+              >
+                <Icon
+                  name="person-add-outline"
+                  size={24}
+                  color="#2196F3"
+                  style={{ marginRight: 10 }}
+                />
+                <Text style={{ fontSize: 16 }}>Lời mời tham gia nhóm (1)</Text>
               </TouchableOpacity>
-            </TouchableOpacity>
-          </>
-        )}
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  padding: 10,
+                  alignItems: "center",
+                  borderBottomWidth: 1,
+                  borderColor: "#ddd",
+                }}
+              >
+                <Icon
+                  name="person-add-outline"
+                  size={24}
+                  color="#2196F3"
+                  style={{ marginRight: 10 }}
+                />
+                <Text style={{ fontSize: 16 }}>Tạo nhóm mới</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  padding: 10,
+                  alignItems: "center",
+                  borderColor: "#ddd",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ margin: 10, fontSize: 18, fontWeight: "bold" }}>
+                  Nhóm đang tham gia(4)
+                </Text>
+                <TouchableOpacity>
+                  <Icon name="funnel-outline" size={24} color="#2196F3" />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            </>
+          )
+        }
         style={{ flex: 1, backgroundColor: "#fff" }}
         data={friends}
         keyExtractor={(item) => item._id}

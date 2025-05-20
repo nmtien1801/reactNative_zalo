@@ -8,6 +8,7 @@ import {
   Image,
   Dimensions,
   SafeAreaView,
+  RefreshControl,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -29,6 +30,22 @@ const SearchScreen = () => {
 
   const [searchText, setSearchText] = useState('');
   const [filteredConversations, setFilteredConversations] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    if (user?._id) {
+      dispatch(getConversations(user._id))
+        .then(() => {
+          setRefreshing(false);
+        })
+        .catch(() => {
+          setRefreshing(false);
+        });
+    } else {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     if (user?._id) {
@@ -106,6 +123,16 @@ const SearchScreen = () => {
           data={filteredConversations}
           keyExtractor={(item) => item._id.toString()}
           contentContainerStyle={{ paddingVertical: 10 }}
+          refreshControl={
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={onRefresh}
+              colors={["#007bff"]} 
+              tintColor="#007bff" 
+              title="Đang tải dữ liệu..." 
+              titleColor="#007bff"
+            />
+          }
           renderItem={({ item }) => (
             <TouchableOpacity
               style={{

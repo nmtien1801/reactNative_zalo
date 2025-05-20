@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Dimensions,
   SafeAreaView,
+  RefreshControl,
 } from "react-native";
 import SearchHeader from "../../component/Header";
 import { getConversations } from "../../redux/chatSlice";
@@ -23,6 +24,7 @@ const ChatTab = ({ route }) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const user = useSelector((state) => state.auth.user);
   const conversationRedux = useSelector((state) => state.chat.conversations);
@@ -47,6 +49,17 @@ const ChatTab = ({ route }) => {
 
     const date = new Date(past);
     return date.toLocaleDateString("vi-VN");
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    dispatch(getConversations(user._id))
+      .then(() => {
+        setRefreshing(false);
+      })
+      .catch(() => {
+        setRefreshing(false);
+      });
   };
 
   useEffect(() => {
@@ -150,6 +163,16 @@ const ChatTab = ({ route }) => {
       <FlatList
         data={conversations}
         keyExtractor={(item) => item._id}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            colors={["#2196F3"]} // Màu cho Android
+            tintColor="#2196F3" // Màu cho iOS
+            title="Đang tải dữ liệu..." // Chỉ hiển thị trên iOS
+            titleColor="#2196F3"
+          />
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             style={{

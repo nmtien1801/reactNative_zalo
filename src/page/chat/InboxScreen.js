@@ -14,6 +14,7 @@ import {
   Trash2,
   CheckBox,
   TouchableWithoutFeedback,
+  RefreshControl,
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
@@ -52,8 +53,8 @@ const InboxScreen = ({ route }) => {
   const [roomData, setRoomData] = useState({
     room: null,
     receiver: null,
-  });
-  const [allMsg, setAllMsg] = useState([]);
+  });  const [allMsg, setAllMsg] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
   const [role, setRole] = useState(null); // Lưu vai trò của người dùng trong nhóm
   const [showPicker, setShowPicker] = useState(false);
   const ICONS = ["smile", "heart", "thumbs-up", "laugh", "sad-tear"];
@@ -181,7 +182,6 @@ const InboxScreen = ({ route }) => {
       });
     }
   }, []);
-
   const handleLoadMessages = async (receiver, type) => {
     const res = await dispatch(
       loadMessages({ sender: user._id, receiver: receiver, type: type })
@@ -196,6 +196,22 @@ const InboxScreen = ({ route }) => {
     }
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    if (receiver && receiver._id && receiver.type) {
+      handleLoadMessages(receiver._id, receiver.type)
+        .then(() => {
+          setRefreshing(false);
+        })
+        .catch(() => {
+          setRefreshing(false);
+        });
+    } else {
+      setRefreshing(false);
+    }
+  };
+
+ 
   
 //   // nghiem
 const [mediaMessages, setMediaMessages] = useState([]);
@@ -764,6 +780,16 @@ const cleanFileName = (fileName) => {
         ref={flatListRef}
         data={allMsg}
         keyExtractor={(item) => item._id}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            colors={["#007bff"]} 
+            tintColor="#007bff" 
+            title="Đang tải tin nhắn..." 
+            titleColor="#007bff"
+          />
+        }
         renderItem={({ item }) => (
           <View
             style={[
