@@ -194,6 +194,53 @@ const InboxScreen = ({ route }) => {
     }
   };
 
+  
+//   // nghiem
+const [mediaMessages, setMediaMessages] = useState([]);
+const [fileMessages, setFileMessages] = useState([]);
+const [linkMessages, setLinkMessages] = useState([]);
+
+// const [showAllModal, setShowAllModal] = useState(false);
+// const [activeTab, setActiveTab] = useState("media"); // Default tab is "media"
+
+useEffect(() => {
+  const media = allMsg.flatMap((msg) => {
+    if (msg.type === "image") {
+      // Nếu msg chứa nhiều URL, tách chúng thành mảng
+      return msg.msg.split(",").map((url) => ({
+        ...msg,
+        msg: url.trim(), // Loại bỏ khoảng trắng thừa
+      }));
+    }
+    if (msg.type === "video") {
+      return [msg]; // Giữ nguyên video
+    }
+    return [];
+  });
+
+  const files = allMsg.filter((msg) => msg.type === "file");
+  const links = allMsg.filter(
+    (msg) =>
+      msg.type === "text" && // Chỉ lấy tin nhắn có type là "text"
+      msg.msg.match(/https?:\/\/[^\s]+/g) // Kiểm tra xem msg có chứa URL
+  );
+
+  setMediaMessages(media); // Cập nhật mediaMessages
+  setFileMessages(files);
+  setLinkMessages(links); // Lưu các tin nhắn dạng URL
+}, [allMsg]);
+
+const cleanFileName = (fileName) => {
+    // Loại bỏ các ký tự hoặc số không cần thiết ở đầu tên file
+    return fileName.replace(/^\d+_|^\d+-/, ""); // Loại bỏ số và dấu gạch dưới hoặc gạch ngang ở đầu
+  };
+
+  console.log("mediaMessages: ", mediaMessages);
+  console.log("fileMessages: ", fileMessages);
+  console.log("linkMessages: ", linkMessages);
+
+// // nghiem
+
   const sendMessage = (message, type) => {
     if (socketRef.current) {
       let sender = { ...user };
@@ -648,6 +695,7 @@ const InboxScreen = ({ route }) => {
           <TouchableOpacity>
             <Ionicons name="videocam" size={24} color="white" />
           </TouchableOpacity>
+
           <TouchableOpacity
             onPress={() =>
               navigation.navigate(
@@ -658,12 +706,16 @@ const InboxScreen = ({ route }) => {
                   onlineUsers,
                   conversations,
                   role,
+                  mediaMessages, // Truyền mediaMessages
+                  fileMessages,  // Truyền fileMessages
+                  linkMessages,  // Truyền linkMessages
                 }
               )
             }
           >
             <Ionicons name="menu" size={24} color="white" />
           </TouchableOpacity>
+
         </View>
       </View>
 

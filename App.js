@@ -35,6 +35,8 @@ import SearchScreen from "./src/page/chat/SearchScreen";
 import UserProfileScreen from "./src/page/personal/UserProfileScreen";
 import CreateGroupTab from "./src/page/chat/CreateGroupTab";
 import VideoCallModal from "./src/component/VideoCallModal";
+import MediaFilesLinksScreen from "./src/page/chat/MediaFilesLinksScreen";
+import MediaViewer from "./src/page/chat/MediaViewer";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -113,7 +115,7 @@ const Project = () => {
 
   // connect socket -> cmd(IPv4 Address): ipconfig
   const socketRef = useRef();
-  const IPv4 = "192.168.1.5";
+  const IPv4 = "192.168.1.3";
   useEffect(() => {
     const socket = io.connect(`http://${IPv4}:8080`);
     socketRef.current = socket;
@@ -224,6 +226,22 @@ const Project = () => {
                 component={GroupOption}
                 options={{ headerShown: false }}
               />
+                <Stack.Screen
+                  name="MediaFilesLinksScreen"
+                  component={MediaFilesLinksScreen}
+                  options={{
+                    headerTitle: "Ảnh, video, file, link", // Đặt tiêu đề cho header
+                    headerShown: true, // Hiển thị header nếu chưa được bật
+                  }}
+                />
+                <Stack.Screen
+                  name="MediaViewer"
+                  component={MediaViewer}
+                  options={{
+                    headerTitle: "Xem chi tiết",
+                    headerShown: true,
+                  }}
+                />
               <Stack.Screen name="ChangePassword" component={ChangePassword} />
               <Stack.Screen name="Setting" component={Setting} />
               <Stack.Screen
