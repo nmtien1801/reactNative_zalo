@@ -27,7 +27,14 @@ import { useSelector, useDispatch } from "react-redux";
 const { width, height } = Dimensions.get("window");
 const isTablet = width >= 768;
 
-const AddMemberModal = ({ show, onHide, roomId, user, socketRef, roomData }) => {
+const AddMemberModal = ({
+  show,
+  onHide,
+  roomId,
+  user,
+  socketRef,
+  roomData,
+}) => {
   const [friends, setFriends] = useState([]);
   const [members, setMembers] = useState([]);
   const [selectedFriends, setSelectedFriends] = useState([]);
@@ -96,12 +103,12 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef, roomData }) => 
     searchResults.length > 0
       ? searchResults
       : [
-        ...selectedFriends,
-        ...friends.filter(
-          (friend) =>
-            !selectedFriends.some((selected) => selected._id === friend._id)
-        ),
-      ];
+          ...selectedFriends,
+          ...friends.filter(
+            (friend) =>
+              !selectedFriends.some((selected) => selected._id === friend._id)
+          ),
+        ];
 
   const handleClose = () => {
     setFriends([]);
@@ -124,16 +131,39 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef, roomData }) => 
     }
     setIsSubmitting(true);
     try {
-      const response = await addMembersToRoomChatService(roomId, selectedFriends);
+      const response = await addMembersToRoomChatService(
+        roomId,
+        selectedFriends
+      );
       if (response.EC === 0) {
-        socketRef.current.emit("REQ_ADD_GROUP", response.DT);
-        Alert.alert("Thành công", "Thêm thành viên thành công!");
+        const allExistInFriends = response.DT.members.every((member) =>
+          friends.some((f) => f._id === member)
+        );
+
+        if (!allExistInFriends) {
+          // thêm nhóm k phải bạn
+          let groupsMember = {
+            members: [
+              ...response.DT.members,
+              ...selectedFriends.map((f) => f._id),
+            ],
+          };
+          socketRef.current.emit("REQ_ADD_GROUP", groupsMember);
+          Alert.alert("Thành công", "Thêm thành viên thành công!");
+        } else {
+          // thêm nhóm là bạn
+          socketRef.current.emit("REQ_ADD_GROUP", response.DT);
+          Alert.alert("Thành công", "Thêm thành viên thành công!");
+        }
+
+        // update permission
         let res = await dispatch(
           updatePermission({
             groupId: roomId,
             newPermission: roomData.receiver.permission,
           })
         );
+        socketRef.current.emit("REQ_MEMBER_PERMISSION", res.payload.DT);
         handleClose();
       } else {
         Alert.alert("Lỗi", response.EM || "Có lỗi xảy ra khi thêm thành viên.");
@@ -162,7 +192,7 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef, roomData }) => 
           style={[
             styles.checkbox,
             selectedFriends.some((selected) => selected._id === item._id) &&
-            styles.checkboxSelected,
+              styles.checkboxSelected,
           ]}
           onPress={() => handleSelectFriend(item)}
         >
@@ -208,7 +238,10 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef, roomData }) => 
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Thêm thành viên</Text>
-              <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={handleClose}
+              >
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
             </View>
@@ -246,8 +279,8 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef, roomData }) => 
                   ]}
                 >
                   {searchTerm.length > 0 &&
-                    /^\d+$/.test(searchTerm) &&
-                    searchTerm.length < 10 ? (
+                  /^\d+$/.test(searchTerm) &&
+                  searchTerm.length < 10 ? (
                     <Text style={styles.noResults}>Không tìm thấy kết quả</Text>
                   ) : displayList.length > 0 ? (
                     <FlatList
@@ -269,10 +302,10 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef, roomData }) => 
                       styles.selectedListContainer,
                       isTablet
                         ? {
-                          marginLeft: 16,
-                          width: width * 0.25,
-                          maxHeight: height * 0.5,
-                        }
+                            marginLeft: 16,
+                            width: width * 0.25,
+                            maxHeight: height * 0.5,
+                          }
                         : { marginTop: 10, maxHeight: height * 0.15 },
                     ]}
                   >

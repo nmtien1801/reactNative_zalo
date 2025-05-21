@@ -85,6 +85,11 @@ export default function ContactsTabs({ route }) {
     socketRef.current.on("RES_ADD_GROUP", (data) => {
       dispatch(getConversations(user._id));
     });
+
+    // accept member group
+    socketRef.current.on("RES_ACCEPT_GROUP", (data) => {
+      dispatch(getConversations(user._id));
+    });
   }, []);
 
   const handleFriendClick = (item) => {

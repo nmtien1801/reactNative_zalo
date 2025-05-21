@@ -259,9 +259,9 @@ const InboxScreen = ({ route }) => {
         alert("Dữ liệu không hợp lệ");
         return;
       }
-      
+
       if (previewReply !== "") {
-        msg = (`${previewReply}\n\n${msg}`);
+        msg = `${previewReply}\n\n${msg}`;
         setPreviewReply("");
       }
 
@@ -682,7 +682,7 @@ const InboxScreen = ({ route }) => {
     const contentAfterFirstLine =
       parts.length > 1 ? parts.slice(1).join("\n") : selectedMessage.msg;
 
-   setPreviewReply(selectedMessage.sender.name + ": " + contentAfterFirstLine);
+    setPreviewReply(selectedMessage.sender.name + ": " + contentAfterFirstLine);
   };
 
   const handleClearReply = async () => {
@@ -901,7 +901,7 @@ const InboxScreen = ({ route }) => {
               {previewReply !== "" && (
                 <View style={styles.replyPreviewContainer}>
                   <Text style={styles.replyPreviewText} numberOfLines={2}>
-                     {previewReply}
+                    {previewReply}
                   </Text>
                   <TouchableOpacity onPress={() => handleClearReply()}>
                     <FontAwesome5 name="times-circle" size={16} color="red" />
@@ -986,9 +986,13 @@ const InboxScreen = ({ route }) => {
             {/* Menu hành động */}
             <View style={styles.menuOptions}>
               {[
-                { name: "Trả lời", icon: "reply", action: () => {
-                  handleReply(selectedMessage)
-                } },
+                {
+                  name: "Trả lời",
+                  icon: "reply",
+                  action: () => {
+                    handleReply(selectedMessage);
+                  },
+                },
                 {
                   name: "Chuyển tiếp",
                   icon: "share",
@@ -1286,22 +1290,22 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   replyPreviewContainer: {
-  flexDirection: "row",
-  alignItems: "center",
-  backgroundColor: "#f0f0f0",
-  borderRadius: 8,
-  padding: 6,
-  marginBottom: 4,
-  marginHorizontal: 8,
-},
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 8,
+    padding: 6,
+    marginBottom: 4,
+    marginHorizontal: 8,
+  },
 
-replyPreviewText: {
-  flex: 1,
-  color: "#555",
-  fontStyle: "italic",
-  fontSize: 13,
-  marginRight: 8,
-},
+  replyPreviewText: {
+    flex: 1,
+    color: "#555",
+    fontStyle: "italic",
+    fontSize: 13,
+    marginRight: 8,
+  },
 });
 
 export default InboxScreen;
