@@ -179,7 +179,13 @@ const ChatTab = ({ route }) => {
             }
           >
             <Image
-              source={{ uri: item.avatar }}
+              source={
+                item.type === 3
+                  ? require('../../../assets/cloud.jpg')
+                  : {
+                      uri: item.avatar || "https://example.com/placeholder.jpg",
+                    }
+              }
               style={{
                 width: AVATAR_SIZE,
                 height: AVATAR_SIZE,

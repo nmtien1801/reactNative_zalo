@@ -194,7 +194,6 @@ const InboxScreen = ({ route }) => {
     }
   };
 
-  //   // nghiem
   const [mediaMessages, setMediaMessages] = useState([]);
   const [fileMessages, setFileMessages] = useState([]);
   const [linkMessages, setLinkMessages] = useState([]);
@@ -277,11 +276,16 @@ const InboxScreen = ({ route }) => {
       };
       socketRef.current.emit("SEND_MSG", data);
     }
+
+    // gửi cloud
+    if (roomData.receiver.type === 3) {
+      handleLoadMessages(receiver._id, receiver.type);
+    }
+
     setInput("");
   };
 
   // Hàm gửi tin nhắn đến các cuộc trò chuyện được chọn
-
   const handleShareMessage = () => {
     if (!selectedMessage) {
       Alert.alert("Lỗi", "Không có tin nhắn nào được chọn để chia sẻ!");
@@ -439,6 +443,7 @@ const InboxScreen = ({ route }) => {
           setAllMsg((prevState) => [...prevState, data]);
         }
       });
+
       socketRef.current.on("RECALL_MSG", (data) => {
         setAllMsg((prevMsgs) =>
           prevMsgs.map((msg) =>
