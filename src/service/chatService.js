@@ -48,6 +48,18 @@ const dissolveGroupService = async (groupId) => {
   return customizeAxios.delete(`/group/${groupId}/dissolve`);
   
 };
+
+const sendReactionService = (messageId, userId, emoji) => {
+  return customizeAxios.post(`/messages/handleReaction`, {
+    messageId,
+    userId,
+    emoji,
+  });
+};
+
+const getReactionMessageService = (messageId) => {
+  return customizeAxios.get(`/messages/${messageId}/reactions/`);
+};
 export {
   loadMessagesService,
   getConversationsService,
@@ -57,4 +69,6 @@ export {
   updatePermissionService,
   removeMemberFromGroupService,
   dissolveGroupService,
+  sendReactionService,
+  getReactionMessageService,
 };
