@@ -30,6 +30,18 @@ const cancelFriendRequestService = async (requestId) => {
     return response;
 }
 
+// danh sách lời mời vào nhóm
+const getGroupJoinRequestsService = async () => {
+    const response = await customizeAxios.get(`/getGroupJoinRequests`);
+    return response;
+}
+
+const acceptGroupJoinRequestService = async (requestId) => {
+    const response = await customizeAxios.post(`/acceptGroupJoinRequest/${requestId}`);
+    return response;
+}
+
+
 
 export {
     getFriendRequestsService,
@@ -37,6 +49,7 @@ export {
     sendRequestFriendService,
     rejectFriendRequestService,
     getFriendRequestByFromUserAndToUserService,
-    cancelFriendRequestService
+    cancelFriendRequestService,
+    getGroupJoinRequestsService,
+    acceptGroupJoinRequestService,
 };
-    
