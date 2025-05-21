@@ -31,6 +31,7 @@ export default function ContactsTabs({ route }) {
   const onRefresh = async () => {
     setRefreshing(true);
     await dispatch(getConversations(user._id));
+    socketRef.current.emit("register", user._id);
     setRefreshing(false);
   };
 
@@ -107,7 +108,7 @@ export default function ContactsTabs({ route }) {
       onPress={() => handleFriendClick(friend)}
     >
       <Image
-        source={friend.avatar}
+        source={{ uri: friend.avatar }}
         style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
       />
       <Text style={{ flex: 1, fontSize: 16 }}>{friend.username}</Text>
@@ -170,7 +171,7 @@ export default function ContactsTabs({ route }) {
       onPress={() => handleFriendClick(group)}
     >
       <Image
-        source={group.avatar}
+        source={{ uri: group.avatar }}
         style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
       />
       <View style={{ flex: 1 }}>
@@ -259,7 +260,7 @@ export default function ContactsTabs({ route }) {
   };
 
   return (
-    <View>
+    <View style={{ flex: 1 }}>
       <SearchHeader option={"contact"} />
 
       <TopTab.Navigator

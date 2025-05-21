@@ -54,7 +54,7 @@ const AddFriendScreen = ({ route }) => {
           <View style={styles.qrCode}>
             <QRCode value="https://zalo.me/..." size={150} />
           </View>
-          <Text style={styles.qrNote}>Quét mã để thêm bạn Zalo với tôi</Text>
+          <Text style={styles.qrNote}>Quét mã để thêm bạn Zata với tôi</Text>
         </View>
 
         {/* Phone Number Input */}

@@ -26,6 +26,7 @@ export default function PersonalTabs({ route }) {
   const onRefresh = async () => {
     setRefreshing(true);
     await dispatch(getConversations(user._id));
+    socketRef.current.emit("register", user._id);
     setRefreshing(false);
   };
 

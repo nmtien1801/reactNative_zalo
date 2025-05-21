@@ -56,71 +56,9 @@ export default function LogTabs() {
     },
   ];
 
-  // const LogTabs = () => (
-  // <ScrollView style={styles.container}>
-
-  // {/* Phần Trạng Thái */}
-  // <View style={styles.statusBox}>
-  //     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-  //     <Image source={require('../../../assets/favicon.png')} style={{ width: 40, height: 40, borderRadius: 20 }} />
-  //     <Text style={styles.statusText}>Hôm nay bạn thế nào?</Text>
-  //     </View>
-  //     <View style={styles.statusButtons}>
-  //         {['Ảnh', 'Video', 'Album', 'Kỷ niệm'].map((item, index) => (
-  //             <TouchableOpacity key={index} style={styles.statusButton}>
-  //                 <Text style={styles.buttonText}>{item}</Text>
-  //             </TouchableOpacity>
-  //         ))}
-  //     </View>
-  // </View>
-
-  // {/* Phần Khoảnh Khắc (Story) */}
-
-  // <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10}}>
-  //   <TouchableOpacity style={styles.storyItem}>
-  //   <Icon name={"add"} size={60} color={"#2196F3"} />
-  //   <Text style={styles.storyName}>Tạo mới</Text>
-  //   </TouchableOpacity>
-
-  // <FlatList
-  //     horizontal
-  //     data={stories}
-  //     keyExtractor={(item) => item.id}
-  //     renderItem={({ item }) => (
-  //         <View style={styles.storyItem}>
-  //             <Image source={item.image} style={styles.storyImage} />
-  //             <Text style={styles.storyName}>{item.name}</Text>
-  //         </View>
-  //     )}
-  //     showsHorizontalScrollIndicator={false}
-  // />
-
-  // </View>
-
-  // {/* Danh sách bài đăng */}
-  // <FlatList
-  //     data={posts}
-  //     keyExtractor={(item) => item.id}
-  //     renderItem={({ item }) => (
-  //         <View style={styles.postContainer}>
-  //             <View style={styles.postHeader}>
-  //                 <Image source={item.avatar} style={styles.avatar} />
-  //                 <View>
-  //                     <Text style={styles.postName}>{item.name}</Text>
-  //                     <Text style={styles.postTime}>{item.time}</Text>
-  //                 </View>
-  //             </View>
-  //             <Text style={styles.postContent}>{item.content}</Text>
-  //             <Image source={item.image} style={styles.postImage} />
-  //         </View>
-  //     )}
-  // />
-  // </ScrollView>
-  // );
-
   return (
-    <View>
-      <SearchHeader option={'logTab'}/>
+    <View style={{ flex: 1 }}>
+      <SearchHeader option={"logTab"} />
 
       <FlatList
         style={styles.container}

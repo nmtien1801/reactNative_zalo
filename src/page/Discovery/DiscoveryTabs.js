@@ -69,7 +69,7 @@ export default function DiscoveryTabs() {
   );
 
   return (
-    <View>
+    <View style={{ flex: 1 }}>
       <SearchHeader option={'discovery'}/>
 
       <FlatList

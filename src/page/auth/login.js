@@ -42,7 +42,7 @@ export default function LoginForm() {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Zalo</Text>
+        <Text style={styles.title}>Zata</Text>
         <Text style={styles.subtitle}>Đăng nhập với mật khẩu</Text>
 
         {/* Phone Number Input */}
