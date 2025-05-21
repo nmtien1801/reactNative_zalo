@@ -390,7 +390,7 @@ const ChatInfoScreen = ({ route }) => {
               style={styles.editIconContainer}
               onPress={() => {
                 if (
-                  item.permission.includes(2) ||
+                  item.permission.includes(1) ||
                   item.role === "leader" ||
                   item.role === "deputy"
                 ) {
