@@ -9,11 +9,9 @@ import {
   StyleSheet,
   Modal,
   ActivityIndicator,
+  ScrollView,
   Alert,
   SafeAreaView,
-  Dimensions,
-  Platform,
-  KeyboardAvoidingView,
 } from "react-native";
 import { getAllFriendsService } from "../../service/friendShipService";
 import {
@@ -24,33 +22,24 @@ import {
 import { updatePermission } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 
-const { width, height } = Dimensions.get("window");
-const isTablet = width >= 768;
-
-const AddMemberModal = ({
-  show,
-  onHide,
-  roomId,
-  user,
-  socketRef,
-  roomData,
-}) => {
-  const [friends, setFriends] = useState([]);
-  const [members, setMembers] = useState([]);
-  const [selectedFriends, setSelectedFriends] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const AddMemberModal = ({ show, onHide, roomId, user, socketRef, roomData}) => {
+  const [friends, setFriends] = useState([]); // Friends list
+  const [members, setMembers] = useState([]); // Room members list
+  const [selectedFriends, setSelectedFriends] = useState([]); // Selected friends
+  const [searchTerm, setSearchTerm] = useState(""); // Search keyword
+  const [searchResults, setSearchResults] = useState([]); // Search results by phone
+  const [isSubmitting, setIsSubmitting] = useState(false); // Submission state
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
-  console.log("socketRef", socketRef);
 
+  // Fetch friends and members when modal opens
   useEffect(() => {
     const fetchFriendsAndMembers = async () => {
       setLoading(true);
       try {
         const friendsResponse = await getAllFriendsService();
         setFriends(friendsResponse.DT || []);
+
         const membersResponse = await getRoomChatMembersService(roomId);
         setMembers(membersResponse.DT || []);
       } catch (error) {
@@ -59,9 +48,13 @@ const AddMemberModal = ({
         setLoading(false);
       }
     };
-    if (show) fetchFriendsAndMembers();
+
+    if (show) {
+      fetchFriendsAndMembers();
+    }
   }, [show, roomId]);
 
+  // Handle search by name or phone
   useEffect(() => {
     const search = async () => {
       if (searchTerm.length === 10 && /^\d+$/.test(searchTerm)) {
@@ -83,12 +76,15 @@ const AddMemberModal = ({
         setSearchResults(filteredFriends);
       }
     };
+
     search();
   }, [searchTerm, friends]);
 
+  // Check if friend is already a member
   const isMember = (friendId) =>
     members.some((member) => member._id === friendId);
 
+  // Handle selecting a friend
   const handleSelectFriend = (friend) => {
     if (selectedFriends.some((selected) => selected._id === friend._id)) {
       setSelectedFriends(
@@ -99,6 +95,7 @@ const AddMemberModal = ({
     }
   };
 
+  // Display list
   const displayList =
     searchResults.length > 0
       ? searchResults
@@ -110,6 +107,7 @@ const AddMemberModal = ({
           ),
         ];
 
+  // Close modal and reset states
   const handleClose = () => {
     setFriends([]);
     setMembers([]);
@@ -119,9 +117,8 @@ const AddMemberModal = ({
     onHide();
   };
 
+  // Add members to room
   const handleAddMembers = async () => {
-    Alert.alert("Thông báo", "Đang xử lý, vui lòng chờ..."); // Thông báo ngay khi ấn xác nhận
-
     if (selectedFriends.length === 0) {
       Alert.alert(
         "Thông báo",
@@ -129,12 +126,14 @@ const AddMemberModal = ({
       );
       return;
     }
+
     setIsSubmitting(true);
     try {
       const response = await addMembersToRoomChatService(
         roomId,
         selectedFriends
       );
+
       if (response.EC === 0) {
         const allExistInFriends = response.DT.members.every((member) =>
           friends.some((f) => f._id === member)
@@ -164,17 +163,20 @@ const AddMemberModal = ({
           })
         );
         socketRef.current.emit("REQ_MEMBER_PERMISSION", res.payload.DT);
+
         handleClose();
       } else {
         Alert.alert("Lỗi", response.EM || "Có lỗi xảy ra khi thêm thành viên.");
       }
     } catch (error) {
+      console.error("Error adding members:", error);
       Alert.alert("Lỗi", "Có lỗi xảy ra khi thêm thành viên.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Render friend item
   const renderFriendItem = ({ item }) => (
     <View style={styles.memberItem}>
       <Image
@@ -204,6 +206,7 @@ const AddMemberModal = ({
     </View>
   );
 
+  // Render selected friend item
   const renderSelectedFriendItem = ({ item }) => (
     <View style={styles.selectedItem}>
       <Image
@@ -224,131 +227,97 @@ const AddMemberModal = ({
 
   return (
     <Modal
-      visible={show}
-      onRequestClose={handleClose}
+      visible={show} // Thay 'show' bằng 'visible'
+      onRequestClose={handleClose} // Thay 'onHide' bằng 'onRequestClose'
       animationType="slide"
       transparent={true}
     >
       <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{ flex: 1 }}
-        >
-          <View style={styles.modalContent}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Thêm thành viên</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={handleClose}
-              >
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
+        <View style={styles.modalContent}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Thêm thành viên</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
 
-            {/* Search input */}
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Nhập tên hoặc số tài khoản"
-              value={searchTerm}
-              onChangeText={setSearchTerm}
-              placeholderTextColor="#aaa"
+          {/* Search input */}
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Nhập tên hoặc số tài khoản"
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+          />
+
+          {/* Loading indicator */}
+          {loading ? (
+            <ActivityIndicator
+              size="large"
+              color="#0000ff"
+              style={styles.loading}
             />
-
-            {/* Loading indicator */}
-            {loading ? (
-              <ActivityIndicator
-                size="large"
-                color="#007bff"
-                style={styles.loading}
-              />
-            ) : (
-              <View
-                style={[
-                  styles.listContainer,
-                  isTablet && { flexDirection: "row" },
-                ]}
-              >
-                {/* Friends list */}
-                <View
-                  style={[
-                    styles.friendsListContainer,
-                    isTablet
-                      ? { maxHeight: height * 0.5, minWidth: width * 0.45 }
-                      : { maxHeight: height * 0.35 },
-                  ]}
-                >
-                  {searchTerm.length > 0 &&
-                  /^\d+$/.test(searchTerm) &&
-                  searchTerm.length < 10 ? (
-                    <Text style={styles.noResults}>Không tìm thấy kết quả</Text>
-                  ) : displayList.length > 0 ? (
-                    <FlatList
-                      data={displayList}
-                      renderItem={renderFriendItem}
-                      keyExtractor={(item) => item._id}
-                      showsVerticalScrollIndicator={false}
-                      contentContainerStyle={{ paddingBottom: 10 }}
-                    />
-                  ) : (
-                    <Text style={styles.noResults}>Không tìm thấy kết quả</Text>
-                  )}
-                </View>
-
-                {/* Selected friends list */}
-                {selectedFriends.length > 0 && (
-                  <View
-                    style={[
-                      styles.selectedListContainer,
-                      isTablet
-                        ? {
-                            marginLeft: 16,
-                            width: width * 0.25,
-                            maxHeight: height * 0.5,
-                          }
-                        : { marginTop: 10, maxHeight: height * 0.15 },
-                    ]}
-                  >
-                    <Text style={styles.selectedHeader}>
-                      Đã chọn ({selectedFriends.length})
-                    </Text>
-                    <FlatList
-                      data={selectedFriends}
-                      renderItem={renderSelectedFriendItem}
-                      keyExtractor={(item) => item._id}
-                      showsVerticalScrollIndicator={false}
-                      contentContainerStyle={{ paddingBottom: 10 }}
-                    />
-                  </View>
+          ) : (
+            <View style={styles.listContainer}>
+              {/* Friends list */}
+              <View style={styles.friendsListContainer}>
+                {searchTerm.length > 0 &&
+                /^\d+$/.test(searchTerm) &&
+                searchTerm.length < 10 ? (
+                  <Text style={styles.noResults}>Không tìm thấy kết quả</Text>
+                ) : displayList.length > 0 ? (
+                  <FlatList
+                    data={displayList}
+                    renderItem={renderFriendItem}
+                    keyExtractor={(item) => item._id}
+                    showsVerticalScrollIndicator={false}
+                  />
+                ) : (
+                  <Text style={styles.noResults}>Không tìm thấy kết quả</Text>
                 )}
               </View>
-            )}
 
-            {/* Footer buttons */}
-            <View style={styles.footer}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={handleClose}
-                disabled={isSubmitting}
-              >
-                <Text style={styles.buttonText}>Hủy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  styles.confirmButton,
-                  isSubmitting && styles.disabledButton,
-                ]}
-                onPress={handleAddMembers}
-                disabled={isSubmitting}
-              >
-                <Text style={styles.buttonText}>
-                  {isSubmitting ? "Đang xử lý..." : "Xác nhận"}
-                </Text>
-              </TouchableOpacity>
+              {/* Selected friends list */}
+              {selectedFriends.length > 0 && (
+                <View style={styles.selectedListContainer}>
+                  <Text style={styles.selectedHeader}>
+                    Đã chọn ({selectedFriends.length})
+                  </Text>
+                  <FlatList
+                    data={selectedFriends}
+                    renderItem={renderSelectedFriendItem}
+                    keyExtractor={(item) => item._id}
+                    showsVerticalScrollIndicator={false}
+                  />
+                </View>
+              )}
             </View>
+          )}
+
+          {/* Footer buttons */}
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={handleClose}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.buttonText}>Hủy</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.button,
+                styles.confirmButton,
+                isSubmitting && styles.disabledButton,
+              ]}
+              onPress={handleAddMembers}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.buttonText}>
+                {isSubmitting ? "Đang xử lý..." : "Xác nhận"}
+              </Text>
+            </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </SafeAreaView>
     </Modal>
   );
@@ -357,103 +326,95 @@ const AddMemberModal = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
-    alignItems: "center",
   },
   modalContent: {
     backgroundColor: "white",
-    marginHorizontal: isTablet ? width * 0.18 : 16,
-    borderRadius: 12,
-    padding: isTablet ? 28 : 16,
-    maxHeight: isTablet ? height * 0.85 : height * 0.95,
-    width: isTablet ? width * 0.65 : "95%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
+    marginHorizontal: 20,
+    borderRadius: 10,
+    padding: 20,
+    maxHeight: "90%",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: isTablet ? 18 : 12,
+    marginBottom: 15,
   },
   title: {
-    fontSize: isTablet ? 22 : 18,
+    fontSize: 18,
     fontWeight: "bold",
   },
   closeButton: {
     padding: 5,
   },
   closeButtonText: {
-    fontSize: isTablet ? 22 : 18,
+    fontSize: 18,
     fontWeight: "bold",
   },
   searchInput: {
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 6,
-    padding: isTablet ? 14 : 10,
-    marginBottom: isTablet ? 18 : 12,
-    fontSize: isTablet ? 18 : 15,
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 15,
   },
   listContainer: {
+    flexDirection: "row",
     flex: 1,
-    flexDirection: "column",
   },
   friendsListContainer: {
     flex: 1,
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 6,
-    padding: isTablet ? 14 : 10,
-    backgroundColor: "#fafbfc",
+    borderRadius: 5,
+    padding: 10,
+    maxHeight: 400,
   },
   selectedListContainer: {
+    marginLeft: 10,
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 6,
-    padding: isTablet ? 14 : 10,
-    backgroundColor: "#f5f7fa",
+    borderRadius: 5,
+    padding: 10,
+    width: 150,
+    maxHeight: 400,
   },
   selectedHeader: {
     fontWeight: "bold",
-    marginBottom: 8,
-    fontSize: isTablet ? 16 : 13,
+    marginBottom: 10,
   },
   memberItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: isTablet ? 12 : 8,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
   avatar: {
-    width: isTablet ? 48 : 40,
-    height: isTablet ? 48 : 40,
-    borderRadius: isTablet ? 24 : 20,
-    marginRight: isTablet ? 14 : 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
   },
   memberInfo: {
     flex: 1,
   },
   username: {
     fontWeight: "bold",
-    fontSize: isTablet ? 17 : 14,
   },
   phone: {
-    fontSize: isTablet ? 14 : 12,
+    fontSize: 12,
     color: "#888",
   },
   joinedStatus: {
     color: "#888",
-    fontSize: isTablet ? 14 : 12,
+    fontSize: 12,
   },
   checkbox: {
-    width: isTablet ? 28 : 24,
-    height: isTablet ? 28 : 24,
+    width: 24,
+    height: 24,
     borderWidth: 1,
     borderColor: "#007bff",
     borderRadius: 4,
@@ -466,32 +427,31 @@ const styles = StyleSheet.create({
   checkmark: {
     color: "white",
     fontWeight: "bold",
-    fontSize: isTablet ? 18 : 15,
   },
   selectedItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: isTablet ? 8 : 5,
+    paddingVertical: 5,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
   selectedAvatar: {
-    width: isTablet ? 36 : 30,
-    height: isTablet ? 36 : 30,
-    borderRadius: isTablet ? 18 : 15,
-    marginRight: isTablet ? 8 : 5,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginRight: 5,
   },
   selectedInfo: {
     flex: 1,
   },
   selectedUsername: {
     fontWeight: "bold",
-    fontSize: isTablet ? 15 : 12,
+    fontSize: 12,
   },
   removeButton: {
-    width: isTablet ? 24 : 20,
-    height: isTablet ? 24 : 20,
-    borderRadius: isTablet ? 12 : 10,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: "#007bff",
     justifyContent: "center",
@@ -499,20 +459,20 @@ const styles = StyleSheet.create({
   },
   removeButtonText: {
     color: "#007bff",
-    fontSize: isTablet ? 16 : 12,
+    fontSize: 12,
   },
   footer: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginTop: isTablet ? 22 : 15,
-    paddingTop: isTablet ? 18 : 10,
+    marginTop: 15,
+    paddingTop: 15,
     borderTopWidth: 1,
     borderTopColor: "#eee",
   },
   button: {
-    paddingVertical: isTablet ? 12 : 10,
-    paddingHorizontal: isTablet ? 22 : 15,
-    borderRadius: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
     marginLeft: 10,
   },
   cancelButton: {
@@ -527,7 +487,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "white",
     fontWeight: "bold",
-    fontSize: isTablet ? 17 : 14,
   },
   loading: {
     marginVertical: 20,
@@ -536,7 +495,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#888",
     marginTop: 20,
-    fontSize: isTablet ? 16 : 13,
   },
 });
 
