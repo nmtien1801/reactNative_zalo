@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Text,
+  RefreshControl,
 } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
@@ -128,8 +129,6 @@ const Project = () => {
     }
 
     socketRef.current.on("RES_CALL", (from, to) => {
-      console.log('ssssssssssssssssss');
-      
       setIncomingCall(from);
       setReceiver(to);
 
@@ -228,22 +227,22 @@ const Project = () => {
                 component={GroupOption}
                 options={{ headerShown: false }}
               />
-                <Stack.Screen
-                  name="MediaFilesLinksScreen"
-                  component={MediaFilesLinksScreen}
-                  options={{
-                    headerTitle: "Ảnh, video, file, link", // Đặt tiêu đề cho header
-                    headerShown: true, // Hiển thị header nếu chưa được bật
-                  }}
-                />
-                <Stack.Screen
-                  name="MediaViewer"
-                  component={MediaViewer}
-                  options={{
-                    headerTitle: "Xem chi tiết",
-                    headerShown: true,
-                  }}
-                />
+              <Stack.Screen
+                name="MediaFilesLinksScreen"
+                component={MediaFilesLinksScreen}
+                options={{
+                  headerTitle: "Ảnh, video, file, link", // Đặt tiêu đề cho header
+                  headerShown: true, // Hiển thị header nếu chưa được bật
+                }}
+              />
+              <Stack.Screen
+                name="MediaViewer"
+                component={MediaViewer}
+                options={{
+                  headerTitle: "Xem chi tiết",
+                  headerShown: true,
+                }}
+              />
               <Stack.Screen name="ChangePassword" component={ChangePassword} />
               <Stack.Screen name="Setting" component={Setting} />
               <Stack.Screen

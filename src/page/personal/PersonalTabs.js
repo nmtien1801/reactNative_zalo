@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   FlatList,
+  RefreshControl,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import SearchHeader from "../../component/Header";
@@ -18,8 +19,16 @@ import { FontAwesome } from "@expo/vector-icons";
 import { Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-export default function PersonalTabs({route}) {
+export default function PersonalTabs({ route }) {
+  const [refreshing, setRefreshing] = useState(false); // reload trang
   const socketRef = route.params.socketRef;
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await dispatch(getConversations(user._id));
+    setRefreshing(false);
+  };
+
   const personal = [
     {
       id: "1",
@@ -163,6 +172,9 @@ export default function PersonalTabs({route}) {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <PersonalItem personal={item} />}
         style={styles.flatList}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
     </View>
   );

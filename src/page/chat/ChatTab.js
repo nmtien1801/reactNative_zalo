@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Dimensions,
   SafeAreaView,
+  RefreshControl,
 } from "react-native";
 import SearchHeader from "../../component/Header";
 import { getConversations } from "../../redux/chatSlice";
@@ -20,6 +21,7 @@ const ITEM_HEIGHT = height * 0.1;
 const AVATAR_SIZE = ITEM_HEIGHT * 0.6;
 
 const ChatTab = ({ route }) => {
+  const [refreshing, setRefreshing] = useState(false); // reload trang
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const [onlineUsers, setOnlineUsers] = useState([]);
@@ -29,6 +31,13 @@ const ChatTab = ({ route }) => {
   const socketRef = route.params.socketRef;
 
   const [conversations, setConversations] = useState([]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await dispatch(getConversations(user._id));
+    socketRef.current.emit("register", user._id);
+    setRefreshing(false);
+  };
 
   const convertTime = (time) => {
     const now = Date.now();
@@ -195,6 +204,9 @@ const ChatTab = ({ route }) => {
             ) : null}
           </TouchableOpacity>
         )}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
     </SafeAreaView>
   );

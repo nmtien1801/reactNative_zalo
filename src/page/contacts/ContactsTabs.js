@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  RefreshControl,
 } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -18,6 +19,7 @@ import { useNavigation } from "@react-navigation/native";
 const TopTab = createMaterialTopTabNavigator();
 
 export default function ContactsTabs({ route }) {
+  const [refreshing, setRefreshing] = useState(false); // reload trang
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const conversationRedux = useSelector((state) => state.chat.conversations);
@@ -25,6 +27,12 @@ export default function ContactsTabs({ route }) {
   const socketRef = route.params.socketRef;
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [conversations, setConversations] = useState([]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await dispatch(getConversations(user._id));
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     dispatch(getConversations(user._id));
@@ -143,6 +151,9 @@ export default function ContactsTabs({ route }) {
         data={friends}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => <FriendItem friend={item} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
     );
   };
@@ -240,6 +251,9 @@ export default function ContactsTabs({ route }) {
         data={friends}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => <GroupItem group={item} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
     );
   };
