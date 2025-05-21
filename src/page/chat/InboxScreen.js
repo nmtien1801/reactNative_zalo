@@ -194,43 +194,41 @@ const InboxScreen = ({ route }) => {
     }
   };
 
-  
-//   // nghiem
-const [mediaMessages, setMediaMessages] = useState([]);
-const [fileMessages, setFileMessages] = useState([]);
-const [linkMessages, setLinkMessages] = useState([]);
+  const [mediaMessages, setMediaMessages] = useState([]);
+  const [fileMessages, setFileMessages] = useState([]);
+  const [linkMessages, setLinkMessages] = useState([]);
 
-// const [showAllModal, setShowAllModal] = useState(false);
-// const [activeTab, setActiveTab] = useState("media"); // Default tab is "media"
+  // const [showAllModal, setShowAllModal] = useState(false);
+  // const [activeTab, setActiveTab] = useState("media"); // Default tab is "media"
 
-useEffect(() => {
-  const media = allMsg.flatMap((msg) => {
-    if (msg.type === "image") {
-      // Nếu msg chứa nhiều URL, tách chúng thành mảng
-      return msg.msg.split(",").map((url) => ({
-        ...msg,
-        msg: url.trim(), // Loại bỏ khoảng trắng thừa
-      }));
-    }
-    if (msg.type === "video") {
-      return [msg]; // Giữ nguyên video
-    }
-    return [];
-  });
+  useEffect(() => {
+    const media = allMsg.flatMap((msg) => {
+      if (msg.type === "image") {
+        // Nếu msg chứa nhiều URL, tách chúng thành mảng
+        return msg.msg.split(",").map((url) => ({
+          ...msg,
+          msg: url.trim(), // Loại bỏ khoảng trắng thừa
+        }));
+      }
+      if (msg.type === "video") {
+        return [msg]; // Giữ nguyên video
+      }
+      return [];
+    });
 
-  const files = allMsg.filter((msg) => msg.type === "file");
-  const links = allMsg.filter(
-    (msg) =>
-      msg.type === "text" && // Chỉ lấy tin nhắn có type là "text"
-      msg.msg.match(/https?:\/\/[^\s]+/g) // Kiểm tra xem msg có chứa URL
-  );
+    const files = allMsg.filter((msg) => msg.type === "file");
+    const links = allMsg.filter(
+      (msg) =>
+        msg.type === "text" && // Chỉ lấy tin nhắn có type là "text"
+        msg.msg.match(/https?:\/\/[^\s]+/g) // Kiểm tra xem msg có chứa URL
+    );
 
-  setMediaMessages(media); // Cập nhật mediaMessages
-  setFileMessages(files);
-  setLinkMessages(links); // Lưu các tin nhắn dạng URL
-}, [allMsg]);
+    setMediaMessages(media); // Cập nhật mediaMessages
+    setFileMessages(files);
+    setLinkMessages(links); // Lưu các tin nhắn dạng URL
+  }, [allMsg]);
 
-const cleanFileName = (fileName) => {
+  const cleanFileName = (fileName) => {
     // Loại bỏ các ký tự hoặc số không cần thiết ở đầu tên file
     return fileName.replace(/^\d+_|^\d+-/, ""); // Loại bỏ số và dấu gạch dưới hoặc gạch ngang ở đầu
   };
@@ -273,11 +271,16 @@ const cleanFileName = (fileName) => {
       };
       socketRef.current.emit("SEND_MSG", data);
     }
+
+    // gửi cloud
+    if (roomData.receiver.type === 3) {
+      handleLoadMessages(receiver._id, receiver.type);
+    }
+
     setInput("");
   };
 
   // Hàm gửi tin nhắn đến các cuộc trò chuyện được chọn
-
   const handleShareMessage = () => {
     if (!selectedMessage) {
       Alert.alert("Lỗi", "Không có tin nhắn nào được chọn để chia sẻ!");
@@ -285,7 +288,10 @@ const cleanFileName = (fileName) => {
     }
 
     if (selectedConversations.length === 0) {
-      Alert.alert("Lỗi", "Vui lòng chọn ít nhất một cuộc trò chuyện để chia sẻ!");
+      Alert.alert(
+        "Lỗi",
+        "Vui lòng chọn ít nhất một cuộc trò chuyện để chia sẻ!"
+      );
       return;
     }
 
@@ -298,7 +304,9 @@ const cleanFileName = (fileName) => {
     selectedConversations.forEach((conversationId) => {
       const conversation = conversations.find((c) => c._id === conversationId);
       if (!conversation) {
-        console.error(`Không tìm thấy cuộc trò chuyện với ID: ${conversationId}`);
+        console.error(
+          `Không tìm thấy cuộc trò chuyện với ID: ${conversationId}`
+        );
         return;
       }
       const receiverOnline = onlineUsers.find(
@@ -326,7 +334,10 @@ const cleanFileName = (fileName) => {
     // Đóng modal sau khi gửi
     setShareModalVisible(false);
     setSelectedConversations([]);
-    Alert.alert("Thành công", "Tin nhắn đã được chia sẻ đến người nhận online!");
+    Alert.alert(
+      "Thành công",
+      "Tin nhắn đã được chia sẻ đến người nhận online!"
+    );
   };
 
   const convertTime = (time) => {
@@ -427,6 +438,7 @@ const cleanFileName = (fileName) => {
           setAllMsg((prevState) => [...prevState, data]);
         }
       });
+
       socketRef.current.on("RECALL_MSG", (data) => {
         setAllMsg((prevMsgs) =>
           prevMsgs.map((msg) =>
@@ -701,15 +713,14 @@ const cleanFileName = (fileName) => {
                   conversations,
                   role,
                   mediaMessages, // Truyền mediaMessages
-                  fileMessages,  // Truyền fileMessages
-                  linkMessages,  // Truyền linkMessages
+                  fileMessages, // Truyền fileMessages
+                  linkMessages, // Truyền linkMessages
                 }
               )
             }
           >
             <Ionicons name="menu" size={24} color="white" />
           </TouchableOpacity>
-
         </View>
       </View>
 
