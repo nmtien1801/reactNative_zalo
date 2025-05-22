@@ -1068,30 +1068,55 @@ const InboxScreen = ({ route }) => {
             <FlatList
               data={conversations}
               keyExtractor={(item) => item._id.toString()}
-              renderItem={({ item }) => (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 10,
-                  }}
-                >
-                  <CheckBox
-                    value={selectedConversations.includes(item._id)}
-                    onValueChange={() => toggleConversationSelection(item._id)}
-                  />
-                  <Image
-                    source={item.avatar}
+              renderItem={({ item }) => {
+                const isSelected = selectedConversations.includes(item._id);
+
+                return (
+                  <View
                     style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 20,
-                      marginRight: 10,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 10,
                     }}
-                  />
-                  <Text style={{ fontSize: 16 }}>{item.username}</Text>
-                </View>
-              )}
+                  >
+                    <TouchableOpacity
+                      onPress={() => toggleConversationSelection(item._id)}
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderWidth: 2,
+                        borderColor: "#007bff",
+                        marginRight: 10,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: isSelected ? "#007bff" : "transparent",
+                      }}
+                    >
+                      {isSelected && (
+                        <View
+                          style={{
+                            width: 10,
+                            height: 10,
+                            backgroundColor: "white",
+                            borderRadius: 2,
+                          }}
+                        />
+                      )}
+                    </TouchableOpacity>
+
+                    <Image
+                      source={{ uri: item.avatar }}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        marginRight: 10,
+                      }}
+                    />
+                    <Text style={{ fontSize: 16 }}>{item.username}</Text>
+                  </View>
+                );
+              }}
             />
             <TouchableOpacity
               style={{
