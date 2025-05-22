@@ -14,31 +14,11 @@ const uploadAvatarService = (formData) => {
 };
 
 const uploadAvatarProfileService = (phone, avatar) => {
-  if (Platform.OS === "android" || Platform.OS === "ios") {
-    return customizeAxios.post(
-      `/uploadAvatarProfile`,
-      { phone, avatar },
-      {
-        headers: {
-          "Content-Type": "multipart/form-data", // Đảm bảo gửi đúng kiểu Content-Type
-        },
-      }
-    );
-  } else {
-    return customizeAxios.post(`/uploadAvatarProfile`, { phone, avatar });
-  }
+ return customizeAxios.post(`/uploadAvatarProfile`, { phone, avatar });
 };
 
 const uploadProfileService = (data) => {
-  if (Platform.OS === "android" || Platform.OS === "ios") {
-    return customizeAxios.post(`/uploadProfile`, data, {
-      headers: {
-        "Content-Type": "multipart/form-data", // Đảm bảo gửi đúng kiểu Content-Type
-      },
-    });
-  } else {
-    return customizeAxios.post(`/uploadProfile`, data);
-  }
+  return customizeAxios.post(`/uploadProfile`, data);
 };
 
 const uploadAvatarGroupService = (groupId, avatar) => {
