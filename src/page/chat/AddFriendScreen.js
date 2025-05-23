@@ -1,17 +1,28 @@
-import React, { useState, useRef, useEffect } from "react";
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
-import QRCode from 'react-native-qrcode-svg';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { getUserByPhoneService } from "../../service/userService"; // Giả sử bạn đã định nghĩa hàm này trong userService.js
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  Alert,
+  Platform,
+  KeyboardAvoidingView,
+} from "react-native";
+import Icon from "react-native-vector-icons/Ionicons";
+import QRCode from "react-native-qrcode-svg";
+import { useNavigation } from "@react-navigation/native";
+import { getUserByPhoneService } from "../../service/userService";
+
 const AddFriendScreen = ({ route }) => {
   const navigation = useNavigation();
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const { socketRef, onlineUsers } = route.params || {};
 
   const handleSearchAndNavigate = async () => {
-   
     const query = phone.trim();
     if (!query) return;
 
@@ -25,26 +36,34 @@ const AddFriendScreen = ({ route }) => {
         response.DT.DT
       ) {
         const foundUser = response.DT.DT;
-        navigation.navigate('UserProfileScreen', { user: foundUser, socketRef, onlineUsers }); // truyền user qua screen
+        navigation.navigate("UserProfileScreen", {
+          user: foundUser,
+          socketRef,
+          onlineUsers,
+        });
       } else {
-        Alert.alert("Not Found", "Không tìm thấy người dùng.");
+        Alert.alert("Không tìm thấy", "Không tìm thấy người dùng.");
       }
     } catch (error) {
-      console.error("Lỗi khi tìm kiếm:", error);
-      Alert.alert("Error", "Đã có lỗi xảy ra.");
+      Alert.alert("Lỗi", "Đã có lỗi xảy ra.");
     } finally {
       setLoading(false);
     }
   };
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
 
-        <TouchableOpacity onPress={() => navigation.goBack()} >
-          <Icon name="arrow-back" size={24} color="#fff" />
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: "#f6f8fa" }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+        >
+          <Icon name="arrow-back" size={24} color="#222" />
         </TouchableOpacity>
-        <Text style={styles.headerText}>Add friends</Text>
+        <Text style={styles.headerText}>Thêm bạn</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -52,7 +71,7 @@ const AddFriendScreen = ({ route }) => {
         <View style={styles.qrContainer}>
           <Text style={styles.name}>Nguyễn Tấn Lộc</Text>
           <View style={styles.qrCode}>
-            <QRCode value="https://zalo.me/..." size={150} />
+            <QRCode value="https://zalo.me/..." size={140} />
           </View>
           <Text style={styles.qrNote}>Quét mã để thêm bạn Zata với tôi</Text>
         </View>
@@ -62,120 +81,192 @@ const AddFriendScreen = ({ route }) => {
           <View style={styles.prefixBox}>
             <Text style={styles.prefixText}>+84</Text>
           </View>
-
           <TextInput
             style={styles.phoneInput}
-            placeholder="Enter phone number"
-            placeholderTextColor="#999"
+            placeholder="Nhập số điện thoại"
+            placeholderTextColor="#888"
             keyboardType="phone-pad"
             value={phone}
             onChangeText={setPhone}
+            maxLength={10}
           />
-          <TouchableOpacity style={styles.arrowButton} onPress={handleSearchAndNavigate}>
-            <Icon name="arrow-forward" size={20} color="#fff" />
+          <TouchableOpacity
+            style={[
+              styles.arrowButton,
+              { opacity: phone.trim() ? 1 : 0.5 },
+            ]}
+            onPress={handleSearchAndNavigate}
+            disabled={!phone.trim() || loading}
+          >
+            <Icon name="search" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
         {/* Options */}
-        {[
-          { icon: 'qr-code-outline', label: 'Scan QR code' },
-          { icon: 'book-outline', label: 'Phonebook' },
-          { icon: 'people-outline', label: 'People you may know' },
-        ].map((item, index) => (
-          <TouchableOpacity key={index} style={styles.optionRow}>
-            <Icon name={item.icon} size={22} color="#00aaff" />
-            <Text style={styles.optionText}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
+        <View style={styles.optionsWrap}>
+          {[
+            { icon: "qr-code-outline", label: "Quét mã QR" },
+            { icon: "book-outline", label: "Danh bạ máy" },
+            { icon: "people-outline", label: "Có thể bạn quen" },
+          ].map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.optionRow}
+              activeOpacity={0.7}
+            >
+              <View style={styles.optionIconBox}>
+                <Icon name={item.icon} size={22} color="#2196f3" />
+              </View>
+              <Text style={styles.optionText}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         {/* Footer note */}
-        <Text style={styles.footerText}>View sent friend requests in Contacts</Text>
+        <Text style={styles.footerText}>
+          Xem các lời mời kết bạn đã gửi trong Danh bạ
+        </Text>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
 export default AddFriendScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#1c1c1e',
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: 18,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+    elevation: 2,
+  },
+  backBtn: {
+    padding: 6,
+    borderRadius: 20,
+    backgroundColor: "#f0f0f0",
   },
   headerText: {
-    color: '#fff',
-    fontSize: 18,
-    marginLeft: 10,
+    color: "#222",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginLeft: 14,
   },
   scroll: {
-    padding: 16,
-    backgroundColor: '#000',
+    padding: 18,
+    backgroundColor: "#f6f8fa",
+    flexGrow: 1,
   },
   qrContainer: {
-    backgroundColor: '#2f4f6f',
-    alignItems: 'center',
-    padding: 20,
-    borderRadius: 20,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    padding: 22,
+    borderRadius: 18,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 2,
   },
   name: {
-    fontSize: 16,
-    color: '#fff',
-    marginBottom: 10,
+    fontSize: 17,
+    color: "#222",
+    fontWeight: "bold",
+    marginBottom: 12,
   },
   qrCode: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 8,
     borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
   },
   qrNote: {
-    marginTop: 10,
-    color: '#eee',
-    fontSize: 12,
+    marginTop: 8,
+    color: "#666",
+    fontSize: 13,
   },
   phoneInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
-    backgroundColor: '#1e1e1e',
-    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 18,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    overflow: "hidden",
+    marginBottom: 18,
   },
   prefixBox: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 14,
     borderRightWidth: 1,
-    borderColor: '#444',
+    borderColor: "#e0e0e0",
+    backgroundColor: "#f6f8fa",
   },
   prefixText: {
-    color: '#fff',
+    color: "#222",
+    fontWeight: "bold",
   },
   phoneInput: {
     flex: 1,
-    paddingHorizontal: 10,
-    color: '#fff',
+    paddingHorizontal: 12,
+    color: "#222",
+    fontSize: 16,
+    backgroundColor: "#fff",
+    height: 48,
   },
   arrowButton: {
     padding: 14,
-    backgroundColor: '#00aaff',
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 8,
+    backgroundColor: "#2196f3",
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  optionsWrap: {
+    marginTop: 10,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.03,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 4,
+    elevation: 1,
   },
   optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  optionIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#e3f2fd",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
   },
   optionText: {
-    color: '#fff',
-    marginLeft: 10,
-    fontSize: 15,
+    color: "#222",
+    fontSize: 16,
   },
   footerText: {
-    marginTop: 40,
-    color: '#aaa',
-    fontSize: 12,
-    textAlign: 'center',
+    marginTop: 36,
+    color: "#888",
+    fontSize: 13,
+    textAlign: "center",
   },
 });

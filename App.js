@@ -38,6 +38,7 @@ import CreateGroupTab from "./src/page/chat/CreateGroupTab";
 import VideoCallModal from "./src/component/VideoCallModal";
 import MediaFilesLinksScreen from "./src/page/chat/MediaFilesLinksScreen";
 import MediaViewer from "./src/page/chat/MediaViewer";
+import GroupRequest from "./src/page/contacts/GroupRequest";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -94,7 +95,7 @@ const MainTabs = ({ route }) => (
 
 const Project = () => {
   const dispatch = useDispatch();
-  const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
+  let isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const user = useSelector((state) => state.auth.user);
 
   // Trạng thái cuộc gọi
@@ -116,7 +117,8 @@ const Project = () => {
 
   // connect socket -> cmd(IPv4 Address): ipconfig
   const socketRef = useRef();
-  const IPv4 = "192.168.1.3";
+
+  const IPv4 = "localhost";
   useEffect(() => {
     const socket = io.connect(`http://${IPv4}:8080`);
     socketRef.current = socket;
@@ -143,11 +145,6 @@ const Project = () => {
       setIsInitiator(false);
       setReceiver(null);
     });
-
-    // return () => {
-    //   socketRef.current.off("RES_CALL");
-    //   socketRef.current.off("RES_END_CALL");
-    // };
   }, [user]);
 
   // Hàm xử lý cuộc gọi
@@ -227,6 +224,7 @@ const Project = () => {
                 component={GroupOption}
                 options={{ headerShown: false }}
               />
+
               <Stack.Screen
                 name="MediaFilesLinksScreen"
                 component={MediaFilesLinksScreen}
@@ -243,7 +241,11 @@ const Project = () => {
                   headerShown: true,
                 }}
               />
-              <Stack.Screen name="ChangePassword" component={ChangePassword} />
+
+              <Stack.Screen
+                name="ChangePassword"
+                component={ChangePassword}
+              />
               <Stack.Screen name="Setting" component={Setting} />
               <Stack.Screen
                 name="InformationAccount"
@@ -259,6 +261,11 @@ const Project = () => {
               <Stack.Screen
                 name="FriendRequest"
                 component={FriendRequest}
+                initialParams={{ socketRef }}
+              />
+              <Stack.Screen
+                name="GroupRequest"
+                component={GroupRequest}
                 initialParams={{ socketRef }}
               />
             </>

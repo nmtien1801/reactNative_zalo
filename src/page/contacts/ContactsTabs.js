@@ -85,6 +85,11 @@ export default function ContactsTabs({ route }) {
     socketRef.current.on("RES_ADD_GROUP", (data) => {
       dispatch(getConversations(user._id));
     });
+
+    // accept member group
+    socketRef.current.on("RES_ACCEPT_GROUP", (data) => {
+      dispatch(getConversations(user._id));
+    });
   }, []);
 
   const handleFriendClick = (item) => {
@@ -141,7 +146,7 @@ export default function ContactsTabs({ route }) {
                 color="#2196F3"
                 style={{ marginRight: 10 }}
               />
-              <Text style={{ fontSize: 16 }}>Lời mời kết bạn (1)</Text>
+              <Text style={{ fontSize: 16 }}>Lời mời kết bạn</Text>
             </TouchableOpacity>
 
             <Text style={{ margin: 10, fontSize: 18, fontWeight: "bold" }}>
@@ -201,7 +206,7 @@ export default function ContactsTabs({ route }) {
                 borderColor: "#ddd",
               }}
               onPress={() =>
-                navigation.navigate("FriendRequest", { socketRef })
+                navigation.navigate("GroupRequest", { socketRef })
               }
             >
               <Icon
@@ -210,7 +215,7 @@ export default function ContactsTabs({ route }) {
                 color="#2196F3"
                 style={{ marginRight: 10 }}
               />
-              <Text style={{ fontSize: 16 }}>Lời mời tham gia nhóm (1)</Text>
+              <Text style={{ fontSize: 16 }}>Lời mời tham gia nhóm</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={{

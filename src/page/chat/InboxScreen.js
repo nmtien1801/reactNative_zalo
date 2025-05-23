@@ -13,6 +13,7 @@ import {
   Linking,
   CheckBox,
   TouchableWithoutFeedback,
+  Dimensions
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
@@ -43,6 +44,7 @@ const InboxScreen = ({ route }) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const flatListRef = useRef(null);
+  const flatListLayout = useRef({ x: 0, y: 0, width: 0, height: 0 });
   const user = useSelector((state) => state.auth.user);
   const [input, setInput] = useState("");
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -64,27 +66,28 @@ const InboxScreen = ({ route }) => {
 
   // Reaction
   const [reactions, setReactions] = useState({});
-  const [reactionPopupVisible, setReactionPopupVisible] = useState(null);
-  const [hideReactionTimeout, setHideReactionTimeout] = useState(null);
+  const [reactionPopupPosition, setReactionPopupPosition] = useState({ x: 0, y: 0 });
+  const [messageIdForReaction, setMessageIdForReaction] = useState(null);
 
   // Ánh xạ Emoji - Text
   const emojiToTextMap = {
-    "like": "Like",
     "heart": "Love",
+    "thumbs-up": "Like", 
     "laugh": "Haha",
     "sad-cry": "Sad",
     "angry": "Angry",
-    "thumbs-up": "ThumbsUp"
+    "like": "Like" 
   };
 
+
   // Ánh xạ Text - Icon (sử dụng FontAwesome5)
-  const textToIconMap = {
-    "Like": "thumbs-up",
-    "Love": "heart",
-    "Haha": "laugh",
-    "Sad": "sad-cry",
-    "Angry": "angry",
-    "ThumbsUp": "thumbs-up",
+  const textToEmojiMap = {
+    "Like": "👍",
+    "Love": "❤️",
+    "Haha": "😂", 
+    "Sad": "😢",
+    "Angry": "😡",
+    "Wow": "😮"
   };
 
   // share mess
@@ -211,7 +214,10 @@ const InboxScreen = ({ route }) => {
         );
       case "system":
         return (
-          <Text style={styles.systemMessage}>
+          <Text style={
+            msg.sender._id === user._id
+              ? styles.systemMessageTextUser
+              : styles.systemMessageTextFriend}>
             {msg.msg || ""}
           </Text>
         );
@@ -228,8 +234,11 @@ const InboxScreen = ({ route }) => {
     }
   };
 
+  
+
   // Gửi phản ứng
   const handleReactToMessage = (messageId, emojiName) => {
+    // Chuyển đổi từ tên emoji sang giá trị text tương ứng
     const emojiText = emojiToTextMap[emojiName];
     if (!emojiText) return;
 
@@ -237,46 +246,101 @@ const InboxScreen = ({ route }) => {
     setModalVisible(false);
     setReactionModalVisible(false);
 
-    sendReactionService(messageId, user._id, emojiText)
-      .then((response) => {
-        if (response.EC === 0) {
-          console.log("Reaction sent successfully:", response.DT);
+    const reactionData = {
+      messageId,
+      userId: user._id,
+      username: user.username,
+      emoji: emojiText,
+      receiver: roomData.receiver
+    };
+
+    // Kiểm tra nếu có socket connection thì gửi event
+    if (socketRef.current) {
+      socketRef.current.emit("REACTION", reactionData);
+    }
+
+    // Gọi service với đúng tham số
+    // sendReactionService(messageId, user._id, emojiText)
+    //   .then((response) => {
+    //     if (response.EC === 0) {
+    //       console.log("Reaction sent successfully:", response.DT);
           
-          setReactions((prevReactions) => {
-            const currentReactions = prevReactions[messageId] || [];
-            const existingReactionIndex = currentReactions.findIndex(
-              (reaction) => reaction.emoji === emojiText && reaction.userId === user._id
-            );
+    //       setReactions((prevReactions) => {
+    //         const currentReactions = prevReactions[messageId] || [];
+    //         const existingReactionIndex = currentReactions.findIndex(
+    //           (reaction) => reaction.emoji === emojiText && reaction.userId === user._id
+    //         );
 
-            let updatedReactions;
-            if (existingReactionIndex !== -1) {
-              // Nếu user đã react, xóa reaction
-              updatedReactions = [...currentReactions];
-              updatedReactions.splice(existingReactionIndex, 1);
-            } else {
-              // Nếu user chưa react, thêm reaction mới
-              updatedReactions = [
-                ...currentReactions,
-                {
-                  emoji: emojiText,
-                  userId: user._id,
-                  count: 1,
-                },
-              ];
-            }
+    //         let updatedReactions;
+    //         if (existingReactionIndex !== -1) {
+    //           // Nếu user đã react, xóa reaction
+    //           updatedReactions = [...currentReactions];
+    //           updatedReactions.splice(existingReactionIndex, 1);
+    //         } else {
+    //           // Nếu user chưa react, thêm reaction mới
+    //           updatedReactions = [
+    //             ...currentReactions,
+    //             {
+    //               emoji: emojiText,
+    //               userId: user._id,
+    //               count: 1,
+    //             },
+    //           ];
+    //         }
 
-            return {
-              ...prevReactions,
-              [messageId]: updatedReactions,
-            };
-          });
-        } else {
-          console.error("Failed to send reaction:", response.EM);
-        }
-      })
-      .catch((error) => {
-        console.error("Error sending reaction:", error);
-      });
+    //         return {
+    //           ...prevReactions,
+    //           [messageId]: updatedReactions,
+    //         };
+    //       });
+    //     } else {
+    //       console.error("Failed to send reaction:", response.EM);
+    //     }
+    //   })
+    //   .catch((error) => {
+    //     console.error("Error sending reaction:", error);
+    //   });
+  };
+  
+  //Xử lý vị trí popup Reaction
+  const handleShowReactionPopup = (event, messageId) => {
+    const { pageX, pageY } = event.nativeEvent;
+    
+    // Lấy kích thước màn hình
+    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+    
+    // Ước lượng kích thước của popup (điều chỉnh theo thiết kế thực tế)
+    const popupWidth = 200;  // Chiều rộng ước lượng của popup
+    const popupHeight = 50;  // Chiều cao ước lượng của popup
+    
+    // Tính toán vị trí tốt nhất cho popup
+    let x = pageX - 70;  // Vị trí mặc định
+    let y = pageY - 60;  // Vị trí mặc định
+    
+    // Xử lý trường hợp vượt quá bên phải màn hình
+    if (x + popupWidth > screenWidth) {
+      x = screenWidth - popupWidth - 10;  // 10px padding
+    }
+    
+    // Xử lý trường hợp vượt quá bên trái màn hình
+    if (x < 10) {
+      x = 10;  // 10px padding
+    }
+    
+    // Xử lý trường hợp vượt quá phía trên
+    if (y < 70) {  // 70px là chiều cao của header
+      y = pageY + 20;  // Hiển thị bên dưới thay vì phía trên
+    }
+    
+    // Xử lý trường hợp vượt quá phía dưới
+    if (y + popupHeight > screenHeight - 70) {  // 70px là chiều cao của input container
+      y = pageY - popupHeight - 20;  // Hiển thị phía trên thay vì bên dưới
+    }
+    
+    // Cập nhật vị trí popup và hiển thị
+    setReactionPopupPosition({ x, y });
+    setMessageIdForReaction(messageId);
+    setReactionModalVisible(true);
   };
 
   // Hàm kiểm tra hiển thị avatar và timestamp
@@ -317,6 +381,14 @@ const InboxScreen = ({ route }) => {
       fetchReactions();
     }
   }, [allMsg]);
+
+  useEffect(() => {
+    if (flatListRef.current && flatListRef.current.measureInWindow) {
+      flatListRef.current.measure((x, y, width, height, pageX, pageY) => {
+        flatListLayout.current = { x: pageX, y: pageY, width, height };
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const role = conversations.find((item) => item._id === receiver._id);
@@ -469,6 +541,11 @@ const InboxScreen = ({ route }) => {
       } else {
         alert("Dữ liệu không hợp lệ");
         return;
+      }
+
+      if (previewReply !== "") {
+        msg = `${previewReply}\n\n${msg}`;
+        setPreviewReply("");
       }
 
       const data = {
@@ -659,11 +736,61 @@ const InboxScreen = ({ route }) => {
           )
         );
       });
+
       socketRef.current.on("DELETED_MSG", (data) => {
         setAllMsg((prevState) =>
           prevState.filter((item) => item._id != data.msg._id)
         );
       });
+
+      socketRef.current.on("RECEIVED_REACTION", (data) => {
+        console.log("Received reaction:", data);
+        const { messageId, userId, emoji } = data;
+        
+        setReactions(prevReactions => {
+          const currentReactions = prevReactions[messageId] || [];
+          
+          const existingReactionIndex = currentReactions.findIndex(
+            reaction => String(reaction.userId) === String(userId) && reaction.emoji === emoji
+          );
+          
+          let updatedReactions;
+          if (existingReactionIndex !== -1) {
+            // Nếu đã tồn tại chính xác emoji này từ user này -> xóa
+            updatedReactions = currentReactions.filter((_, index) => 
+              index !== existingReactionIndex
+            );
+          } else {
+            // Nếu chưa có emoji này -> thêm mới, không cần xóa emoji khác
+            updatedReactions = [
+              ...currentReactions,
+              {
+                userId: userId,
+                emoji: emoji,
+                count: 1
+              }
+            ];
+          }
+          
+          return {
+            ...prevReactions,
+            [messageId]: updatedReactions
+          };
+        });
+      });
+
+      socketRef.current.on("REACTION_ERROR", (data) => {
+        console.error("Reaction error:", data.error);
+      });
+
+      return () => {
+        socketRef.current.off("RECEIVED_MSG");
+        socketRef.current.off("RECALL_MSG");
+        socketRef.current.off("DELETED_MSG");
+        socketRef.current.off("RECEIVED_REACTION");
+        socketRef.current.off("REACTION_ERROR");
+      };
+
     }
   }, [roomData.receiver]);
 
@@ -880,6 +1007,21 @@ const InboxScreen = ({ route }) => {
     return date.toLocaleDateString("vi-VN");
   };
 
+  // reply mess
+  let [previewReply, setPreviewReply] = useState("");
+  const handleReply = async (selectedMessage) => {
+    // Tách nội dung từ dòng 2 trở đi (nếu có \n)
+    const parts = selectedMessage.msg.split("\n\n");
+    const contentAfterFirstLine =
+      parts.length > 1 ? parts.slice(1).join("\n") : selectedMessage.msg;
+
+    setPreviewReply(selectedMessage.sender.name + ": " + contentAfterFirstLine);
+  };
+
+  const handleClearReply = async () => {
+    setPreviewReply("");
+  };
+
   // call
   const handleStartCall = route.params?.handleStartCall;
 
@@ -949,7 +1091,7 @@ const InboxScreen = ({ route }) => {
           const senderAvatar = item.sender._id !== user._id ? 
             (item.sender.avatar || "https://i.imgur.com/l5HXBdTg.jpg") :
             null;
-          const senderName = item.sender._id !== user._id ? item.sender.username || "User" : null;
+          const senderName = item.sender._id !== user._id ? item.sender.name || "User" : null;
 
           return (
             <View>
@@ -983,7 +1125,6 @@ const InboxScreen = ({ route }) => {
                   source={{ uri: senderAvatar }}
                   style={styles.avatarCircle}
                 />
-                <Text style={styles.senderNameBelow}>{senderName}</Text>
               </View>
             )}
             
@@ -999,6 +1140,10 @@ const InboxScreen = ({ route }) => {
                 item.sender._id === user._id ? styles.userBubble : styles.friendBubble
               ]}>
 
+                {item.sender._id !== user._id && showAvatar && (
+                  <Text style={styles.senderNameBelow}>{senderName}</Text>
+                )}
+
                 {/* Nội dung tin nhắn */}
                 <TouchableOpacity
                   onLongPress={() => {
@@ -1009,10 +1154,15 @@ const InboxScreen = ({ route }) => {
                 >{renderMessageContent(item)}</TouchableOpacity>
 
                 <TouchableOpacity 
-                  style={styles.reactionButton}
+                  style={
+                    item.sender._id === user._id
+                      ? styles.reactionButtonUser
+                      : styles.reactionButtonFriend}
                   onPress={() => {
-                    setMessageForReaction(item);
-                    setReactionModalVisible(true);
+                    handleReactToMessage(item._id, "heart");
+                  }}
+                  onLongPress={(event) => {
+                    handleShowReactionPopup(event, item._id);
                   }}
                 >
                   <FontAwesome5 name="smile" size={18} color="#666" />
@@ -1028,17 +1178,13 @@ const InboxScreen = ({ route }) => {
                       if (!acc[reaction.emoji]) {
                         acc[reaction.emoji] = 0;
                       }
-                      acc[reaction.emoji] += reaction.count || 1;
+                      acc[reaction.emoji] += 1;
                       return acc;
                     }, {})
                   ).map(([emoji, count], index) => (
                     <View key={index} style={styles.reactionItem}>
                       <Text style={styles.reactionEmoji}>
-                        {emoji === "Like" ? "👍" : 
-                        emoji === "Love" ? "❤️" :
-                        emoji === "Haha" ? "😂" :
-                        emoji === "Wow" ? "😮" :
-                        emoji === "Sad" ? "😢" : "😡"}
+                        {textToEmojiMap[emoji] || emoji}
                       </Text>
                       <Text style={styles.reactionCount}>{count}</Text>
                     </View>
@@ -1059,6 +1205,7 @@ const InboxScreen = ({ route }) => {
           </View>
         )}}
         contentContainerStyle={styles.messagesContainer}
+        scrollEventThrottle={16} //Hiệu suất scroll
         onContentSizeChange={() => {
           setTimeout(() => {
             flatListRef.current?.scrollToEnd({ animated: true });
@@ -1085,6 +1232,16 @@ const InboxScreen = ({ route }) => {
               />
             </TouchableOpacity>
             <View style={styles.inputWrapper}>
+              {previewReply !== "" && (
+                <View style={styles.replyPreviewContainer}>
+                  <Text style={styles.replyPreviewText} numberOfLines={2}>
+                    {previewReply}
+                  </Text>
+                  <TouchableOpacity onPress={() => handleClearReply()}>
+                    <FontAwesome5 name="times-circle" size={16} color="red" />
+                  </TouchableOpacity>
+                </View>
+              )}
               <TextInput
                 style={styles.input}
                 placeholder="Message"
@@ -1128,17 +1285,21 @@ const InboxScreen = ({ route }) => {
         onPick={(iconName) => handleSelectIcon(iconName)}
       />
 
-      {/* Modal Reaction riêng biệt */}
-      <Modal
-        visible={reactionModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setReactionModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setReactionModalVisible(false)}>
-          <View style={styles.reactionModalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.reactionModalContainer}>
+      {/* Popup Reaction */}
+      {reactionModalVisible && (
+        <View style={StyleSheet.absoluteFill}>
+          <TouchableWithoutFeedback onPress={() => setReactionModalVisible(false)}>
+            <View style={styles.reactionPopupOverlay}>
+              <View 
+                style={[
+                  styles.reactionPopupContainer,
+                  {
+                    position: 'absolute',
+                    left: reactionPopupPosition.x,
+                    top: reactionPopupPosition.y,
+                  }
+                ]}
+              >
                 {[
                   {emoji: "❤️", type: "heart"},
                   {emoji: "👍", type: "thumbs-up"},
@@ -1150,8 +1311,8 @@ const InboxScreen = ({ route }) => {
                     key={index} 
                     style={styles.reactionEmojiButton}
                     onPress={() => {
-                      if (messageForReaction) {
-                        handleReactToMessage(messageForReaction._id, item.type);
+                      if (messageIdForReaction) {
+                        handleReactToMessage(messageIdForReaction, item.type);
                         setReactionModalVisible(false);
                       }
                     }}
@@ -1160,10 +1321,10 @@ const InboxScreen = ({ route }) => {
                   </TouchableOpacity>
                 ))}
               </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      )}
 
       <Modal
         visible={modalVisible}
@@ -1191,7 +1352,13 @@ const InboxScreen = ({ route }) => {
             {/* Menu hành động */}
             <View style={styles.menuOptions}>
               {[
-                { name: "Trả lời", icon: "reply", action: () => {} },
+                {
+                  name: "Trả lời",
+                  icon: "reply",
+                  action: () => {
+                    handleReply(selectedMessage);
+                  },
+                },
                 {
                   name: "Chuyển tiếp",
                   icon: "share",
@@ -1267,30 +1434,55 @@ const InboxScreen = ({ route }) => {
             <FlatList
               data={conversations}
               keyExtractor={(item) => item._id.toString()}
-              renderItem={({ item }) => (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 10,
-                  }}
-                >
-                  <CheckBox
-                    value={selectedConversations.includes(item._id)}
-                    onValueChange={() => toggleConversationSelection(item._id)}
-                  />
-                  <Image
-                    source={item.avatar}
+              renderItem={({ item }) => {
+                const isSelected = selectedConversations.includes(item._id);
+
+                return (
+                  <View
                     style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 20,
-                      marginRight: 10,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 10,
                     }}
-                  />
-                  <Text style={{ fontSize: 16 }}>{item.username}</Text>
-                </View>
-              )}
+                  >
+                    <TouchableOpacity
+                      onPress={() => toggleConversationSelection(item._id)}
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderWidth: 2,
+                        borderColor: "#007bff",
+                        marginRight: 10,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: isSelected ? "#007bff" : "transparent",
+                      }}
+                    >
+                      {isSelected && (
+                        <View
+                          style={{
+                            width: 10,
+                            height: 10,
+                            backgroundColor: "white",
+                            borderRadius: 2,
+                          }}
+                        />
+                      )}
+                    </TouchableOpacity>
+
+                    <Image
+                      source={{ uri: item.avatar }}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        marginRight: 10,
+                      }}
+                    />
+                    <Text style={{ fontSize: 16 }}>{item.username}</Text>
+                  </View>
+                );
+              }}
             />
             <TouchableOpacity
               style={{
@@ -1377,19 +1569,25 @@ const styles = StyleSheet.create({
   },
   messageTextUser: {
     color: "white",
-    backgroundColor: "#007bff",
-    padding: 8,
-    borderRadius: 10,
     flexDirection: 'row', 
     flexWrap: 'wrap',
+    maxWidth: "70%",
+    minWidth: "50px", 
+    marginLeft: 10,
+    fontSize: ".9375rem",
+    fontWeight: "400",
+    lineHeight: "1.5",
   },
   messageTextFriend: {
     color: "black",
-    backgroundColor: "#e4e6eb",
-    padding: 8,
-    borderRadius: 10,
     flexDirection: 'row', // Đảm bảo text hiển thị theo chiều ngang
     flexWrap: 'wrap',
+    maxWidth: "70%",
+    minWidth: "50px", 
+    marginRight: 10,
+    fontSize: ".9375rem",
+    fontWeight: "400",
+    lineHeight: "1.5",
   },
   inputContainer: {
     position: "absolute",
@@ -1575,12 +1773,16 @@ const styles = StyleSheet.create({
   },
   
   // System message style
-  systemMessage: {
+  systemMessageTextFriend: {
     fontStyle: 'italic',
     color: '#666',
-    backgroundColor: '#f0f0f0',
-    padding: 8,
-    borderRadius: 10,
+    marginRight: 10,
+  },
+
+  systemMessageTextUser: {
+    fontStyle: 'italic',
+    color: 'white',
+    marginLeft: 10,
   },
 
   senderInfoContainer: {
@@ -1588,6 +1790,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 40,
     marginBottom: 5,
+    height: "100%"
   },
 
   avatarCircle: {
@@ -1595,14 +1798,15 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginBottom: 4,
+    marginTop: 5,
   },
 
   senderNameBelow: {
     fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
+    color: '#5a6981',
     marginTop: 2,
     fontWeight: '400',
+    marginBottom: 5,
   },
 
   messageBubble: {
@@ -1610,7 +1814,7 @@ const styles = StyleSheet.create({
     padding: 10,
     position: 'relative',
     maxWidth: '100%',
-    flexDirection: 'row',
+    display: 'block'
   },
 
   userBubble: {
@@ -1630,7 +1834,7 @@ const styles = StyleSheet.create({
   },
 
   // Style cho nút reaction
-  reactionButton: {
+  reactionButtonFriend: {
     position: 'absolute',
     bottom: -12,
     right: -5,
@@ -1647,6 +1851,25 @@ const styles = StyleSheet.create({
     elevation: 2,
     zIndex: 10,
   },
+
+  reactionButtonUser: {
+    position: 'absolute',
+    bottom: -12,
+    left: -5,
+    backgroundColor: '#ffffff',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 2,
+    zIndex: 10,
+  },
+
   reactionEmoji: {
     fontSize: 16, 
   },
@@ -1670,13 +1893,14 @@ const styles = StyleSheet.create({
   messageTime: {
     fontSize: 11,
     marginTop: 4,
-    alignSelf: 'flex-end',
   },
   userMessageTime: {
     color: '#a0a0a0',
+    alignSelf: 'flex-end',
   },
   friendMessageTime: {
     color: '#666',
+    alignSelf: 'flex-start',
   },
   
 
@@ -1700,11 +1924,45 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   reactionEmojiButton: {
-    padding: 10,
-    marginHorizontal: 5,
+    padding: 5,
+    marginHorizontal: 2,
   },
   reactionEmojiText: {
-    fontSize: 24,
+    fontSize: 17,
+  },
+  replyPreviewContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 8,
+    padding: 6,
+    marginBottom: 4,
+    marginHorizontal: 8,
+  },
+
+  replyPreviewText: {
+    flex: 1,
+    color: "#555",
+    fontStyle: "italic",
+    fontSize: 13,
+    marginRight: 8,
+  },
+
+  reactionPopupOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent', // Nền trong suốt
+  },
+  reactionPopupContainer: {
+    backgroundColor: 'white',
+    borderRadius: 30,
+    padding: 5,
+    flexDirection: 'row',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 2000,
   },
 });
 

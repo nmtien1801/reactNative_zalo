@@ -63,7 +63,6 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef, roomData}) => {
           const searchResult = response.DT ? [response.DT] : [];
           setSearchResults(searchResult);
         } catch (error) {
-          console.error("Error searching by phone:", error);
           setSearchResults([]);
         }
       } else if (searchTerm.trim() === "") {
@@ -136,8 +135,25 @@ const AddMemberModal = ({ show, onHide, roomId, user, socketRef, roomData}) => {
       );
 
       if (response.EC === 0) {
-        socketRef.current.emit("REQ_ADD_GROUP", response.DT);
-        Alert.alert("Thành công", "Thêm thành viên thành công!");
+        const allExistInFriends = response.DT.members.every((member) =>
+          friends.some((f) => f._id === member)
+        );
+
+        if (!allExistInFriends) {
+          // thêm nhóm k phải bạn
+          let groupsMember = {
+            members: [
+              ...response.DT.members,
+              ...selectedFriends.map((f) => f._id),
+            ],
+          };
+          socketRef.current.emit("REQ_ADD_GROUP", groupsMember);
+          Alert.alert("Thành công", "Thêm thành viên thành công!");
+        } else {
+          // thêm nhóm là bạn
+          socketRef.current.emit("REQ_ADD_GROUP", response.DT);
+          Alert.alert("Thành công", "Thêm thành viên thành công!");
+        }
 
         // update permission
         let res = await dispatch(

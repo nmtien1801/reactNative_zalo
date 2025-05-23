@@ -94,6 +94,11 @@ const ChatTab = ({ route }) => {
       dispatch(getConversations(user._id));
     });
 
+    // accept group
+    socketRef.current.on("RES_ACCEPT_GROUP", async () => {
+      dispatch(getConversations(user._id));
+    });
+
     // delete friend
     socketRef.current.on("RES_DELETE_FRIEND", async () => {
       dispatch(getConversations(user._id));
@@ -181,7 +186,7 @@ const ChatTab = ({ route }) => {
             <Image
               source={
                 item.type === 3
-                  ? require('../../../assets/cloud.jpg')
+                  ? require("../../../assets/cloud.jpg")
                   : {
                       uri: item.avatar || "https://example.com/placeholder.jpg",
                     }

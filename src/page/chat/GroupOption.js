@@ -22,12 +22,12 @@ import { getRoomChatMembersService } from "../../service/roomChatService";
 import { removeMemberFromGroupService } from "../../service/chatService";
 import AddMemberModal from "./AddMemberModal";
 import { dissolveGroupService } from "../../service/chatService";
-import { launchImageLibrary } from "react-native-image-picker";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import { Platform } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatarGroup } from "../../redux/profileSlice.js";
 import { transLeaderService } from "../../service/permissionService";
+import * as DocumentPicker from "expo-document-picker";
 
 const ChatInfoScreen = ({ route }) => {
   const [item, setItem] = useState(route.params?.receiver); // click conversation
@@ -247,6 +247,25 @@ const ChatInfoScreen = ({ route }) => {
       };
       fetchMembers();
     });
+
+    // accept member group
+    socketRef.current.on("RES_ACCEPT_GROUP", (data) => {
+      const fetchMembers = async () => {
+        try {
+          if (receiver?._id) {
+            const response = await getRoomChatMembersService(receiver._id);
+            if (response.EC === 0) {
+              setMembers(response.DT); // Lưu danh sách thành viên vào state
+            } else {
+              console.error("Lỗi khi lấy danh sách thành viên:", response.EM);
+            }
+          }
+        } catch (error) {
+          console.error("Lỗi khi gọi API getRoomChatMembersService:", error);
+        }
+      };
+      fetchMembers();
+    });
   }, []);
   console.log("role", role);
 
@@ -307,48 +326,70 @@ const ChatInfoScreen = ({ route }) => {
   };
 
   // Hàm chọn ảnh từ thư viện hoặc camera
+  const [previewImages, setPreviewImages] = useState([]);
   const pickImage = async () => {
-    launchImageLibrary(
-      { mediaType: "photo", includeBase64: false },
-      async (response) => {
-        if (response.didCancel) {
-          console.log("User cancelled image picker");
-        } else if (response.errorMessage) {
-          console.log("ImagePicker Error: ", response.errorMessage);
-        } else if (response.assets && response.assets.length > 0) {
-          setPhoto(response.assets[0]);
-        }
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "image/*", // hoặc 'image/*', 'video/*', 'application/pdf'
+        copyToCacheDirectory: true,
+      });
+      if (!result.assets || result.assets.length === 0) return;
+      if (result.assets.length > 10) {
+        alert("Chỉ được chọn tối đa 10 ảnh.");
+        return;
       }
-    );
+      setPreviewImages(result.assets);
+    } catch (err) {
+      console.log("Error picking file:", err);
+    }
   };
 
   useEffect(() => {
-    if (photo) {
-      handleUploadPhoto();
+    if (previewImages) {
+      handleUploadMultiple();
     }
-  }, [photo]);
+  }, [previewImages]);
 
-  const handleUploadPhoto = async () => {
-    if (!photo) {
-      Alert.alert("Chưa chọn ảnh");
+  const handleUploadMultiple = async () => {
+    if (!previewImages || previewImages.length === 0) {
+      console.log("Chưa chọn ảnh, video hoặc file");
       return;
     }
-
     try {
-      const formData = createFormData(photo);
-      const res = await dispatch(uploadAvatar(formData)).unwrap();
+      const listUrlImage = [];
+      for (const file of previewImages) {
+        const formData = new FormData();
+        if (Platform.OS === "android" || Platform.OS === "ios") {
+          formData.append("avatar", {
+            uri: file.uri,
+            name: file.name || "photo.jpg",
+            type: file.mimeType || "image/jpeg",
+          });
+        } else {
+          formData.append("avatar", file.uri);
+          formData.append("fileName", file.name);
+          formData.append("mimeType", file.mimeType);
+        }
 
-      console.log("Upload thành công:", res);
-      if (res.EC === 0) {
-        setUploadedUrl(res.DT); // link ảnh server trả về
-        let a = await dispatch(
-          uploadAvatarGroup({ groupId: item._id, avatar: res.DT })
-        );
+        const res = await dispatch(uploadAvatar(formData)).unwrap();
+        console.log("Upload thành công:", res);
+        if (res.EC === 0) {
+          listUrlImage.push(res.DT);
+          setUploadedUrl(res.DT); // link ảnh server trả về
 
-        if (a.payload.EC === 0) {
-          Alert.alert("Upload thành công!", `Link: ${res.DT}`);
+          let a = await dispatch(
+            uploadAvatarGroup({ groupId: item._id, avatar: res.DT })
+          );
+
+          if (a.payload.EC === 0) {
           socketRef.current.emit("REQ_UPDATE_AVATAR", receiver);
         }
+        } else {
+          console.log("err : ", res.EM);
+        }
+      }
+      if (listUrlImage.length > 0) {
+        const listUrlImageString = listUrlImage.join(", ");
       }
     } catch (error) {
       console.error("Upload thất bại:", error);

@@ -18,4 +18,16 @@ const transLeaderService = async (groupId, newLeaderId) => {
   return response;
 };
 
-export { getAllPermissionService, updateDeputyService, transLeaderService };
+const getPermissionCurrentService = async (groupId) => {
+  const response = await customizeAxios.get(
+    `/getPermissionCurrent/${groupId}`
+  );
+  return response;
+};
+
+export {
+  getAllPermissionService,
+  updateDeputyService,
+  transLeaderService,
+  getPermissionCurrentService,
+};

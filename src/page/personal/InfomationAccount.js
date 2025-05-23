@@ -9,12 +9,13 @@ import {
   Image,
   TextInput,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { Platform } from "react-native";
-import { launchImageLibrary } from "react-native-image-picker";
 import { useNavigation } from "@react-navigation/native";
+import * as DocumentPicker from "expo-document-picker";
 
-const InformationAccount = ({route}) => {
+const InformationAccount = ({ route }) => {
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
   const navigation = useNavigation();
@@ -29,7 +30,6 @@ const InformationAccount = ({route}) => {
     phone: user.phone,
     gender: user.gender,
   });
-  //   console.log(user);
 
   useEffect(() => {
     if (user.avatar) {
@@ -37,58 +37,63 @@ const InformationAccount = ({route}) => {
     }
   }, [user.avatar]);
 
-  const createFormData = (photo) => {
-    const data = new FormData();
-    if (Platform.OS === "android" || Platform.OS === "ios") {
-      data.append("avatar", {
-        uri: photo.uri,
-        name: photo.name || "photo.jpg",
-        type: photo.mimeType || "image/jpeg",
-      });
-    } else {
-      data.append("avatar", photo.uri);
-      data.append("fileName", photo.name);
-      data.append("mimeType", photo.mimeType);
-    }
-
-    return data;
-  };
-
   // Hàm chọn ảnh từ thư viện hoặc camera
+  const [previewImages, setPreviewImages] = useState([]);
   const pickImage = async () => {
-    launchImageLibrary(
-      { mediaType: "photo", includeBase64: false },
-      async (response) => {
-        if (response.didCancel) {
-          console.log("User cancelled image picker");
-        } else if (response.errorMessage) {
-          console.log("ImagePicker Error: ", response.errorMessage);
-        } else if (response.assets && response.assets.length > 0) {
-          setPhoto(response.assets[0]);
-        }
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "image/*", // hoặc 'image/*', 'video/*', 'application/pdf'
+        copyToCacheDirectory: true,
+      });
+      if (!result.assets || result.assets.length === 0) return;
+      if (result.assets.length > 10) {
+        alert("Chỉ được chọn tối đa 10 ảnh.");
+        return;
       }
-    );
+      setPreviewImages(result.assets);
+    } catch (err) {
+      console.log("Error picking file:", err);
+    }
   };
 
   useEffect(() => {
-    if (photo) {
-      handleUploadPhoto();
+    if (previewImages) {
+      handleUploadMultiple();
     }
-  }, [photo]);
+  }, [previewImages]);
 
-  const handleUploadPhoto = async () => {
-    if (!photo) {
-      Alert.alert("Chưa chọn ảnh");
+  const handleUploadMultiple = async () => {
+    if (!previewImages || previewImages.length === 0) {
+      console.log("Chưa chọn ảnh, video hoặc file");
       return;
     }
-
     try {
-      const formData = createFormData(photo);
-      const res = await dispatch(uploadAvatar(formData)).unwrap();
+      const listUrlImage = [];
+      for (const file of previewImages) {
+        const formData = new FormData();
+        if (Platform.OS === "android" || Platform.OS === "ios") {
+          formData.append("avatar", {
+            uri: file.uri,
+            name: file.name || "photo.jpg",
+            type: file.mimeType || "image/jpeg",
+          });
+        } else {
+          formData.append("avatar", file.uri);
+          formData.append("fileName", file.name);
+          formData.append("mimeType", file.mimeType);
+        }
 
-      console.log("Upload thành công:", res);
-      if (res.EC === 0) {
-        setAvatarUrl(res.DT); // link ảnh server trả về
+        const res = await dispatch(uploadAvatar(formData)).unwrap();
+        console.log("Upload thành công:", res);
+        if (res.EC === 0) {
+          listUrlImage.push(res.DT);
+          setAvatarUrl(res.DT); // link ảnh server trả về
+        } else {
+          console.log(res.EM);
+        }
+      }
+      if (listUrlImage.length > 0) {
+        const listUrlImageString = listUrlImage.join(", ");
       }
     } catch (error) {
       console.error("Upload thất bại:", error);
@@ -102,10 +107,15 @@ const InformationAccount = ({route}) => {
       avatar: avatarUrl,
     };
 
-    let res = await dispatch(uploadProfile(data));
-    if (res.payload.EC === 0) {
-      socketRef.current.emit("REQ_UPDATE_AVATAR");
-      navigation.goBack();
+    try {
+      let res = await dispatch(uploadProfile(data));
+      if (res.payload.EC === 0) {
+        socketRef.current.emit("REQ_UPDATE_AVATAR");
+        navigation.goBack();
+      }
+    } catch (error) {
+      console.log('er ', error);
+      
     }
   };
 
@@ -133,7 +143,9 @@ const InformationAccount = ({route}) => {
           <TextInput
             style={styles.input}
             value={userUpdate.username}
-            onChangeText={(text) => setUserUpdate({ ...user, username: text })}
+            onChangeText={(text) =>
+              setUserUpdate({ ...userUpdate, username: text })
+            }
             placeholder="Nhập tên người dùng"
           />
         </View>
