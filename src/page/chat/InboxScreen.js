@@ -69,6 +69,10 @@ const InboxScreen = ({ route }) => {
   const [reactionPopupPosition, setReactionPopupPosition] = useState({ x: 0, y: 0 });
   const [messageIdForReaction, setMessageIdForReaction] = useState(null);
 
+  //Typing
+  const [typingUsers, setTypingUsers] = useState({});
+  const typingTimeout = useRef(null);
+
   // Ánh xạ Emoji - Text
   const emojiToTextMap = {
     "heart": "Love",
@@ -153,6 +157,52 @@ const InboxScreen = ({ route }) => {
     } catch (error) {
       console.error("Error fetching reactions:", error);
       return [];
+    }
+  };
+
+  // Hàm theo dõi typing
+  const handleTyping = (text) => {
+    setInput(text);
+    
+    // Nếu đang có timeout, xóa đi để reset
+    if (typingTimeout.current) {
+      clearTimeout(typingTimeout.current);
+    }
+    
+    // Gửi sự kiện TYPING nếu đang nhập
+    if (text.trim() !== "") {
+      // Emit typing event
+      if (socketRef.current) {
+        const typingData = {
+          userId: user._id,
+          username: user.username,
+          receiver: roomData.receiver,
+          // Thêm conversationId để đồng bộ với web
+          conversationId: roomData.receiver._id
+        };
+        
+        console.log("Sending typing data from mobile:", typingData);
+        socketRef.current.emit("TYPING", typingData);
+      }
+      
+      // Set timeout để dừng typing sau 1.5 giây không nhập
+      typingTimeout.current = setTimeout(() => {
+        // Emit stop typing
+        if (socketRef.current) {
+          socketRef.current.emit("STOP_TYPING", {
+            userId: user._id,
+            receiver: roomData.receiver
+          });
+        }
+      }, 1500);
+    } else {
+      // Nếu input rỗng, gửi sự kiện dừng typing ngay lập tức
+      if (socketRef.current) {
+        socketRef.current.emit("STOP_TYPING", {
+          userId: user._id,
+          receiver: roomData.receiver
+        });
+      }
     }
   };
 
@@ -794,6 +844,67 @@ const InboxScreen = ({ route }) => {
     }
   }, [roomData.receiver]);
 
+  //Listener typing
+  useEffect(() => {
+    if (socketRef.current) {
+      // Lắng nghe sự kiện USER_TYPING
+      socketRef.current.on("USER_TYPING", (data) => {
+
+        console.log("Received USER_TYPING in mobile:", data);
+        console.log("Mobile current room:", roomData.receiver._id);
+
+        const { userId, username, conversationId } = data;
+        
+        // Kiểm tra xem sự kiện typing có thuộc conversation hiện tại không
+        if (userId === roomData.receiver._id) {
+          console.log(`${username} is typing...`);
+          setTypingUsers((prev) => ({
+            ...prev,
+            [userId]: username
+          }));
+        }
+      });
+      
+      // Lắng nghe sự kiện USER_STOP_TYPING
+      socketRef.current.on("USER_STOP_TYPING", (data) => {
+        const { userId, conversationId } = data;
+        
+        // Chỉ xử lý nếu đúng conversation hiện tại
+        if (userId === roomData.receiver._id) {
+          console.log(`User ${userId} stopped typing`);
+          setTypingUsers((prev) => {
+            const newState = { ...prev };
+            delete newState[userId];
+            return newState;
+          });
+        }
+      });
+      
+      // Cleanup
+      return () => {
+        socketRef.current.off("USER_TYPING");
+        socketRef.current.off("USER_STOP_TYPING");
+        
+        // Dừng typing khi rời khỏi màn hình
+        if (socketRef.current) {
+          socketRef.current.emit("STOP_TYPING", {
+            userId: user._id,
+            receiver: roomData.receiver
+          });
+        }
+      };
+    }
+  }, [roomData.receiver]);
+
+  // Cleanup typing timeout
+  useEffect(() => {
+    return () => {
+      if (typingTimeout.current) {
+        clearTimeout(typingTimeout.current);
+      }
+    };
+  }, []);
+
   const handleRecallMessage = async (message) => {
     try {
       const response = await recallMessageService(message._id);
@@ -1231,6 +1342,15 @@ const InboxScreen = ({ route }) => {
                 style={{ marginLeft: -17 }}
               />
             </TouchableOpacity>
+            {Object.values(typingUsers).length > 0 && (
+              <View style={styles.typingContainer}>
+                <Text style={styles.typingText}>
+                  {Object.values(typingUsers).length === 1
+                    ? `${Object.values(typingUsers)[0]} đang nhập...`
+                    : `${Object.values(typingUsers).length} người đang nhập...`}
+                </Text>
+              </View>
+            )}
             <View style={styles.inputWrapper}>
               {previewReply !== "" && (
                 <View style={styles.replyPreviewContainer}>
@@ -1247,7 +1367,7 @@ const InboxScreen = ({ route }) => {
                 placeholder="Message"
                 placeholderTextColor="grey"
                 value={input}
-                onChangeText={(text) => setInput(text)}
+                onChangeText={(text) => handleTyping(text)}
               />
             </View>
             {!input.trim() ? (
@@ -1963,6 +2083,28 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
     zIndex: 2000,
+  },
+
+  typingContainer: {
+    position: 'absolute',
+    bottom: 60,
+    left: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+    zIndex: 10,
+    maxWidth: '80%',
+  },
+  typingText: {
+    color: '#666',
+    fontSize: 12,
+    fontStyle: 'italic',
   },
 });
 
