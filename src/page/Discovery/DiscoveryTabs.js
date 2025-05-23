@@ -1,93 +1,205 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
-  FlatList,
-  TouchableOpacity,
+  ScrollView,
   Image,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableOpacity
 } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
-import SearchHeader from "../../component/Header";
+import { useDispatch, useSelector } from "react-redux";
+import { chatGPT } from "../../redux/chatSlice";
+import { Send } from "lucide-react-native";
 
-export default function DiscoveryTabs() {
-  const discovery = [
-    {
-      id: "1",
-      name: "Game Center",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "2",
-      name: "Tiện ích đời sống",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "3",
-      name: "Tiện ích tài chính",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "4",
-      name: "Dịch vụ công",
-      avatar: require("../../../assets/favicon.png"),
-    },
-    {
-      id: "5",
-      name: "Mini App",
-      avatar: require("../../../assets/favicon.png"),
-    },
-  ];
+export default function ChatBot() {
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.userInfo);
+  const scrollViewRef = useRef();
 
-  const DiscoveryItem = ({ discovery }) => (
-    <TouchableOpacity
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        padding: 10,
-        borderBottomWidth: 1,
-        borderColor: "#ddd",
-      }}
-    >
-      <Image
-        source={discovery.avatar}
-        style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
-      />
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 16, fontWeight: "bold" }}>
-          {discovery.name}
-        </Text>
-      </View>
-      <Icon
-        name="chevron-forward-outline"
-        size={18}
-        color="black"
-        style={{ marginRight: 10 }}
-      />
-    </TouchableOpacity>
-  );
+  const chatbotImage = "https://cdn-icons-png.flaticon.com/512/4712/4712027.png";
+
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+
+  const sendMessage = async () => {
+    if (!message.trim()) return;
+
+    const userMsg = { sender: "user", content: message };
+    setMessages((prev) => [...prev, userMsg]);
+    setMessage("");
+
+    try {
+      const res = await dispatch(chatGPT(message)).unwrap();
+      const reply = res.reply;
+      setMessages((prev) => [...prev, { sender: "bot", content: reply }]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", content: "Xin lỗi, đã xảy ra lỗi!" },
+      ]);
+    }
+  };
 
   return (
-    <View style={{ flex: 1 }}>
-      <SearchHeader option={'discovery'}/>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={styles.container}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <Image source={{ uri: chatbotImage }} style={styles.avatar} />
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.title}>Trợ lý ảo</Text>
+          <Text style={styles.subtitle}>Sẵn sàng giúp bạn</Text>
+        </View>
+      </View>
 
-      <FlatList
-        ListHeaderComponent={() => (
-          <>
-            {/* <TouchableOpacity style={{ flexDirection: "row", padding: 10, alignItems: "center", borderBottomWidth: 1, borderColor: "#ddd" }}>
-                       <Icon name="radio-outline" size={50} color="#2196F3" style={{ marginRight: 10 }} />
-                       <Text style={{ fontSize: 16 }}>Tìm thêm Offical Account</Text>
-                     </TouchableOpacity> */}
-          </>
-        )}
-        style={{ flex: 1, backgroundColor: "#fff" }}
-        data={discovery}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <DiscoveryItem discovery={item} />}
-      />
-    </View>
+      {/* Chat Content */}
+      <ScrollView
+        style={styles.chatContainer}
+        ref={scrollViewRef}
+        onContentSizeChange={() =>
+          scrollViewRef.current?.scrollToEnd({ animated: true })
+        }
+      >
+        {messages.map((msg, index) => (
+          <View
+            key={index}
+            style={[
+              styles.messageRow,
+              msg.sender === "user" ? styles.userMessageRow : styles.botMessageRow,
+            ]}
+          >
+            <View
+              style={[
+                styles.messageBubble,
+                msg.sender === "user"
+                  ? styles.userBubble
+                  : styles.botBubble,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.messageText,
+                  msg.sender === "user"
+                    ? styles.userText
+                    : styles.botText,
+                ]}
+              >
+                {msg.content}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Message Input */}
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Nhập tin nhắn..."
+          value={message}
+          onChangeText={setMessage}
+          onSubmitEditing={sendMessage}
+        />
+        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+          <Send size={20} color="white" />
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f8f9fa",
+  },
+  header: {
+    flexDirection: "row",
+    padding: 12,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  headerTextContainer: {
+    marginLeft: 12,
+  },
+  title: {
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  subtitle: {
+    color: "#888",
+    fontSize: 12,
+  },
+  chatContainer: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  messageRow: {
+    marginVertical: 4,
+    flexDirection: "row",
+  },
+  userMessageRow: {
+    justifyContent: "flex-end",
+  },
+  botMessageRow: {
+    justifyContent: "flex-start",
+  },
+  messageBubble: {
+    padding: 10,
+    borderRadius: 16,
+    maxWidth: "75%",
+  },
+  userBubble: {
+    backgroundColor: "#007bff",
+  },
+  botBubble: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  messageText: {
+    fontSize: 14,
+  },
+  userText: {
+    color: "white",
+  },
+  botText: {
+    color: "#333",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    padding: 10,
+    backgroundColor: "white",
+    borderTopWidth: 1,
+    borderColor: "#ddd",
+    alignItems: "center",
+  },
+  input: {
+    flex: 1,
+    height: 40,
+    backgroundColor: "#f1f1f1",
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    fontSize: 14,
+  },
+  sendButton: {
+    marginLeft: 10,
+    backgroundColor: "#007bff",
+    padding: 10,
+    borderRadius: 20,
+  },
+});

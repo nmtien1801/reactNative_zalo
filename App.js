@@ -54,7 +54,7 @@ const MainTabs = ({ route }) => (
               ? "chatbubble-ellipses"
               : "chatbubble-ellipses-outline",
             "Danh bạ": focused ? "id-card" : "id-card-outline",
-            "Khám phá": focused ? "grid" : "grid-outline",
+            "Trợ lý ảo": focused ?  "sparkles" : "sparkles-outline",
             "Nhật ký": focused ? "time" : "time-outline",
             "Cá nhân": focused ? "person" : "person-outline",
           };
@@ -75,7 +75,7 @@ const MainTabs = ({ route }) => (
         initialParams={{ socketRef: route.params.socketRef }}
       />
       <Tab.Screen
-        name="Khám phá"
+        name="Trợ lý ảo"
         component={DiscoveryTabs}
         initialParams={{ socketRef: route.params.socketRef }}
       />
