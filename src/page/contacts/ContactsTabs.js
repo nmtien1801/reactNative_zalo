@@ -260,40 +260,19 @@ export default function ContactsTabs({ route, socketRef, friendRequestCount, gro
               </View>
               <Text style={{ fontSize: 16 }}>Lời mời tham gia nhóm</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                padding: 10,
-                alignItems: "center",
-                borderBottomWidth: 1,
-                borderColor: "#ddd",
-              }}
-            >
-              <Icon
-                name="person-add-outline"
-                size={24}
-                color="#2196F3"
-                style={{ marginRight: 10 }}
-              />
-              <Text style={{ fontSize: 16 }}>Tạo nhóm mới</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
+            <View
               style={{
                 flexDirection: "row",
-                padding: 10,
                 alignItems: "center",
                 borderColor: "#ddd",
                 justifyContent: "space-between",
               }}
             >
               <Text style={{ margin: 10, fontSize: 18, fontWeight: "bold" }}>
-                Nhóm đang tham gia(4)
+                Nhóm đang tham gia
               </Text>
-              <TouchableOpacity>
-                <Icon name="funnel-outline" size={24} color="#2196F3" />
-              </TouchableOpacity>
-            </TouchableOpacity>
+            </View>
           </>
         )}
         style={{ flex: 1, backgroundColor: "#fff" }}

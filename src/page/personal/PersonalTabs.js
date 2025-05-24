@@ -14,15 +14,18 @@ import SearchHeader from "../../component/Header";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import { uploadAvatarProfile } from "../../redux/authSlice.js";
 import { useSelector, useDispatch } from "react-redux";
-import { launchImageLibrary } from "react-native-image-picker";
 import { FontAwesome } from "@expo/vector-icons";
 import { Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import * as DocumentPicker from "expo-document-picker";
+import { getConversations } from "../../redux/chatSlice";
 
 export default function PersonalTabs({ route }) {
   const [refreshing, setRefreshing] = useState(false); // reload trang
   const socketRef = route.params.socketRef;
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const conversationRedux = useSelector((state) => state.chat.conversations);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -30,6 +33,31 @@ export default function PersonalTabs({ route }) {
     socketRef.current.emit("register", user._id);
     setRefreshing(false);
   };
+
+  useEffect(() => {
+    dispatch(getConversations(user._id));
+  }, []);
+
+  useEffect(() => {
+    if (conversationRedux) {
+      let _conversations = conversationRedux.map((item) => {
+        return {
+          _id: item.receiver._id,
+          username: item.receiver.username,
+          message: item.message,
+          time: item.time,
+          avatar: item.avatar,
+          type: item.type,
+          phone: item.receiver.phone,
+          members: item.members,
+          role: item.role,
+          permission: item.receiver.permission,
+        };
+      });
+
+      setConversations(_conversations);
+    }
+  }, [conversationRedux]);
 
   const personal = [
     {
@@ -68,23 +96,6 @@ export default function PersonalTabs({ route }) {
       setUploadedUrl(user.avatar);
     }
   }, [user?.avatar]);
-
-  const createFormData = (photo) => {
-    const data = new FormData();
-    if (Platform.OS === "android" || Platform.OS === "ios") {
-      data.append("avatar", {
-        uri: photo.uri,
-        name: photo.name || "photo.jpg",
-        type: photo.mimeType || "image/jpeg",
-      });
-    } else {
-      data.append("avatar", photo.uri);
-      data.append("fileName", photo.name);
-      data.append("mimeType", photo.mimeType);
-    }
-
-    return data;
-  };
 
   // Hàm chọn ảnh từ thư viện hoặc camera
   const [previewImages, setPreviewImages] = useState([]);
@@ -146,7 +157,7 @@ export default function PersonalTabs({ route }) {
             socketRef.current.emit("REQ_UPDATE_AVATAR");
           }
         } else {
-          console.log('err : ', res.EM);
+          console.log("err : ", res.EM);
         }
       }
       if (listUrlImage.length > 0) {
@@ -161,8 +172,25 @@ export default function PersonalTabs({ route }) {
   const handleItemPress = (item) => {
     if (item.id === "2") {
       navigation.navigate("InformationAccount");
+    } else if (item.id === "1") {
+      let cloud = conversations.filter((cloud) => cloud.type === 3);
+      console.log("ssssssssssssss ", cloud);
+
+      navigation.navigate("InboxScreen", {
+        item: cloud[0],
+        socketRef,
+        onlineUsers,
+        conversations,
+      });
     }
   };
+
+  // action socket
+  useEffect(() => {
+    socketRef.current.on("user-list", (usersList) => {
+      setOnlineUsers(usersList);
+    });
+  }, []);
 
   return (
     <View style={styles.container}>

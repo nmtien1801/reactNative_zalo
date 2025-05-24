@@ -1542,12 +1542,6 @@ const InboxScreen = ({ route }) => {
                     setModalVisible(false);
                   },
                 },
-                {
-                  name: "Xóa",
-                  icon: "trash",
-                  action: () =>
-                    handleDeleteMessageForMe(selectedMessage._id, user._id),
-                },
               ].map((item, index) => (
                 <TouchableOpacity
                   key={index}
