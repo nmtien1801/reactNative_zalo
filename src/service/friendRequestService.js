@@ -41,8 +41,6 @@ const acceptGroupJoinRequestService = async (requestId) => {
     return response;
 }
 
-
-
 export {
     getFriendRequestsService,
     acceptFriendRequestService,

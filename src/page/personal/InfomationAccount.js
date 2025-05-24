@@ -115,14 +115,13 @@ const InformationAccount = ({ route }) => {
       }
     } catch (error) {
       console.log('er ', error);
-      
+
     }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Thông tin tài khoản</Text>
-
       <View style={styles.avatarContainer}>
         <Image
           source={{

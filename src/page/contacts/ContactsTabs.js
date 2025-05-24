@@ -15,18 +15,19 @@ import SearchHeader from "../../component/Header";
 import { getConversations } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
+import { G } from "react-native-svg";
 
 const TopTab = createMaterialTopTabNavigator();
 
-export default function ContactsTabs({ route }) {
+export default function ContactsTabs({ route, socketRef, friendRequestCount, groupRequestCount }) {
   const [refreshing, setRefreshing] = useState(false); // reload trang
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const conversationRedux = useSelector((state) => state.chat.conversations);
   const user = useSelector((state) => state.auth.user);
-  const socketRef = route.params.socketRef;
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [conversations, setConversations] = useState([]);
+
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -140,12 +141,33 @@ export default function ContactsTabs({ route }) {
                 navigation.navigate("FriendRequest", { socketRef })
               }
             >
-              <Icon
-                name="person-add-outline"
-                size={24}
-                color="#2196F3"
-                style={{ marginRight: 10 }}
-              />
+              <View style={{ position: "relative", marginRight: 10 }}>
+                <Icon
+                  name="person-add-outline"
+                  size={24}
+                  color="#2196F3"
+                />
+                {friendRequestCount > 0 && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: -4,
+                      right: -4,
+                      backgroundColor: "red",
+                      borderRadius: 8,
+                      minWidth: 16,
+                      height: 16,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      paddingHorizontal: 3,
+                    }}
+                  >
+                    <Text style={{ color: "white", fontSize: 10, fontWeight: "bold" }}>
+                      {friendRequestCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
               <Text style={{ fontSize: 16 }}>Lời mời kết bạn</Text>
             </TouchableOpacity>
 
@@ -209,12 +231,33 @@ export default function ContactsTabs({ route }) {
                 navigation.navigate("GroupRequest", { socketRef })
               }
             >
-              <Icon
-                name="person-add-outline"
-                size={24}
-                color="#2196F3"
-                style={{ marginRight: 10 }}
-              />
+              <View style={{ position: "relative", marginRight: 10 }}>
+                <Icon
+                  name="person-add-outline"
+                  size={24}
+                  color="#2196F3"
+                />
+                {groupRequestCount > 0 && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: -4,
+                      right: -4,
+                      backgroundColor: "red",
+                      borderRadius: 8,
+                      minWidth: 16,
+                      height: 16,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      paddingHorizontal: 3,
+                    }}
+                  >
+                    <Text style={{ color: "white", fontSize: 10, fontWeight: "bold" }}>
+                      {groupRequestCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
               <Text style={{ fontSize: 16 }}>Lời mời tham gia nhóm</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -275,8 +318,64 @@ export default function ContactsTabs({ route }) {
           tabBarIndicatorStyle: { backgroundColor: "#2196F3" },
         }}
       >
-        <TopTab.Screen name="Bạn bè" component={FriendsScreen} />
-        <TopTab.Screen name="Nhóm" component={GroupsScreen} />
+        <TopTab.Screen
+          name="Bạn bè"
+          component={FriendsScreen}
+          options={{
+            tabBarLabel: ({ focused, color }) => (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ color, fontWeight: focused ? "bold" : "normal" }}>Bạn bè</Text>
+                {friendRequestCount > 0 && (
+                  <View
+                    style={{
+                      backgroundColor: "red",
+                      borderRadius: 8,
+                      minWidth: 16,
+                      height: 16,
+                      marginLeft: 4,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      paddingHorizontal: 3,
+                    }}
+                  >
+                    <Text style={{ color: "white", fontSize: 10, fontWeight: "bold" }}>
+                      {friendRequestCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ),
+          }}
+        />
+        <TopTab.Screen
+          name="Nhóm"
+          component={GroupsScreen}
+          options={{
+            tabBarLabel: ({ focused, color }) => (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ color, fontWeight: focused ? "bold" : "normal" }}>Nhóm</Text>
+                {groupRequestCount > 0 && (
+                  <View
+                    style={{
+                      backgroundColor: "red",
+                      borderRadius: 8,
+                      minWidth: 16,
+                      height: 16,
+                      marginLeft: 4,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      paddingHorizontal: 3,
+                    }}
+                  >
+                    <Text style={{ color: "white", fontSize: 10, fontWeight: "bold" }}>
+                      {groupRequestCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ),
+          }}
+        />
       </TopTab.Navigator>
     </View>
   );
