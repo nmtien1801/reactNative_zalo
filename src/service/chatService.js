@@ -54,6 +54,18 @@ const chatGPTService = async (message) => {
   });
 };
 
+const sendReactionService = (messageId, userId, emoji) => {
+  return customizeAxios.post(`/messages/handleReaction`, {
+    messageId,
+    userId,
+    emoji,
+  });
+};
+
+const getReactionMessageService = (messageId) => {
+  return customizeAxios.get(`/messages/${messageId}/reactions/`);
+};
+
 export {
   loadMessagesService,
   getConversationsService,
@@ -64,4 +76,6 @@ export {
   removeMemberFromGroupService,
   dissolveGroupService,
   chatGPTService,
+  sendReactionService,
+  getReactionMessageService,
 };

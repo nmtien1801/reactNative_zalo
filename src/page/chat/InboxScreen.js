@@ -13,6 +13,7 @@ import {
   Linking,
   CheckBox,
   TouchableWithoutFeedback,
+  Dimensions
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +28,8 @@ import ImageViewer from "../../component/ImageViewer";
 import {
   recallMessageService,
   deleteMessageForMeService,
+  sendReactionService,
+  getReactionMessageService,
 } from "../../service/chatService";
 
 const InboxScreen = ({ route }) => {
@@ -41,6 +44,7 @@ const InboxScreen = ({ route }) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const flatListRef = useRef(null);
+  const flatListLayout = useRef({ x: 0, y: 0, width: 0, height: 0 });
   const user = useSelector((state) => state.auth.user);
   const [input, setInput] = useState("");
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -60,9 +64,42 @@ const InboxScreen = ({ route }) => {
   const [previewImages, setPreviewImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
 
+  // Reaction
+  const [reactions, setReactions] = useState({});
+  const [reactionPopupPosition, setReactionPopupPosition] = useState({ x: 0, y: 0 });
+  const [messageIdForReaction, setMessageIdForReaction] = useState(null);
+
+  //Typing
+  const [typingUsers, setTypingUsers] = useState({});
+  const typingTimeout = useRef(null);
+
+  // Ánh xạ Emoji - Text
+  const emojiToTextMap = {
+    "heart": "Love",
+    "thumbs-up": "Like", 
+    "laugh": "Haha",
+    "sad-cry": "Sad",
+    "angry": "Angry",
+    "like": "Like" 
+  };
+
+
+  // Ánh xạ Text - Icon (sử dụng FontAwesome5)
+  const textToEmojiMap = {
+    "Like": "👍",
+    "Love": "❤️",
+    "Haha": "😂", 
+    "Sad": "😢",
+    "Angry": "😡",
+    "Wow": "😮"
+  };
+
   // share mess
   const [shareModalVisible, setShareModalVisible] = useState(false); // Trạng thái cho modal chia sẻ
   const [selectedConversations, setSelectedConversations] = useState([]); // Lưu các conversation được chọn
+
+  const [reactionModalVisible, setReactionModalVisible] = useState(false);
+  const [messageForReaction, setMessageForReaction] = useState(null);
 
   const toggleConversationSelection = (conversationId) => {
     setSelectedConversations((prev) =>
@@ -106,6 +143,302 @@ const InboxScreen = ({ route }) => {
       </TouchableOpacity>
     </Modal>
   );
+
+  // Lấy phản ứng từng message
+  const getReactions = async (messageId) => {
+    try {
+      const response = await getReactionMessageService(messageId);
+      if (response.EC === 0) {
+        return response.DT; // Trả về danh sách reaction
+      } else {
+        console.error("Failed to fetch reactions:", response.EM);
+        return [];
+      }
+    } catch (error) {
+      console.error("Error fetching reactions:", error);
+      return [];
+    }
+  };
+
+  // Hàm theo dõi typing
+  const handleTyping = (text) => {
+    setInput(text);
+    
+    // Nếu đang có timeout, xóa đi để reset
+    if (typingTimeout.current) {
+      clearTimeout(typingTimeout.current);
+    }
+    
+    // Gửi sự kiện TYPING nếu đang nhập
+    if (text.trim() !== "") {
+      // Emit typing event
+      if (socketRef.current) {
+        const typingData = {
+          userId: user._id,
+          username: user.username,
+          receiver: roomData.receiver,
+          // Thêm conversationId để đồng bộ với web
+          conversationId: roomData.receiver._id
+        };
+        
+        console.log("Sending typing data from mobile:", typingData);
+        socketRef.current.emit("TYPING", typingData);
+      }
+      
+      // Set timeout để dừng typing sau 1.5 giây không nhập
+      typingTimeout.current = setTimeout(() => {
+        // Emit stop typing
+        if (socketRef.current) {
+          socketRef.current.emit("STOP_TYPING", {
+            userId: user._id,
+            receiver: roomData.receiver
+          });
+        }
+      }, 1500);
+    } else {
+      // Nếu input rỗng, gửi sự kiện dừng typing ngay lập tức
+      if (socketRef.current) {
+        socketRef.current.emit("STOP_TYPING", {
+          userId: user._id,
+          receiver: roomData.receiver
+        });
+      }
+    }
+  };
+
+  // Hàm render nội dung tin nhắn theo loại
+  const renderMessageContent = (msg) => {
+    switch (msg.type) {
+      case "image":
+        if (msg.msg.includes(",")) {
+          // Nhiều ảnh
+          return (
+            <View style={styles.gridContainer}>
+              {msg.msg.split(",").map((url, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => handleImageClick(url.trim())}
+                  style={styles.gridItem}
+                >
+                  <Image
+                    source={{ uri: url.trim() }}
+                    style={styles.imageSquare}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          );
+        } else {
+          // Một ảnh
+          return (
+            <TouchableOpacity
+              onPress={() => handleImageClick(msg.msg)}
+              style={styles.gridItem}
+            >
+              <Image
+                source={{ uri: msg.msg }}
+                style={styles.imageSquare}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          );
+        }
+      case "video":
+        return (
+          <Video
+            source={{ uri: msg.msg }}
+            style={styles.videoPlayer}
+            useNativeControls={true}
+            resizeMode="contain"
+            isLooping={false}
+          />
+        );
+      case "file":
+        return (
+          <TouchableOpacity onPress={() => Linking.openURL(msg.msg)}>
+            <Text style={styles.fileLink}>
+              🡇 {msg.msg.split("_").pop() || "Tệp đính kèm"}
+            </Text>
+          </TouchableOpacity>
+        );
+      case "system":
+        return (
+          <Text style={
+            msg.sender._id === user._id
+              ? styles.systemMessageTextUser
+              : styles.systemMessageTextFriend}>
+            {msg.msg || ""}
+          </Text>
+        );
+      default:
+        return (
+          <Text style={
+            msg.sender._id === user._id
+              ? styles.messageTextUser
+              : styles.messageTextFriend
+          }>
+            {msg.msg || ""}
+          </Text>
+        );
+    }
+  };
+
+  
+
+  // Gửi phản ứng
+  const handleReactToMessage = (messageId, emojiName) => {
+    // Chuyển đổi từ tên emoji sang giá trị text tương ứng
+    const emojiText = emojiToTextMap[emojiName];
+    if (!emojiText) return;
+
+    // Đóng cả hai modal nếu đang mở
+    setModalVisible(false);
+    setReactionModalVisible(false);
+
+    const reactionData = {
+      messageId,
+      userId: user._id,
+      username: user.username,
+      emoji: emojiText,
+      receiver: roomData.receiver
+    };
+
+    // Kiểm tra nếu có socket connection thì gửi event
+    if (socketRef.current) {
+      socketRef.current.emit("REACTION", reactionData);
+    }
+
+    // Gọi service với đúng tham số
+    // sendReactionService(messageId, user._id, emojiText)
+    //   .then((response) => {
+    //     if (response.EC === 0) {
+    //       console.log("Reaction sent successfully:", response.DT);
+          
+    //       setReactions((prevReactions) => {
+    //         const currentReactions = prevReactions[messageId] || [];
+    //         const existingReactionIndex = currentReactions.findIndex(
+    //           (reaction) => reaction.emoji === emojiText && reaction.userId === user._id
+    //         );
+
+    //         let updatedReactions;
+    //         if (existingReactionIndex !== -1) {
+    //           // Nếu user đã react, xóa reaction
+    //           updatedReactions = [...currentReactions];
+    //           updatedReactions.splice(existingReactionIndex, 1);
+    //         } else {
+    //           // Nếu user chưa react, thêm reaction mới
+    //           updatedReactions = [
+    //             ...currentReactions,
+    //             {
+    //               emoji: emojiText,
+    //               userId: user._id,
+    //               count: 1,
+    //             },
+    //           ];
+    //         }
+
+    //         return {
+    //           ...prevReactions,
+    //           [messageId]: updatedReactions,
+    //         };
+    //       });
+    //     } else {
+    //       console.error("Failed to send reaction:", response.EM);
+    //     }
+    //   })
+    //   .catch((error) => {
+    //     console.error("Error sending reaction:", error);
+    //   });
+  };
+  
+  //Xử lý vị trí popup Reaction
+  const handleShowReactionPopup = (event, messageId) => {
+    const { pageX, pageY } = event.nativeEvent;
+    
+    // Lấy kích thước màn hình
+    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+    
+    // Ước lượng kích thước của popup (điều chỉnh theo thiết kế thực tế)
+    const popupWidth = 200;  // Chiều rộng ước lượng của popup
+    const popupHeight = 50;  // Chiều cao ước lượng của popup
+    
+    // Tính toán vị trí tốt nhất cho popup
+    let x = pageX - 70;  // Vị trí mặc định
+    let y = pageY - 60;  // Vị trí mặc định
+    
+    // Xử lý trường hợp vượt quá bên phải màn hình
+    if (x + popupWidth > screenWidth) {
+      x = screenWidth - popupWidth - 10;  // 10px padding
+    }
+    
+    // Xử lý trường hợp vượt quá bên trái màn hình
+    if (x < 10) {
+      x = 10;  // 10px padding
+    }
+    
+    // Xử lý trường hợp vượt quá phía trên
+    if (y < 70) {  // 70px là chiều cao của header
+      y = pageY + 20;  // Hiển thị bên dưới thay vì phía trên
+    }
+    
+    // Xử lý trường hợp vượt quá phía dưới
+    if (y + popupHeight > screenHeight - 70) {  // 70px là chiều cao của input container
+      y = pageY - popupHeight - 20;  // Hiển thị phía trên thay vì bên dưới
+    }
+    
+    // Cập nhật vị trí popup và hiển thị
+    setReactionPopupPosition({ x, y });
+    setMessageIdForReaction(messageId);
+    setReactionModalVisible(true);
+  };
+
+  // Hàm kiểm tra hiển thị avatar và timestamp
+  const checkMessageDisplay = (currentMsg, prevMsg, index) => {
+    // Kiểm tra người gửi có giống nhau không
+    const isSameSender = prevMsg && prevMsg.sender._id === currentMsg.sender._id;
+    
+    // Tính khoảng thời gian giữa 2 tin nhắn (> 10 phút = 600000ms)
+    const timeDiff = prevMsg 
+      ? new Date(currentMsg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime() 
+      : 0;
+    const isLongTimeDiff = timeDiff > 600000; // 10 phút
+    
+    // Hiển thị avatar khi: tin nhắn đầu tiên, người gửi khác, hoặc khoảng cách > 10p
+    const showAvatar = !isSameSender || isLongTimeDiff || index === 0;
+    
+    // Hiển thị timestamp khi khoảng cách > 10p hoặc là tin nhắn đầu tiên
+    const showTimestamp = isLongTimeDiff || index === 0;
+    
+    // Hiển thị tên người gửi khi: tin nhắn đầu tiên hoặc người gửi khác
+    const showSenderName = !isSameSender || index === 0;
+    
+    return { showAvatar, showTimestamp, showSenderName, isSameSender };
+  };
+
+  // Lấy reactions cho tất cả tin nhắn
+  useEffect(() => {
+    const fetchReactions = async () => {
+      const reactionsData = {};
+      for (const msg of allMsg) {
+        const reactionList = await getReactions(msg._id);
+        reactionsData[msg._id] = reactionList;
+      }
+      setReactions(reactionsData);
+    };
+
+    if (allMsg.length > 0) {
+      fetchReactions();
+    }
+  }, [allMsg]);
+
+  useEffect(() => {
+    if (flatListRef.current && flatListRef.current.measureInWindow) {
+      flatListRef.current.measure((x, y, width, height, pageX, pageY) => {
+        flatListLayout.current = { x: pageX, y: pageY, width, height };
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const role = conversations.find((item) => item._id === receiver._id);
@@ -453,13 +786,124 @@ const InboxScreen = ({ route }) => {
           )
         );
       });
+
       socketRef.current.on("DELETED_MSG", (data) => {
         setAllMsg((prevState) =>
           prevState.filter((item) => item._id != data.msg._id)
         );
       });
+
+      socketRef.current.on("RECEIVED_REACTION", (data) => {
+        console.log("Received reaction:", data);
+        const { messageId, userId, emoji } = data;
+        
+        setReactions(prevReactions => {
+          const currentReactions = prevReactions[messageId] || [];
+          
+          const existingReactionIndex = currentReactions.findIndex(
+            reaction => String(reaction.userId) === String(userId) && reaction.emoji === emoji
+          );
+          
+          let updatedReactions;
+          if (existingReactionIndex !== -1) {
+            // Nếu đã tồn tại chính xác emoji này từ user này -> xóa
+            updatedReactions = currentReactions.filter((_, index) => 
+              index !== existingReactionIndex
+            );
+          } else {
+            // Nếu chưa có emoji này -> thêm mới, không cần xóa emoji khác
+            updatedReactions = [
+              ...currentReactions,
+              {
+                userId: userId,
+                emoji: emoji,
+                count: 1
+              }
+            ];
+          }
+          
+          return {
+            ...prevReactions,
+            [messageId]: updatedReactions
+          };
+        });
+      });
+
+      socketRef.current.on("REACTION_ERROR", (data) => {
+        console.error("Reaction error:", data.error);
+      });
+
+      return () => {
+        socketRef.current.off("RECEIVED_MSG");
+        socketRef.current.off("RECALL_MSG");
+        socketRef.current.off("DELETED_MSG");
+        socketRef.current.off("RECEIVED_REACTION");
+        socketRef.current.off("REACTION_ERROR");
+      };
+
     }
   }, [roomData.receiver]);
+
+  //Listener typing
+  useEffect(() => {
+    if (socketRef.current) {
+      // Lắng nghe sự kiện USER_TYPING
+      socketRef.current.on("USER_TYPING", (data) => {
+
+        console.log("Received USER_TYPING in mobile:", data);
+        console.log("Mobile current room:", roomData.receiver._id);
+
+        const { userId, username, conversationId } = data;
+        
+        // Kiểm tra xem sự kiện typing có thuộc conversation hiện tại không
+        if (userId === roomData.receiver._id) {
+          console.log(`${username} is typing...`);
+          setTypingUsers((prev) => ({
+            ...prev,
+            [userId]: username
+          }));
+        }
+      });
+      
+      // Lắng nghe sự kiện USER_STOP_TYPING
+      socketRef.current.on("USER_STOP_TYPING", (data) => {
+        const { userId, conversationId } = data;
+        
+        // Chỉ xử lý nếu đúng conversation hiện tại
+        if (userId === roomData.receiver._id) {
+          console.log(`User ${userId} stopped typing`);
+          setTypingUsers((prev) => {
+            const newState = { ...prev };
+            delete newState[userId];
+            return newState;
+          });
+        }
+      });
+      
+      // Cleanup
+      return () => {
+        socketRef.current.off("USER_TYPING");
+        socketRef.current.off("USER_STOP_TYPING");
+        
+        // Dừng typing khi rời khỏi màn hình
+        if (socketRef.current) {
+          socketRef.current.emit("STOP_TYPING", {
+            userId: user._id,
+            receiver: roomData.receiver
+          });
+        }
+      };
+    }
+  }, [roomData.receiver]);
+
+  // Cleanup typing timeout
+  useEffect(() => {
+    return () => {
+      if (typingTimeout.current) {
+        clearTimeout(typingTimeout.current);
+      }
+    };
+  }, []);
 
   const handleRecallMessage = async (message) => {
     try {
@@ -748,7 +1192,35 @@ const InboxScreen = ({ route }) => {
         ref={flatListRef}
         data={allMsg}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => {
+
+          const prevMsg = index > 0 ? allMsg[index - 1] : null;
+          const { showAvatar, showTimestamp, showSenderName, isSameSender } = 
+            checkMessageDisplay(item, prevMsg, index);
+          
+          // Lấy thông tin người gửi
+          const senderAvatar = item.sender._id !== user._id ? 
+            (item.sender.avatar || "https://i.imgur.com/l5HXBdTg.jpg") :
+            null;
+          const senderName = item.sender._id !== user._id ? item.sender.name || "User" : null;
+
+          return (
+            <View>
+
+          {showTimestamp && (
+            <View style={styles.timestampContainer}>
+              <Text style={styles.timestampText}>
+                {new Date(item.createdAt).toLocaleString('vi-VN', {
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  day: '2-digit', 
+                  month: '2-digit', 
+                  year: 'numeric'
+                })}
+              </Text>
+            </View>
+          )}
+
           <View
             style={[
               styles.message,
@@ -757,121 +1229,94 @@ const InboxScreen = ({ route }) => {
                 : styles.friendMessage,
             ]}
           >
-            {item.type === "image" ? (
-              item.msg.includes(",") ? (
-                // Nếu có nhiều ảnh, tách và hiển thị dạng lưới
-                <View style={styles.gridContainer}>
-                  {item.msg.split(",").map((url, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() => handleImageClick(url.trim())}
-                      onLongPress={() => {
-                        setSelectedMessage(item);
-                        setModalVisible(true);
-                      }}
-                      style={styles.gridItem}
-                    >
-                      <Image
-                        source={{ uri: url.trim() }}
-                        style={styles.imageSquare}
-                        resizeMode="cover"
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : (
-                // Nếu chỉ có một ảnh
+            {/* Hiển thị avatar và tên người gửi - kiểu giống ảnh mẫu */}
+            {item.sender._id !== user._id && showAvatar && (
+              <View style={styles.senderInfoContainer}>
+                <Image
+                  source={{ uri: senderAvatar }}
+                  style={styles.avatarCircle}
+                />
+              </View>
+            )}
+            
+            {/* Nếu không phải tin nhắn đầu và cùng người gửi, hiển thị khoảng trống */}
+            {item.sender._id !== user._id && !showAvatar && (
+              <View style={styles.avatarPlaceholder} />
+            )}
+
+            <View style={styles.messageContentContainer}>
+
+              <View style={[
+                styles.messageBubble,
+                item.sender._id === user._id ? styles.userBubble : styles.friendBubble
+              ]}>
+
+                {item.sender._id !== user._id && showAvatar && (
+                  <Text style={styles.senderNameBelow}>{senderName}</Text>
+                )}
+
+                {/* Nội dung tin nhắn */}
                 <TouchableOpacity
-                  onPress={() => handleImageClick(item.msg)}
                   onLongPress={() => {
                     setSelectedMessage(item);
                     setModalVisible(true);
                   }}
-                  style={styles.gridItem}
-                >
-                  <Image
-                    source={{ uri: item.msg }}
-                    style={styles.imageSquare}
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
-              )
-            ) : item.type === "video" ? (
-              <TouchableOpacity
-                onLongPress={() => {
-                  setSelectedMessage(item);
-                  setModalVisible(true);
-                }}
-              >
-                <Video
-                  source={{ uri: item.msg }}
-                  style={{
-                    width: 250,
-                    height: 200,
-                    borderRadius: 10,
-                    backgroundColor: "black",
-                  }}
-                  useNativeControls={true}
-                  resizeMode="contain"
-                  isLooping={false}
-                />
-              </TouchableOpacity>
-            ) : item.type === "file" ? (
-              <TouchableOpacity
-                onPress={() => Linking.openURL(item.msg)}
-                onLongPress={() => {
-                  setSelectedMessage(item);
-                  setModalVisible(true);
-                }}
-              >
-                <Text
-                  style={{
-                    color: "white",
-                    backgroundColor: "#007bff",
-                    padding: 8,
-                    borderRadius: 10,
-                  }}
-                >
-                  🡇 {item.msg.split("_").pop() || "Tệp đính kèm"}
-                </Text>
-              </TouchableOpacity>
-            ) : item.type === "system" ? (
-              <TouchableOpacity>
-                <Text
-                  style={[
-                    item.sender._id === user._id
-                      ? styles.messageTextUser
-                      : styles.messageTextFriend,
-                    styles.italicText,
-                  ]}
-                >
-                  {item.msg || ""}
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                onLongPress={() => {
-                  setSelectedMessage(item);
-                  setModalVisible(true);
-                }}
-              >
-                <Text
+                  style={styles.messageInner}
+                >{renderMessageContent(item)}</TouchableOpacity>
+
+                <TouchableOpacity 
                   style={
                     item.sender._id === user._id
-                      ? styles.messageTextUser
-                      : styles.messageTextFriend
-                  }
+                      ? styles.reactionButtonUser
+                      : styles.reactionButtonFriend}
+                  onPress={() => {
+                    handleReactToMessage(item._id, "heart");
+                  }}
+                  onLongPress={(event) => {
+                    handleShowReactionPopup(event, item._id);
+                  }}
                 >
-                  {(item.msg || "").replace(/\\n/g, "\n")}
-                </Text>
-              </TouchableOpacity>
-            )}
-            <Text style={styles.messageTime}>
-              {convertTime(item.createdAt)}
-            </Text>
+                  <FontAwesome5 name="smile" size={18} color="#666" />
+                </TouchableOpacity>
+
+              </View>
+
+              {/* Hiển thị reactions khi có */}
+              {reactions[item._id] && reactions[item._id].length > 0 && (
+                <View style={styles.reactionSummary}>
+                  {Object.entries(
+                    reactions[item._id].reduce((acc, reaction) => {
+                      if (!acc[reaction.emoji]) {
+                        acc[reaction.emoji] = 0;
+                      }
+                      acc[reaction.emoji] += 1;
+                      return acc;
+                    }, {})
+                  ).map(([emoji, count], index) => (
+                    <View key={index} style={styles.reactionItem}>
+                      <Text style={styles.reactionEmoji}>
+                        {textToEmojiMap[emoji] || emoji}
+                      </Text>
+                      <Text style={styles.reactionCount}>{count}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Hiển thị thời gian */}
+              <Text style={[
+                styles.messageTime,
+                item.sender._id === user._id ? styles.userMessageTime : styles.friendMessageTime
+              ]}>
+                {convertTime(item.createdAt)}
+              </Text>
+
+            </View>
           </View>
-        )}
+          </View>
+        )}}
         contentContainerStyle={styles.messagesContainer}
+        scrollEventThrottle={16} //Hiệu suất scroll
         onContentSizeChange={() => {
           setTimeout(() => {
             flatListRef.current?.scrollToEnd({ animated: true });
@@ -897,6 +1342,15 @@ const InboxScreen = ({ route }) => {
                 style={{ marginLeft: -17 }}
               />
             </TouchableOpacity>
+            {Object.values(typingUsers).length > 0 && (
+              <View style={styles.typingContainer}>
+                <Text style={styles.typingText}>
+                  {Object.values(typingUsers).length === 1
+                    ? `${Object.values(typingUsers)[0]} đang nhập...`
+                    : `${Object.values(typingUsers).length} người đang nhập...`}
+                </Text>
+              </View>
+            )}
             <View style={styles.inputWrapper}>
               {previewReply !== "" && (
                 <View style={styles.replyPreviewContainer}>
@@ -913,7 +1367,7 @@ const InboxScreen = ({ route }) => {
                 placeholder="Message"
                 placeholderTextColor="grey"
                 value={input}
-                onChangeText={(text) => setInput(text)}
+                onChangeText={(text) => handleTyping(text)}
               />
             </View>
             {!input.trim() ? (
@@ -951,6 +1405,47 @@ const InboxScreen = ({ route }) => {
         onPick={(iconName) => handleSelectIcon(iconName)}
       />
 
+      {/* Popup Reaction */}
+      {reactionModalVisible && (
+        <View style={StyleSheet.absoluteFill}>
+          <TouchableWithoutFeedback onPress={() => setReactionModalVisible(false)}>
+            <View style={styles.reactionPopupOverlay}>
+              <View 
+                style={[
+                  styles.reactionPopupContainer,
+                  {
+                    position: 'absolute',
+                    left: reactionPopupPosition.x,
+                    top: reactionPopupPosition.y,
+                  }
+                ]}
+              >
+                {[
+                  {emoji: "❤️", type: "heart"},
+                  {emoji: "👍", type: "thumbs-up"},
+                  {emoji: "😂", type: "laugh"},
+                  {emoji: "😢", type: "sad-cry"},
+                  {emoji: "😡", type: "angry"}
+                ].map((item, index) => (
+                  <TouchableOpacity 
+                    key={index} 
+                    style={styles.reactionEmojiButton}
+                    onPress={() => {
+                      if (messageIdForReaction) {
+                        handleReactToMessage(messageIdForReaction, item.type);
+                        setReactionModalVisible(false);
+                      }
+                    }}
+                  >
+                    <Text style={styles.reactionEmojiText}>{item.emoji}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      )}
+
       <Modal
         visible={modalVisible}
         transparent
@@ -965,23 +1460,14 @@ const InboxScreen = ({ route }) => {
             {/* Tin nhắn được chọn */}
             {selectedMessage && (
               <View style={styles.highlightedMessage}>
-                <Text style={styles.messageText}>{selectedMessage.msg}</Text>
+                <Text style={styles.messageText} numberOfLines={2}>
+                  {selectedMessage.type === "text" ? selectedMessage.msg : "Media content"}
+                </Text>
                 <Text style={styles.messageTime}>
                   {convertTime(selectedMessage.createdAt)}
                 </Text>
               </View>
             )}
-
-            {/* Biểu tượng cảm xúc */}
-            <View style={styles.reactionBar}>
-              {["heart", "thumbs-up", "laugh", "sad-cry", "angry"].map(
-                (icon, index) => (
-                  <TouchableOpacity key={index} style={styles.emojiButton}>
-                    <FontAwesome5 name={icon} size={24} color="red" />
-                  </TouchableOpacity>
-                )
-              )}
-            </View>
 
             {/* Menu hành động */}
             <View style={styles.menuOptions}>
@@ -1187,36 +1673,41 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   message: {
+    flexDirection: 'row',
     marginVertical: 5,
-    padding: 10,
-    borderRadius: 10,
-    maxWidth: "80%",
+    alignItems: 'flex-end',
+    maxWidth: "100%",
   },
   userMessage: {
-    alignSelf: "flex-end",
+    justifyContent: "flex-end",
   },
   friendMessage: {
-    alignSelf: "flex-start",
+    justifyContent: "flex-start",
   },
   messageText: {
     color: "black",
   },
   messageTextUser: {
     color: "white",
-    backgroundColor: "#007bff",
-    padding: 8,
-    borderRadius: 10,
+    flexDirection: 'row', 
+    flexWrap: 'wrap',
+    maxWidth: "70%",
+    minWidth: "50px", 
+    marginLeft: 10,
+    fontSize: ".9375rem",
+    fontWeight: "400",
+    lineHeight: "1.5",
   },
   messageTextFriend: {
     color: "black",
-    backgroundColor: "#fff",
-    padding: 8,
-    borderRadius: 10,
-  },
-  messageTime: {
-    fontSize: 10,
-    color: "gray",
-    textAlign: "right",
+    flexDirection: 'row', // Đảm bảo text hiển thị theo chiều ngang
+    flexWrap: 'wrap',
+    maxWidth: "70%",
+    minWidth: "50px", 
+    marginRight: 10,
+    fontSize: ".9375rem",
+    fontWeight: "400",
+    lineHeight: "1.5",
   },
   inputContainer: {
     position: "absolute",
@@ -1314,6 +1805,251 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "transparent",
   },
+
+  // Avatar styles
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  avatarPlaceholder: {
+    width: 32,
+    height: 32,
+    marginRight: 8,
+  },
+  
+  // Timestamp styles
+  timestampContainer: {
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  timestampText: {
+    backgroundColor: '#e0e0e0',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 15,
+    fontSize: 12,
+    color: '#666',
+  },
+  
+  // Sender name styles
+  senderName: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 2,
+    fontWeight: 'bold',
+  },
+  
+  // Message container styles
+  messageContentContainer: {
+    
+  },
+  
+  // Reaction styles
+  reactionSummary: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    marginTop: 2,
+    alignSelf: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
+    zIndex: 5,
+  },
+  reactionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 6,
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  reactionCount: {
+    fontSize: 12,
+    marginLeft: 2,
+    color: '#666',
+    fontWeight: '500',
+  },
+  
+  // Popup reaction styles
+  reactionBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginVertical: 15,
+  },
+  emojiButton: {
+    padding: 8,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    marginHorizontal: 4,
+  },
+  
+  // System message style
+  systemMessageTextFriend: {
+    fontStyle: 'italic',
+    color: '#666',
+    marginRight: 10,
+  },
+
+  systemMessageTextUser: {
+    fontStyle: 'italic',
+    color: 'white',
+    marginLeft: 10,
+  },
+
+  senderInfoContainer: {
+    marginRight: 8,
+    alignItems: 'center',
+    width: 40,
+    marginBottom: 5,
+    height: "100%"
+  },
+
+  avatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginBottom: 4,
+    marginTop: 5,
+  },
+
+  senderNameBelow: {
+    fontSize: 12,
+    color: '#5a6981',
+    marginTop: 2,
+    fontWeight: '400',
+    marginBottom: 5,
+  },
+
+  messageBubble: {
+    borderRadius: 16,
+    padding: 10,
+    position: 'relative',
+    maxWidth: '100%',
+    display: 'block'
+  },
+
+  userBubble: {
+    backgroundColor: '#0084ff',
+    alignSelf: 'flex-end',
+    borderTopRightRadius: 4,
+  },
+
+  friendBubble: {
+    backgroundColor: '#e4e6eb',
+    alignSelf: 'flex-start',
+    borderTopLeftRadius: 4,
+  },
+
+  messageInner: {
+    paddingRight: 5, // để tạo khoảng trống cho nút reaction
+  },
+
+  // Style cho nút reaction
+  reactionButtonFriend: {
+    position: 'absolute',
+    bottom: -12,
+    right: -5,
+    backgroundColor: '#ffffff',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 2,
+    zIndex: 10,
+  },
+
+  reactionButtonUser: {
+    position: 'absolute',
+    bottom: -12,
+    left: -5,
+    backgroundColor: '#ffffff',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 2,
+    zIndex: 10,
+  },
+
+  reactionEmoji: {
+    fontSize: 16, 
+  },
+
+  // Styles cập nhật cho emoji
+  emojiText: {
+    fontSize: 24,
+  },
+  emojiButton: {
+    padding: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 25,
+    margin: 5,
+    height: 50,
+    width: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Style cho thời gian
+  messageTime: {
+    fontSize: 11,
+    marginTop: 4,
+  },
+  userMessageTime: {
+    color: '#a0a0a0',
+    alignSelf: 'flex-end',
+  },
+  friendMessageTime: {
+    color: '#666',
+    alignSelf: 'flex-start',
+  },
+  
+
+  // Reaction modal styles
+  reactionModalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reactionModalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 30,
+    padding: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  reactionEmojiButton: {
+    padding: 5,
+    marginHorizontal: 2,
+  },
+  reactionEmojiText: {
+    fontSize: 17,
+  },
   replyPreviewContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -1330,6 +2066,45 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     fontSize: 13,
     marginRight: 8,
+  },
+
+  reactionPopupOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent', // Nền trong suốt
+  },
+  reactionPopupContainer: {
+    backgroundColor: 'white',
+    borderRadius: 30,
+    padding: 5,
+    flexDirection: 'row',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 2000,
+  },
+
+  typingContainer: {
+    position: 'absolute',
+    bottom: 60,
+    left: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+    zIndex: 10,
+    maxWidth: '80%',
+  },
+  typingText: {
+    color: '#666',
+    fontSize: 12,
+    fontStyle: 'italic',
   },
 });
 

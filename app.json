@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.khangodra.snackde4abce27deb44a78255b299a9869928"
     },
     "web": {
       "favicon": "./assets/favicon.png"
