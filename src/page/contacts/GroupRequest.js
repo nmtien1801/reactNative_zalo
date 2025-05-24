@@ -57,7 +57,7 @@ const GroupRequest = ({ route }) => {
     try {
       const response = await acceptGroupJoinRequestService(requestId);
       if (response.EC === 0) {
-        socketRef.current.emit("REQ_ACCEPT_GROUP", response.DT);
+        socketRef.current.emit("REQ_ADD_GROUP", response.DT);
 
         let permission = await dispatch(getPermissionCurrent(response.DT._id));
 
@@ -68,7 +68,7 @@ const GroupRequest = ({ route }) => {
             newPermission: permission.payload.DT.receiver.permission,
           })
         );
-        
+
         socketRef.current.emit("REQ_MEMBER_PERMISSION", res.payload.DT);
       }
       fetchGroupRequests();
