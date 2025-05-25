@@ -29,7 +29,6 @@ const UserProfileScreen = ({ route }) => {
   useEffect(() => {
     const init = async () => {
       try {
-        debugger
  
         setCurrentUserId(idUser);
 

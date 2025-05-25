@@ -13,8 +13,8 @@ const initialState = {
 
 export const loadMessages = createAsyncThunk(
   "chat/loadMessages",
-  async ({ sender, receiver, type }, thunkAPI) => {
-    let response = await loadMessagesService(sender, receiver, type);
+  async ({ sender, receiver, type, page = 1, limit = 20 }, thunkAPI) => {
+    let response = await loadMessagesService(sender, receiver, type, page, limit);
     return response;
   }
 );

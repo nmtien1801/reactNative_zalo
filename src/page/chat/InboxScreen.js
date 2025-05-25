@@ -13,7 +13,8 @@ import {
   Linking,
   CheckBox,
   TouchableWithoutFeedback,
-  Dimensions
+  Dimensions,
+  ActivityIndicator
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
@@ -78,6 +79,16 @@ const InboxScreen = ({ route }) => {
   //Select ReadBy
   const [selectedReadStatus, setSelectedReadStatus] = useState(null);
   const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  //State phân trang tin nhắn
+  const [page, setPage] = useState(1);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [oldestMessageId, setOldestMessageId] = useState(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [preventAutoScroll, setPreventAutoScroll] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
 
   // Ánh xạ Emoji - Text
   const emojiToTextMap = {
@@ -459,6 +470,67 @@ const InboxScreen = ({ route }) => {
     }
   }, [allMsg]);
 
+  const scrollToBottom = () => {
+    if (flatListRef.current) {
+      flatListRef.current.scrollToEnd({ animated: true });
+      // Sau khi cuộn xuống, ta không cần ngăn auto scroll nữa
+      setPreventAutoScroll(false);
+      setHasNewMessages(false);
+    }
+  };
+
+  // handleTypeChat
+  useEffect(() => {
+    let receiverOnline; // lấy socketId của người nhận từ danh sách onlineUsers
+    if (receiver.type === 1) {
+
+      // Reset pagination state
+      setPage(1);
+      setHasMoreMessages(true);
+      setIsInitialLoad(true);
+      setPreventAutoScroll(false);
+
+      handleLoadMessages(receiver._id, receiver.type, 1); // Pass page 1 explicitly
+      receiverOnline = onlineUsers.find((u) => u.userId === receiver._id);
+
+      setRoomData({
+        ...roomData,
+        room: "single",
+        receiver: {
+          ...receiver,
+          socketId: receiverOnline ? receiverOnline.socketId : null,
+        },
+      });
+    } else if (receiver.type === 2) {
+      handleLoadMessages(receiver._id, receiver.type, 1); // Pass page 1 explicitly
+
+      receiverOnline = onlineUsers.find((u) =>
+        receiver.members?.includes(u.userId)
+      );
+
+      setRoomData({
+        ...roomData,
+        room: "group",
+        receiver: {
+          ...receiver,
+          socketId: receiverOnline ? receiverOnline.socketId : null,
+        },
+      });
+    } else {
+      handleLoadMessages(receiver._id, receiver.type, 1); // Pass page 1 explicitly
+
+      receiverOnline = onlineUsers.find((u) => u.userId === receiver._id);
+      setRoomData({
+        ...roomData,
+        room: "cloud",
+        receiver: {
+          ...receiver,
+          socketId: receiverOnline ? receiverOnline.socketId : null,
+        },
+      });
+    }
+  }, []);
+
   useEffect(() => {
     if (flatListRef.current && flatListRef.current.measureInWindow) {
       flatListRef.current.measure((x, y, width, height, pageX, pageY) => {
@@ -540,18 +612,129 @@ const InboxScreen = ({ route }) => {
     }
   }, []);
 
-  const handleLoadMessages = async (receiver, type) => {
-    const res = await dispatch(
-      loadMessages({ sender: user._id, receiver: receiver, type: type })
-    );
+  const handleLoadMessages = async (receiver, type, currentPage = 1) => {
 
-    if (res.payload.EC === 0) {
-      let msg = res.payload.DT;
-      const filteredMessages = msg.filter(
-        (msg) => !msg.memberDel?.includes(user._id)
+    const limit = 20;
+
+    try {
+
+      // Lưu lại vị trí scroll hiện tại trước khi tải
+      let currentScrollPosition = null;
+      let contentHeight = null;
+      
+      if (currentPage > 1 && flatListRef.current) {
+        // Ghi lại độ dài nội dung và vị trí cuộn hiện tại
+        contentHeight = allMsg.length;
+      }
+
+      const res = await dispatch(
+        loadMessages({ 
+          sender: user._id, 
+          receiver: receiver, 
+          type: type,
+          page: currentPage,
+          limit: limit 
+        })
       );
-      setAllMsg(filteredMessages);
+
+      if (res.payload.EC === 0) {
+
+        let newMessages = res.payload.DT;
+        const filteredMessages = newMessages.filter(
+          (msg) => !msg.memberDel?.includes(user._id)
+        );
+
+        if (filteredMessages.length < limit) {
+          setHasMoreMessages(false);
+        }
+
+        if (currentPage === 1) {
+          setAllMsg(filteredMessages);
+          if (filteredMessages.length > 0) {
+            // Save the oldest message ID for reference
+            setOldestMessageId(filteredMessages[0]._id);
+          }
+        } else {
+          // Prepend new messages to existing ones (for pagination)
+          // Also avoid duplicates by checking message IDs
+          const existingIds = new Set(allMsg.map(msg => msg._id));
+          const uniqueNewMessages = filteredMessages.filter(msg => !existingIds.has(msg._id));
+
+          // Lưu chiều cao nội dung hiện tại
+          const previousMsgCount = allMsg.length;
+          
+          setAllMsg(prevMessages => [...uniqueNewMessages, ...prevMessages]);
+          
+          if (filteredMessages.length > 0) {
+            setOldestMessageId(filteredMessages[0]._id);
+          }
+
+          // Duy trì vị trí scroll sau khi thêm tin nhắn mới
+          setTimeout(() => {
+            if (flatListRef.current && uniqueNewMessages.length > 0) {
+              // Dùng index của message cũ đầu tiên để định vị scroll
+              const oldFirstMsgIndex = uniqueNewMessages.length; 
+              flatListRef.current.scrollToIndex({
+                index: oldFirstMsgIndex > 0 ? oldFirstMsgIndex - 1 : 0,
+                animated: false,
+                viewPosition: 0 // 0 là đầu màn hình, 1 là cuối màn hình
+              });
+            }
+          }, 100);
+        }
+        
+        // If we didn't get any new messages but hasMoreMessages is still true
+        if (filteredMessages.length === 0 && hasMoreMessages) {
+          setHasMoreMessages(false);
+        }
+
+        // Chỉ đặt isInitialLoad = false sau lần load đầu tiên
+        if (currentPage === 1) {
+          setTimeout(() => {
+            setIsInitialLoad(false);
+          }, 500);
+        }
+      }
+
+    } catch (error) {
+      console.error("Error loading messages:", error);
     }
+  };
+
+  const handleLoadMoreMessages = async () => {
+    if (isLoadingMore || !hasMoreMessages) return;
+    
+    setIsLoadingMore(true);
+    
+    try {
+      const nextPage = page + 1;
+      await handleLoadMessages(receiver._id, receiver.type, nextPage);
+      setPage(nextPage);
+    } catch (error) {
+      console.error("Error loading more messages:", error);
+
+      // Nếu có lỗi scrollToIndex (invalid index), bắt và xử lý
+      if (error.message && error.message.includes("index out of bounds")) {
+        console.log("Handled scroll index error gracefully");
+      }
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  // Thêm vào nơi phù hợp trong component
+  const onScrollToIndexFailed = (info) => {
+    const wait = new Promise(resolve => setTimeout(resolve, 500));
+    wait.then(() => {
+      // Thử scrollToIndex với index gần đó nhất mà hợp lệ
+      if (flatListRef.current) {
+        flatListRef.current.scrollToIndex({
+          index: Math.min(info.highestMeasuredFrameIndex, info.index - 1),
+          animated: false,
+          viewPosition: 0
+        });
+      }
+    });
   };
 
   const [mediaMessages, setMediaMessages] = useState([]);
@@ -840,6 +1023,11 @@ const InboxScreen = ({ route }) => {
           data.sender._id === roomData.receiver?._id
         ) {
           setAllMsg((prevState) => [...prevState, data]);
+
+          //Nếu đang cuộn lên trên, đánh dấu có tin nhắn mới
+          if (showScrollButton) {
+            setHasNewMessages(true);
+          }
         }
       });
 
@@ -1568,11 +1756,48 @@ const InboxScreen = ({ route }) => {
         )}}
         contentContainerStyle={styles.messagesContainer}
         scrollEventThrottle={16} //Hiệu suất scroll
+        onScrollToIndexFailed={onScrollToIndexFailed}
         onContentSizeChange={() => {
-          setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
-          }, 100); // thử 100ms hoặc tăng lên 200ms nếu cần
+          // Chỉ scroll to end nếu là lần load đầu tiên hoặc không đang kéo lên để tải thêm
+          if (isInitialLoad && !preventAutoScroll) {
+            setTimeout(() => {
+              flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+          }
         }}
+        onScroll={({ nativeEvent }) => {
+          // Check if user has scrolled to the top
+          if (nativeEvent.contentOffset.y <= 0 && !isLoadingMore && hasMoreMessages) {
+            setPreventAutoScroll(true); // Ngăn scroll xuống dưới khi đang tải thêm
+            handleLoadMoreMessages();
+          }
+
+          // Kiểm tra vị trí cuộn để quyết định hiển thị nút scroll to bottom
+          const isScrolledUp = 
+            nativeEvent.contentOffset.y < 
+            nativeEvent.contentSize.height - nativeEvent.layoutMeasurement.height - 200; // 200px là ngưỡng
+          
+          setShowScrollButton(isScrolledUp);
+          
+          // Nếu người dùng scroll xuống dưới, bật lại auto scroll
+          if (
+            nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >=
+            nativeEvent.contentSize.height - 50
+          ) {
+            setPreventAutoScroll(false);
+            setShowScrollButton(false);
+          }
+        }}
+        inverted={false}
+        ListHeaderComponent={() => (
+          <View style={styles.loadingHeader}>
+            {isLoadingMore ? (
+              <ActivityIndicator size="small" color="#007bff" />
+            ) : !hasMoreMessages ? (
+              <Text style={styles.noMoreMessagesText}>Không còn tin nhắn cũ hơn</Text>
+            ) : null}
+          </View>
+        )}
       />
 
       {/* Input Box */}
@@ -1855,6 +2080,19 @@ const InboxScreen = ({ route }) => {
                 );
               }}
             />
+
+            {showScrollButton && (
+              <TouchableOpacity 
+                style={styles.scrollToBottomButton} 
+                onPress={scrollToBottom}
+              >
+                <View style={styles.scrollButtonInner}>
+                  <FontAwesome5 name="chevron-down" size={16} color="white" />
+                  {hasNewMessages && <View style={styles.newMessageBadge} />}
+                </View>
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity
               style={{
                 backgroundColor: "#007bff",
@@ -2444,6 +2682,48 @@ const styles = StyleSheet.create({
   readCounterText: {
     fontSize: 9,
     color: '#555',
+  },
+
+  loadingIndicator: {
+    paddingVertical: 10,
+  },
+
+  loadingHeader: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noMoreMessagesText: {
+    color: '#888',
+    fontSize: 13,
+    fontStyle: 'italic',
+    padding: 10,
+  },
+
+  scrollToBottomButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 80, // Đặt phía trên input box
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007bff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+    zIndex: 100,
+  },
+
+  scrollButtonInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

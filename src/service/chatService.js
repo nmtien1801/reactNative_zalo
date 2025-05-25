@@ -1,7 +1,7 @@
 import customizeAxios from "../component/customizeAxios";
 
-const loadMessagesService = (sender, receiver, type) => {
-  return customizeAxios.get(`/messages/${sender}/${receiver}/${type}`);
+const loadMessagesService = (sender, receiver, type, page = 1, limit = 20) => {
+  return customizeAxios.get(`/messages/${sender}/${receiver}/${type}?page=${page}&limit=${limit}`);
 };
 
 const getConversationsService = (sender) => {
