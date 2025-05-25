@@ -105,7 +105,7 @@
 ### 7. Danh sách nhóm và cộng.
  - Hình ảnh:
 
-![image](https://github.com/user-attachments/assets/dbedacd1-67bc-4610-9c92-6500c873d0b4)
+![image](https://github.com/user-attachments/assets/08080912-7cc0-411d-8dee-ccc73864bcd6)
 
 - Mô tả:
   + Hiển thị danh sách nhóm và cộng đồng đã tham gia.
