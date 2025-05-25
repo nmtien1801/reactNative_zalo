@@ -1,68 +1,67 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   StyleSheet,
-  Alert,
   FlatList,
 } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
-import SearchHeader from "../../component/Header";
 import { useSelector, useDispatch } from "react-redux";
-import { FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { logoutUser } from "../../redux/authSlice";
+import { FontAwesome } from "@expo/vector-icons";
 
 export default function Setting() {
   const navigation = useNavigation();
-  const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
 
   const personal = [
     {
       id: "1",
       name: "Đổi mật khẩu",
+      icon: "lock",
     },
     {
       id: "2",
       name: "Đăng xuất",
+      icon: "sign-out",
     },
   ];
-
-  const PersonalItem = ({ personal, onPress }) => (
-    <TouchableOpacity
-      style={styles.itemContainer}
-      onPress={() => onPress(personal)}
-    >
-      <View style={styles.itemTextContainer}>
-        <Text style={styles.itemName}>{personal.name}</Text>
-      </View>
-      <Icon name="chevron-forward-outline" size={18} color="#666" />
-    </TouchableOpacity>
-  );
 
   const handleItemPress = async (item) => {
     if (item.id === "1") {
       navigation.navigate("ChangePassword");
     } else if (item.id === "2") {
-      let res = await dispatch(logoutUser());
+      const res = await dispatch(logoutUser());
       if (res.payload.EC === 2) {
         navigation.navigate("Login");
       }
     }
   };
 
+  const PersonalItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.itemContainer}
+      onPress={() => handleItemPress(item)}
+    >
+      <View style={styles.iconContainer}>
+        <FontAwesome name={item.icon} size={20} color="#4F8EF7" />
+      </View>
+      <View style={styles.textContainer}>
+        <Text style={styles.itemText}>{item.name}</Text>
+      </View>
+      <FontAwesome name="angle-right" size={20} color="#ccc" />
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <FlatList
         data={personal}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <PersonalItem personal={item} onPress={handleItemPress} />
-        )}
-        style={styles.flatList}
+        renderItem={({ item }) => <PersonalItem item={item} />}
+        contentContainerStyle={styles.listContainer}
       />
     </View>
   );
@@ -71,23 +70,37 @@ export default function Setting() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f8f9fa",
   },
-  flatList: {
-    flex: 1,
+
+  listContainer: {
+    padding: 10,
   },
   itemContainer: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: "#ddd",
+    backgroundColor: "#fff",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
-  itemTextContainer: {
+  iconContainer: {
+    width: 30,
+    alignItems: "center",
+    marginRight: 15,
+  },
+  textContainer: {
     flex: 1,
   },
-  itemName: {
+  itemText: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "500",
+    color: "#333",
   },
 });

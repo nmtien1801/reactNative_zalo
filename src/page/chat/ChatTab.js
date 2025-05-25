@@ -207,7 +207,11 @@ const ChatTab = ({ route }) => {
                 numberOfLines={1} // 👈 Cắt dòng
                 ellipsizeMode="tail" // 👈 Thêm dấu "..."
               >
-                {item.message}
+                {item.message.startsWith(
+                  "https://monhoc1.s3.ap-southeast-1.amazonaws.com/media"
+                )
+                  ? "*file*"
+                  : item.message}
               </Text>
             </View>
             {item.time ? (

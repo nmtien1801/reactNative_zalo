@@ -3,6 +3,7 @@ import {
   loadMessagesService,
   getConversationsService,
   updatePermissionService,
+  chatGPTService,
 } from "../service/chatService";
 
 const initialState = {
@@ -31,6 +32,14 @@ export const updatePermission = createAsyncThunk(
   "chat/updatePermission",
   async ({ groupId, newPermission }, thunkAPI) => {
     let response = await updatePermissionService(groupId, newPermission);
+    return response;
+  }
+);
+
+export const chatGPT = createAsyncThunk(
+  "chat/chatGPT",
+  async (message, thunkAPI) => {
+    let response = await chatGPTService(message);
     return response;
   }
 );
@@ -77,6 +86,12 @@ const chatSlice = createSlice({
         }
       })
       .addCase(updatePermission.rejected, (state, action) => {});
+
+    // chatGPT
+    builder
+      .addCase(chatGPT.pending, (state) => {})
+      .addCase(chatGPT.fulfilled, (state, action) => {})
+      .addCase(chatGPT.rejected, (state, action) => {});
   },
 });
 

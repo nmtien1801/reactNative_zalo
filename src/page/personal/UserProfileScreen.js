@@ -11,7 +11,7 @@ import {
 } from '../../service/friendRequestService';
 import {
   checkFriendShipExistsService,
-  
+
 } from '../../service/friendShipService';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -29,7 +29,8 @@ const UserProfileScreen = ({ route }) => {
   useEffect(() => {
     const init = async () => {
       try {
- 
+        debugger
+
         setCurrentUserId(idUser);
 
         // Kiểm tra đã là bạn bè chưa
@@ -65,6 +66,14 @@ const UserProfileScreen = ({ route }) => {
       });
 
       if (response?.data?.EC === 0) {
+
+        // Gửi socket event tới server
+        if (socketRef && socketRef.current) {
+          socketRef.current.emit("REQ_ADD_fRIEND", {
+            fromUser: currentUserId,
+            toUser: idUser,
+          });
+        }
         Alert.alert("Thành công", "Yêu cầu kết bạn đã được gửi.");
         setHasSentRequest(true);
         setIsFriend(false);

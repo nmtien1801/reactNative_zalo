@@ -21,7 +21,7 @@ const updatePermissionService = (groupId, newPermission) => {
     groupId,
     newPermission,
   });
-}
+};
 
 const removeMemberFromGroupService = async (groupId, memberId) => {
   try {
@@ -46,7 +46,12 @@ const createConversationGroupService = (nameGroup, avatarGroup, members) => {
 // Service để giải tán nhóm (chỉ leader)
 const dissolveGroupService = async (groupId) => {
   return customizeAxios.delete(`/group/${groupId}/dissolve`);
-  
+};
+
+const chatGPTService = async (message) => {
+  return customizeAxios.post(`/chatGPT`, {
+    message,
+  });
 };
 
 const sendReactionService = (messageId, userId, emoji) => {
@@ -80,6 +85,7 @@ export {
   updatePermissionService,
   removeMemberFromGroupService,
   dissolveGroupService,
+  chatGPTService,
   sendReactionService,
   getReactionMessageService,
   markMessageAsReadService,

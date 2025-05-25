@@ -39,64 +39,94 @@ import VideoCallModal from "./src/component/VideoCallModal";
 import MediaFilesLinksScreen from "./src/page/chat/MediaFilesLinksScreen";
 import MediaViewer from "./src/page/chat/MediaViewer";
 import GroupRequest from "./src/page/contacts/GroupRequest";
+import {
+  getFriendRequestsService,
+  getGroupJoinRequestsService,
+} from "./src/service/friendRequestService";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-const MainTabs = ({ route }) => (
-  <View style={{ flex: 1 }}>
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ focused, color, size }) => {
-          const icons = {
-            "Tin nhắn": focused
-              ? "chatbubble-ellipses"
-              : "chatbubble-ellipses-outline",
-            "Danh bạ": focused ? "id-card" : "id-card-outline",
-            "Khám phá": focused ? "grid" : "grid-outline",
-            "Nhật ký": focused ? "time" : "time-outline",
-            "Cá nhân": focused ? "person" : "person-outline",
-          };
-          return <Icon name={icons[route.name]} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: "#2196F3",
-        tabBarInactiveTintColor: "gray",
-      })}
-    >
-      <Tab.Screen
-        name="Tin nhắn"
-        component={ChatTab}
-        initialParams={{ socketRef: route.params.socketRef }}
-      />
-      <Tab.Screen
-        name="Danh bạ"
-        component={ContactsTabs}
-        initialParams={{ socketRef: route.params.socketRef }}
-      />
-      <Tab.Screen
-        name="Khám phá"
-        component={DiscoveryTabs}
-        initialParams={{ socketRef: route.params.socketRef }}
-      />
-      <Tab.Screen
-        name="Nhật ký"
-        component={LogTabs}
-        initialParams={{ socketRef: route.params.socketRef }}
-      />
-      <Tab.Screen
-        name="Cá nhân"
-        component={PersonalTabs}
-        initialParams={{ socketRef: route.params.socketRef }}
-      />
-    </Tab.Navigator>
-  </View>
-);
+const MainTabs = ({
+  route,
+  socketRef,
+  handleStartCall,
+  friendRequestCount,
+  groupRequestCount,
+}) => {
+  return (
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarIcon: ({ focused, color, size }) => {
+            const icons = {
+              "Tin nhắn": focused
+                ? "chatbubble-ellipses"
+                : "chatbubble-ellipses-outline",
+              "Danh bạ": focused ? "id-card" : "id-card-outline",
+              "Trợ lý ảo": focused ? "sparkles" : "sparkles-outline",
+              // "Nhật ký": focused ? "time" : "time-outline",
+              "Cá nhân": focused ? "person" : "person-outline",
+            };
+            return <Icon name={icons[route.name]} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: "#2196F3",
+          tabBarInactiveTintColor: "gray",
+        })}
+      >
+        <Tab.Screen
+          name="Tin nhắn"
+          component={ChatTab}
+          initialParams={{ socketRef: socketRef }}
+        />
+        <Tab.Screen
+          name="Danh bạ"
+          options={{
+            tabBarBadge:
+              friendRequestCount > 0 || groupRequestCount > 0
+                ? friendRequestCount + groupRequestCount
+                : undefined,
+          }}
+        >
+          {(props) => (
+            <ContactsTabs
+              {...props}
+              socketRef={socketRef}
+              friendRequestCount={friendRequestCount}
+              groupRequestCount={groupRequestCount}
+            />
+          )}
+        </Tab.Screen>
+        <Tab.Screen
+          name="Trợ lý ảo"
+          component={DiscoveryTabs}
+          initialParams={{ socketRef: socketRef }}
+        />
+        {/* <Tab.Screen
+          name="Nhật ký"
+          component={LogTabs}
+          initialParams={{ socketRef: socketRef }}
+        /> */}
+        <Tab.Screen
+          name="Cá nhân"
+          component={PersonalTabs}
+          initialParams={{ socketRef: socketRef }}
+        />
+      </Tab.Navigator>
+    </View>
+  );
+};
 
 const Project = () => {
   const dispatch = useDispatch();
   let isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const user = useSelector((state) => state.auth.user);
+
+  // sô lượng yêu cầu kết bạn
+  const [friendRequestCount, setFriendRequestCount] = useState(0);
+  // số lượng yêu cầu tham gia nhóm
+  const [groupRequestCount, setGroupRequestCount] = useState(0);
 
   // Trạng thái cuộc gọi
   const [isCalling, setIsCalling] = useState(false);
@@ -168,18 +198,51 @@ const Project = () => {
     setReceiver(null);
   };
 
+  const fetchRequestCount = async () => {
+    const countFriendRequest = await getFriendRequestsService();
+    const countGroupRequest = await getGroupJoinRequestsService();
+
+    setFriendRequestCount(countFriendRequest?.DT?.length || 0);
+    setGroupRequestCount(countGroupRequest?.DT?.length || 0);
+  };
+
+  useEffect(() => {
+    if (socketRef.current) {
+      socketRef.current.on("RES_ADD_FRIEND", fetchRequestCount);
+      socketRef.current.on("RES_CANCEL_FRIEND", fetchRequestCount);
+      socketRef.current.on("RES_REJECT_FRIEND", fetchRequestCount);
+      socketRef.current.on("RES_ACCEPT_FRIEND", fetchRequestCount);
+      socketRef.current.on("RES_ADD_GROUP", fetchRequestCount);
+    }
+    fetchRequestCount();
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("RES_ADD_FRIEND", fetchRequestCount);
+        socketRef.current.off("RES_CANCEL_FRIEND", fetchRequestCount);
+        socketRef.current.off("RES_REJECT_FRIEND", fetchRequestCount);
+        socketRef.current.off("RES_ACCEPT_FRIEND", fetchRequestCount);
+        socketRef.current.off("RES_ADD_GROUP", fetchRequestCount);
+      }
+    };
+  }, []);
+
   return (
     <NavigationContainer>
       <SafeAreaView style={{ flex: 1 }}>
         <Stack.Navigator>
           {isLoggedIn ? (
             <>
-              <Stack.Screen
-                name="MainTabs"
-                component={MainTabs}
-                initialParams={{ socketRef, handleStartCall }}
-                options={{ headerShown: false }}
-              />
+              <Stack.Screen name="MainTabs" options={{ headerShown: false }}>
+                {(props) => (
+                  <MainTabs
+                    {...props}
+                    socketRef={socketRef}
+                    handleStartCall={handleStartCall}
+                    friendRequestCount={friendRequestCount}
+                    groupRequestCount={groupRequestCount}
+                  />
+                )}
+              </Stack.Screen>
               <Stack.Screen
                 name="SearchScreen"
                 component={SearchScreen}
@@ -242,10 +305,7 @@ const Project = () => {
                 }}
               />
 
-              <Stack.Screen
-                name="ChangePassword"
-                component={ChangePassword}
-              />
+              <Stack.Screen name="ChangePassword" component={ChangePassword} />
               <Stack.Screen name="Setting" component={Setting} />
               <Stack.Screen
                 name="InformationAccount"
