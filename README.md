@@ -13,7 +13,8 @@
 ### 1. Đăng ký.
 - Hình ảnh:
   
-![image](https://github.com/user-attachments/assets/34d5f5be-a8da-444e-bd2e-7a1060f3bb66)
+![image](https://github.com/user-attachments/assets/0681c1e7-16d8-45a1-ba75-c0cd5c374f4d)
+
 - Mô tả:
   + Giúp người dùng tạo tài khoản để truy cập vào ứng dụng.
   
@@ -30,7 +31,8 @@
 ### 2. Đăng nhập.
 - Hình ảnh:
 
-![image](https://github.com/user-attachments/assets/7f3a7cbe-5c26-492d-87a5-cc9bae54209e)
+![image](https://github.com/user-attachments/assets/f3cc186f-ee0a-4579-b6f2-8210fb4b7cf1)
+
 - Mô tả:
   + Giúp người dùng truy cập vào hệ thống.
     
@@ -47,7 +49,7 @@
 ### 3. Giao diện chính.
 - Hình ảnh:
   
-![image](https://github.com/user-attachments/assets/941f3e2b-5c09-4103-ab5b-e4e60ede8c23)
+![image](https://github.com/user-attachments/assets/4f1bd161-7d1b-4381-8140-a9ec2bb32777)
 
 - Mô tả:
   + Sau khi đăng nhập thành công, hệ thống sẽ hiển thị giao diện chính như trên.
@@ -58,7 +60,8 @@
 ### 4. Cloud lưu trữ ảnh.
   - Hình ảnh:
     
-![image](https://github.com/user-attachments/assets/c1cd75d2-d7ab-465d-a52e-c9d371df14d2)
+![image](https://github.com/user-attachments/assets/71967653-191e-4123-8ee1-795c3635fd5e)
+
 - Mô tả:
   + Lưu trữ nhiều loại tài liệu như văn bản, hình ảnh, video ... trên cloud của Zata.
   
@@ -79,7 +82,7 @@
 ### 5. Kết bạn.
 - Hình ảnh:
    
-![image](https://github.com/user-attachments/assets/31596059-cc01-42b1-8963-f72971c2e5d2)
+![image](https://github.com/user-attachments/assets/fa630f73-15ea-4dbb-82fa-9f45639d1191)
 
 - Mô tả:
   + Cho phép người dùng kết bạn để nhắn tin khi biết số điện thoại.
@@ -94,7 +97,7 @@
 ### 6. Danh sách bạn bè.
 - Hình ảnh:
 
-![image](https://github.com/user-attachments/assets/a0922638-8f0a-452f-86fa-c703d57ab60f)
+![image](https://github.com/user-attachments/assets/a57b17a4-670c-4be5-ac29-23adaade9a4b)
 
 - Mô tả:
   + Hiển thị danh sách bạn đã kết bạn. 
@@ -102,7 +105,7 @@
 ### 7. Danh sách nhóm và cộng.
  - Hình ảnh:
 
- ![image](https://github.com/user-attachments/assets/be6f0a58-224b-40bd-ae3d-533688a4f57d)
+![image](https://github.com/user-attachments/assets/08080912-7cc0-411d-8dee-ccc73864bcd6)
 
 - Mô tả:
   + Hiển thị danh sách nhóm và cộng đồng đã tham gia.
@@ -110,15 +113,30 @@
 ### 9. Lời mời kết bạn.
 - Hình ảnh:
 
-![image](https://github.com/user-attachments/assets/5a12f3bb-89d7-4b58-b92c-c9f580fb6e12)
+![image](https://github.com/user-attachments/assets/395009e9-6de9-4aed-9abd-284069ef3e6d)
 
 - Mô tả:
   + Hiển thị danh sách các cá nhân gửi yêu cầu kết bạn đến mình.
-    
-### 10. Nhắn tin cá nhân.
+
+### 10. Tìm kiếm.
+- Hình ảnh:
+
+![image](https://github.com/user-attachments/assets/c531fcd0-377b-42ad-b665-0c6665ac8fd7)
+
+- Mô tả:
+  + Hiển thị danh sách các nhóm hay cá nhân cần tìm kiếm.
+
+- Ưu điểm:
+  + Tìm nhanh trong tin nhắn cá nhân và nhóm.
+
+- Nhược điểm:
+  + Không hỗ trợ tìm kiếm nâng cao.
+  + Tìm kiếm trong nhóm lớn có thể chậm.
+
+### 11. Nhắn tin cá nhân.
 - Hình ảnh:
   
-![image](https://github.com/user-attachments/assets/4b16273c-be17-403c-bff1-fa65152e5583)
+![image](https://github.com/user-attachments/assets/66b73a55-9a5b-4d83-82f6-b23cec9c47c9)
 
 - Mô tả:
   + Giúp nhắn tin giữa 2 người trong ứng dụng (1-1).
@@ -132,10 +150,10 @@
   + Không có mã hóa đầu-cuối.
   + Giới hạn kích thước file.
   
-### 11. Nhắn tin nhóm.
+### 12. Nhắn tin nhóm.
 - Hình ảnh:
 
-![image](https://github.com/user-attachments/assets/bfe6a4b1-f6cb-4769-8c19-5122030cac55)
+![image](https://github.com/user-attachments/assets/44584977-97ff-476c-abfe-7af5450cff19)
 
 - Mô tả:
   + Giúp nhắn tin giữa 3 người trở lên trong ứng dụng.
@@ -149,10 +167,10 @@
   + Khó kiểm soát khi nhóm quá đông.
   + Không có lưu trữ đám mây lâu dài.
 
-### 12. Chat bot.
+### 13. Chat bot.
 - Hình ảnh:
 
-![image](https://github.com/user-attachments/assets/f355ba31-9a67-4905-8159-3b1241082a72)
+![image](https://github.com/user-attachments/assets/d82da662-cf4a-445e-aaf5-f3fda57436d2)
 
 - Mô tả:
   + Cho phép người dùng hỏi các câu hỏi liên quan đến ứng dụng Zata.
