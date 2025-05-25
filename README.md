@@ -117,8 +117,23 @@
 
 - Mô tả:
   + Hiển thị danh sách các cá nhân gửi yêu cầu kết bạn đến mình.
-    
-### 10. Nhắn tin cá nhân.
+
+### 10. Tìm kiếm.
+- Hình ảnh:
+
+![image](https://github.com/user-attachments/assets/c531fcd0-377b-42ad-b665-0c6665ac8fd7)
+
+- Mô tả:
+  + Hiển thị danh sách các nhóm hay cá nhân cần tìm kiếm.
+
+- Ưu điểm:
+  + Tìm nhanh trong tin nhắn cá nhân và nhóm.
+
+- Nhược điểm:
+  + Không hỗ trợ tìm kiếm nâng cao.
+  + Tìm kiếm trong nhóm lớn có thể chậm.
+
+### 11. Nhắn tin cá nhân.
 - Hình ảnh:
   
 ![image](https://github.com/user-attachments/assets/66b73a55-9a5b-4d83-82f6-b23cec9c47c9)
@@ -135,7 +150,7 @@
   + Không có mã hóa đầu-cuối.
   + Giới hạn kích thước file.
   
-### 11. Nhắn tin nhóm.
+### 12. Nhắn tin nhóm.
 - Hình ảnh:
 
 ![image](https://github.com/user-attachments/assets/44584977-97ff-476c-abfe-7af5450cff19)
@@ -152,7 +167,7 @@
   + Khó kiểm soát khi nhóm quá đông.
   + Không có lưu trữ đám mây lâu dài.
 
-### 12. Chat bot.
+### 13. Chat bot.
 - Hình ảnh:
 
 ![image](https://github.com/user-attachments/assets/d82da662-cf4a-445e-aaf5-f3fda57436d2)
