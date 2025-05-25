@@ -60,6 +60,17 @@ const sendReactionService = (messageId, userId, emoji) => {
 const getReactionMessageService = (messageId) => {
   return customizeAxios.get(`/messages/${messageId}/reactions/`);
 };
+
+// Đánh dấu một tin nhắn là đã đọc
+const markMessageAsReadService = (messageId, userId) => {
+  return customizeAxios.post(`/mark-read/${messageId}`, { userId });
+};
+
+// Đánh dấu tất cả tin nhắn trong cuộc trò chuyện là đã đọc
+const markAllMessagesAsReadService = (conversationId, userId) => {
+  return customizeAxios.post(`/mark-all-read/${conversationId}`, { userId });
+};
+
 export {
   loadMessagesService,
   getConversationsService,
@@ -71,4 +82,6 @@ export {
   dissolveGroupService,
   sendReactionService,
   getReactionMessageService,
+  markMessageAsReadService,
+  markAllMessagesAsReadService
 };

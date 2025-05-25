@@ -23,13 +23,15 @@ import { loadMessages } from "../../redux/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { uploadAvatar } from "../../redux/profileSlice.js";
 import * as DocumentPicker from "expo-document-picker";
-import { Platform } from "react-native";
+import { Platform, Animated } from "react-native";
 import ImageViewer from "../../component/ImageViewer";
 import {
   recallMessageService,
   deleteMessageForMeService,
   sendReactionService,
   getReactionMessageService,
+  markMessageAsReadService,
+  markAllMessagesAsReadService 
 } from "../../service/chatService";
 
 const InboxScreen = ({ route }) => {
@@ -72,6 +74,10 @@ const InboxScreen = ({ route }) => {
   //Typing
   const [typingUsers, setTypingUsers] = useState({});
   const typingTimeout = useRef(null);
+
+  //Select ReadBy
+  const [selectedReadStatus, setSelectedReadStatus] = useState(null);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   // Ánh xạ Emoji - Text
   const emojiToTextMap = {
@@ -143,6 +149,29 @@ const InboxScreen = ({ route }) => {
       </TouchableOpacity>
     </Modal>
   );
+
+  // Hàm xử lý khi người dùng nhấp vào tin nhắn
+  const handleMessageClick = (messageId) => {
+
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 1.02,
+        duration: 100,
+        useNativeDriver: true
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true
+      })
+    ]).start();
+
+    if (selectedReadStatus === messageId) {
+      setSelectedReadStatus(null); // Bỏ chọn nếu đã chọn
+    } else {
+      setSelectedReadStatus(messageId); // Chọn tin nhắn mới
+    }
+  };
 
   // Lấy phản ứng từng message
   const getReactions = async (messageId) => {
@@ -283,8 +312,6 @@ const InboxScreen = ({ route }) => {
         );
     }
   };
-
-  
 
   // Gửi phản ứng
   const handleReactToMessage = (messageId, emojiName) => {
@@ -560,6 +587,45 @@ const InboxScreen = ({ route }) => {
     setFileMessages(files);
     setLinkMessages(links); // Lưu các tin nhắn dạng URL
   }, [allMsg]);
+
+  // Đánh dấu một tin nhắn là đã đọc
+  const markMessageAsRead = async (messageId) => {
+    try {
+      if (messageId) {
+        console.log("Marking message as read:", messageId);
+        const response = await markMessageAsReadService(messageId, user._id);
+        if (response.EC === 0) {
+          // Emit socket event
+          socketRef.current.emit("MARK_READ", {
+            messageId,
+            userId: user._id,
+            conversationId: roomData.receiver._id
+          });
+          console.log("Socket MARK_READ", response);
+        }
+      }
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+    }
+  };
+
+  // Đánh dấu tất cả tin nhắn là đã đọc
+  const markAllMessagesAsRead = async (conversationId) => {
+    try {
+      console.log("Marking all messages as read for conversation:", conversationId);
+      const response = await markAllMessagesAsReadService(conversationId, user._id);
+      if (response.EC === 0) {
+        // Emit socket event
+        socketRef.current.emit("MARK_ALL_READ", {
+          userId: user._id,
+          conversationId: conversationId
+        });
+        console.log("Socket MARK_ALL_READ", response);
+      }
+    } catch (error) {
+      console.error("Error marking all messages as read:", error);
+    }
+  };
 
   const cleanFileName = (fileName) => {
     // Loại bỏ các ký tự hoặc số không cần thiết ở đầu tên file
@@ -843,6 +909,79 @@ const InboxScreen = ({ route }) => {
 
     }
   }, [roomData.receiver]);
+  
+  //Trích xuất ID từ object MongoDB
+  const extractId = (idObject) => {
+    if (!idObject) return null;
+    
+    // Nếu là object với $oid
+    if (idObject.$oid) return idObject.$oid;
+    
+    // Nếu là string
+    if (typeof idObject === 'string') return idObject;
+    
+    // Nếu là object MongoDB đã chuyển đổi
+    if (idObject.toString) return idObject.toString();
+    
+    return null;
+  };
+
+  // Xử lý dữ liệu ReadBy
+  const processReadByData = (readBy, currentUserId, members) => {
+    if (!readBy || !Array.isArray(readBy) || readBy.length === 0) {
+      return { readers: [], count: 0 };
+    }
+    
+    // Lọc bỏ người dùng hiện tại
+    const filteredReaders = readBy.filter(readerId => {
+      const id1 = extractId(readerId);
+      const id2 = extractId(currentUserId);
+      return id1 !== id2;
+    });
+
+    // Nếu không còn reader nào sau khi lọc
+    if (filteredReaders.length === 0) {
+      return { readers: [], count: 0 };
+    }
+    
+    // Tìm thông tin chi tiết của người đọc (tối đa 3 người)
+    const detailedReaders = filteredReaders
+      .slice(0, 3)
+      .map(readerId => {
+        const id = extractId(readerId);
+        const memberInfo = conversations.find(conv => extractId(conv._id) === id);
+        return memberInfo || { _id: id, avatar: "https://i.imgur.com/l5HXBdTg.jpg", username: "Unknown" };
+      });
+    
+    return {
+      readers: detailedReaders,
+      count: filteredReaders.length
+    };
+  };
+
+  // Đánh dấu đã đọc khi vào phòng chat
+  useEffect(() => {
+    if (roomData && roomData.receiver && user) {
+      // Đánh dấu tất cả tin nhắn trong phòng là đã đọc
+      markAllMessagesAsRead(roomData.receiver._id);
+    }
+  }, [roomData]);
+
+  // Đánh dấu tin nhắn đã đọc khi có tin nhắn mới
+  useEffect(() => {
+    if (allMsg && allMsg.length > 0) {
+      // Tìm tin nhắn chưa đọc từ người khác
+      const unreadMessages = allMsg.filter(
+        msg => msg.sender._id !== user._id && 
+              (!msg.readBy || !msg.readBy.includes(user._id))
+      );
+      
+      // Đánh dấu từng tin nhắn chưa đọc
+      unreadMessages.forEach(msg => {
+        markMessageAsRead(msg._id);
+      });
+    }
+  }, [allMsg]);
 
   //Listener typing
   useEffect(() => {
@@ -895,6 +1034,46 @@ const InboxScreen = ({ route }) => {
       };
     }
   }, [roomData.receiver]);
+
+  // Socket đã đọc
+  useEffect(() => {
+    if (socketRef.current) {
+
+      // Xử lý sự kiện tin nhắn đã đọc
+      socketRef.current.on("MESSAGE_READ", (data) => {
+        // Cập nhật trạng thái đã đọc cho tin nhắn
+        setAllMsg((prevMsgs) => 
+          prevMsgs.map((msg) => 
+            msg._id === data.messageId 
+            ? { ...msg, isRead: true, readBy: [...(msg.readBy || []), data.userId] } 
+            : msg
+          )
+        );
+      });
+      
+      // Xử lý sự kiện tất cả tin nhắn đã đọc
+      socketRef.current.on("ALL_MESSAGES_READ", (data) => {
+        // Cập nhật trạng thái đã đọc cho tất cả tin nhắn từ người dùng cụ thể
+        setAllMsg((prevMsgs) => 
+          prevMsgs.map((msg) => 
+            (msg.sender._id === user._id && msg.receiver._id === data.conversationId)
+            ? { 
+                ...msg, 
+                isRead: true, 
+                readBy: [...new Set([...(msg.readBy || []), data.userId])] 
+              } 
+            : msg
+          )
+        );
+      });
+
+      // Cleanup function
+      return () => {
+        socketRef.current.off("MESSAGE_READ");
+        socketRef.current.off("ALL_MESSAGES_READ");
+      };
+    }
+  }, [socketRef, user, roomData]);
 
   // Cleanup typing timeout
   useEffect(() => {
@@ -1221,12 +1400,13 @@ const InboxScreen = ({ route }) => {
             </View>
           )}
 
-          <View
+          <Animated.View
             style={[
               styles.message,
               item.sender._id === user._id
                 ? styles.userMessage
                 : styles.friendMessage,
+              selectedReadStatus === item._id ? { transform: [{ scale: scaleAnim }] } : {}
             ]}
           >
             {/* Hiển thị avatar và tên người gửi - kiểu giống ảnh mẫu */}
@@ -1261,6 +1441,7 @@ const InboxScreen = ({ route }) => {
                     setSelectedMessage(item);
                     setModalVisible(true);
                   }}
+                  onPress={() => item.sender._id === user._id && handleMessageClick(item._id)}
                   style={styles.messageInner}
                 >{renderMessageContent(item)}</TouchableOpacity>
 
@@ -1303,16 +1484,86 @@ const InboxScreen = ({ route }) => {
                 </View>
               )}
 
-              {/* Hiển thị thời gian */}
-              <Text style={[
-                styles.messageTime,
-                item.sender._id === user._id ? styles.userMessageTime : styles.friendMessageTime
-              ]}>
-                {convertTime(item.createdAt)}
-              </Text>
+              <View style={styles.messageTimeContainer}>
+
+                {/* Hiển thị thời gian */}
+                <Text style={[
+                  styles.messageTime,
+                  item.sender._id === user._id ? styles.userMessageTime : styles.friendMessageTime
+                ]}>
+                  {convertTime(item.createdAt)}
+                </Text>
+
+                {item.sender._id === user._id && (
+                  <View style={styles.readStatusContainer}>
+                    {index === allMsg.length - 1 || selectedReadStatus === item._id ? (
+                      <>
+                        {receiver.type === 2 ? (
+                          // Chat nhóm
+                          item.readBy && item.readBy.length > 0 ? (
+                            <View style={styles.readStatusInner}>
+                              {/* Hiển thị avatar người đọc */}
+                              {(() => {
+                                // Xử lý dữ liệu readBy
+                                const { readers, count } = processReadByData(item.readBy, user._id, conversations);
+                                
+                                return (
+                                  <>
+                                    {readers.length > 0 ? (
+                                      <>
+                                        <View style={styles.readAvatarContainer}>
+                                          {readers.map((reader, index) => (
+                                            <Image 
+                                              key={index}
+                                              source={{uri: reader.avatar || "https://i.imgur.com/l5HXBdTg.jpg"}}
+                                              style={[
+                                                styles.readAvatar,
+                                                {marginLeft: index > 0 ? -5 : 0}
+                                              ]}
+                                            />
+                                          ))}
+                                          
+                                          {count > 3 && (
+                                            <View style={styles.readCounter}>
+                                              <Text style={styles.readCounterText}>+{count - 3}</Text>
+                                            </View>
+                                          )}
+                                        </View>
+                                      </>
+                                    ) : (
+                                      <FontAwesome5 name="check" size={12} color="#666" />
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </View>
+                          ) : (
+                            <FontAwesome5 name="check" size={12} color="#666" />
+                          )
+                        ) : (
+                          // Chat 1-1
+                          item.readBy && item.readBy.some(readerId => 
+                            extractId(readerId) === extractId(receiver._id)
+                          ) ? (
+                            <View style={styles.readStatusInner}>
+                              <Image 
+                                source={{uri: receiver.avatar || "https://i.imgur.com/l5HXBdTg.jpg"}}
+                                style={styles.readAvatarSingle}
+                              />
+                            </View>
+                          ) : (
+                            <FontAwesome5 name="check" size={12} color="#666" />
+                          )
+                        )}
+                      </>
+                    ) : null}  {/* Không hiển thị gì nếu không phải tin nhắn mới nhất và không được chọn */}
+                  </View>
+                )}
+
+              </View>
 
             </View>
-          </View>
+          </Animated.View>
           </View>
         )}}
         contentContainerStyle={styles.messagesContainer}
@@ -2105,6 +2356,94 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 12,
     fontStyle: 'italic',
+  },
+  messageTimeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  readAvatarSingle: {
+    width: 14, 
+    height: 14, 
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: '#fff',
+    marginLeft: 2
+  },
+  readStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 4
+  },
+  readAvatarContainer: {
+    flexDirection: 'row',
+    marginLeft: 2,
+  },
+  readAvatar: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: '#fff',
+  },
+  readCounter: {
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 10,
+    paddingHorizontal: 4,
+    marginLeft: 2,
+    justifyContent: 'center',
+  },
+  readCounterText: {
+    fontSize: 9,
+    color: '#555',
+  },
+  messageContentWrapper: {
+    position: 'relative',
+  },
+  selectedMessage: {
+    backgroundColor: 'rgba(0, 122, 255, 0.05)', // Màu nhẹ khi được chọn
+  },
+  readStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 4,
+    justifyContent: 'flex-end', // Căn lề bên phải
+  },
+  readStatusInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  readAvatarContainer: {
+    flexDirection: 'row',
+    marginLeft: 2,
+    alignItems: 'center',
+  },
+  readAvatar: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: '#fff',
+  },
+  readAvatarSingle: {
+    width: 14, 
+    height: 14, 
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: '#fff',
+    marginLeft: 2
+  },
+  readCounter: {
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 10,
+    paddingHorizontal: 4,
+    marginLeft: 2,
+    justifyContent: 'center',
+  },
+  readCounterText: {
+    fontSize: 9,
+    color: '#555',
   },
 });
 
