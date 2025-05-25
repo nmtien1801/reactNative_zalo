@@ -68,7 +68,7 @@ export default function PersonalTabs({ route }) {
     {
       id: "2",
       name: "Tài khoản và bảo mật",
-      avatar: require("../../../assets/favicon.png"),
+      avatar: require("../../../assets/security.png"),
     },
   ];
 
@@ -174,7 +174,6 @@ export default function PersonalTabs({ route }) {
       navigation.navigate("InformationAccount");
     } else if (item.id === "1") {
       let cloud = conversations.filter((cloud) => cloud.type === 3);
-      console.log("ssssssssssssss ", cloud);
 
       navigation.navigate("InboxScreen", {
         item: cloud[0],
@@ -197,7 +196,7 @@ export default function PersonalTabs({ route }) {
       <SearchHeader option={"person"} />
       <FlatList
         ListHeaderComponent={() => (
-          <TouchableOpacity style={styles.headerContainer}>
+          <View style={styles.headerContainer}>
             <View style={styles.profileContainer}>
               <View style={styles.avatarWrapper}>
                 <Image
@@ -217,8 +216,7 @@ export default function PersonalTabs({ route }) {
               </View>
               <Text style={styles.userName}>{user?.username || "Lộc lá"}</Text>
             </View>
-            <Icon name="swap-horizontal-outline" size={24} color="#2196F3" />
-          </TouchableOpacity>
+          </View>
         )}
         data={personal}
         keyExtractor={(item) => item.id}

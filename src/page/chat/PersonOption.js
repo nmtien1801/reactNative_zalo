@@ -6,11 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
   SafeAreaView,
-  Modal,
-  FlatList,
-  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
@@ -19,14 +15,10 @@ import { useNavigation } from "@react-navigation/native";
 import { useSelector, useDispatch } from "react-redux";
 import InfoAddFriendMModal from "../../component/InfoAddFriendModal";
 import { getRoomChatByPhoneService } from "../../service/roomChatService";
-import { getRoomChatMembersService } from "../../service/roomChatService";
-import { removeMemberFromGroupService } from "../../service/chatService";
-import { dissolveGroupService } from "../../service/chatService";
 
 const ChatInfoScreen = ({ route }) => {
   const [item, setItem] = useState(route.params?.receiver); // click conversation
   const receiver = route.params?.receiver; // click conversation
-  const [members, setMembers] = useState([]); // Danh sách thành viên
   let socketRef = route.params?.socketRef;
   let onlineUsers = route.params?.onlineUsers;
   const user = useSelector((state) => state.auth.user);
@@ -37,8 +29,6 @@ const ChatInfoScreen = ({ route }) => {
   const linkMessages = route.params?.linkMessages;
 
   const navigation = useNavigation();
-  const [isReportCallsEnabled, setIsReportCallsEnabled] = useState(true);
-  const [isHiddenChatEnabled, setIsHiddenChatEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [searchResult, setSearchResult] = useState({});
 
@@ -59,149 +49,8 @@ const ChatInfoScreen = ({ route }) => {
     handleSearch();
   }, []);
 
-  const toggleReportCalls = () => {
-    setIsReportCallsEnabled((previousState) => !previousState);
-  };
-
-  const toggleHiddenChat = () => {
-    setIsHiddenChatEnabled((previousState) => !previousState);
-  };
-
-  // Lấy danh sách thành viên nhóm
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        if (receiver?._id) {
-          const response = await getRoomChatMembersService(receiver._id);
-          if (response.EC === 0) {
-            setMembers(response.DT);
-          } else {
-            console.error("Lỗi khi lấy danh sách thành viên:", response.EM);
-          }
-        }
-      } catch (error) {
-        console.error("Lỗi khi gọi API:", error);
-      }
-    };
-
-    fetchMembers();
-  }, [receiver?._id]);
-
-  const handleRemoveMember = async (memberId) => {
-    if (memberId === user._id) {
-      alert("Không thể xóa chính mình khỏi nhóm!");
-      return;
-    }
-    let res = await removeMemberFromGroupService(receiver._id, memberId);
-    socketRef.current.emit("REQ_REMOVE_MEMBER", members);
-  };
-
-  // ManageGroup
-  const [role, setRole] = useState("");
-  useEffect(() => {
-    const role = conversations.find(
-      (conversation) => conversation._id === item._id
-    );
-    if (role) {
-      setRole(role.role);
-    }
-  }, []);
-
   // action socket
-  useEffect(() => {
-    socketRef.current.on("RES_UPDATE_DEPUTY", (data) => {
-      // Nếu không có bản ghi nào được cập nhật
-      if (data.length === 0) {
-        setRole("member");
-        return;
-      }
-
-      // Tìm xem user có phải là sender hoặc receiver không
-      const member = data.find(
-        (item) =>
-          item?.sender?._id === user._id || item?.receiver?._id === user._id
-      );
-
-      if (member) {
-        setRole(member.role);
-        setItem({
-          ...item,
-          permission: member.receiver.permission,
-          role: member.role,
-        });
-      } else {
-        if (receiver.role !== "leader") {
-          setRole("member");
-        }
-      }
-    });
-
-    socketRef.current.on("RES_TRANS_LEADER", (data) => {
-      const { newLeader, oldLeader } = data;
-      let member = null;
-      if (newLeader?.sender?._id === user._id) {
-        member = newLeader;
-      } else if (oldLeader?.sender?._id === user._id) {
-        member = oldLeader;
-      }
-
-      setRole(member.role);
-      setItem({
-        ...item,
-        role: member.role,
-      });
-    });
-
-    socketRef.current.on("RES_REMOVE_MEMBER", (data) => {
-      const fetchMembers = async () => {
-        try {
-          if (receiver?._id) {
-            const response = await getRoomChatMembersService(receiver._id);
-            if (response.EC === 0) {
-              setMembers(response.DT); // Lưu danh sách thành viên vào state
-            } else {
-              console.error("Lỗi khi lấy danh sách thành viên:", response.EM);
-            }
-          }
-        } catch (error) {
-          console.error("Lỗi khi gọi API getRoomChatMembersService:", error);
-        }
-      };
-      fetchMembers();
-    });
-  }, []);
-
-  // Handle dissolve group
-  const handleDissolveGroup = async () => {
-    try {
-      Alert.alert("Thông báo", "Đang giải tán nhóm...");
-
-      const response = await dissolveGroupService(item._id);
-
-      const { EC, EM } = response || {};
-
-      if (EC === 0) {
-        Alert.alert("Thành công", "Nhóm đã được giải tán!");
-        navigation.reset({
-          index: 0,
-          routes: [
-            {
-              name: "MainTabs",
-              state: {
-                index: 0,
-                routes: [{ name: "Tin nhắn" }],
-              },
-            },
-          ],
-        });
-      } else {
-        Alert.alert("Lỗi", EM || "Không thể giải tán nhóm.");
-      }
-    } catch (error) {
-      console.error("Lỗi khi giải tán nhóm:", error);
-      Alert.alert("Lỗi", "Không thể giải tán nhóm, vui lòng thử lại sau.");
-    }
-  };
+  useEffect(() => {}, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -226,7 +75,7 @@ const ChatInfoScreen = ({ route }) => {
         <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
             <Image
-              source={{ uri: "https://randomuser.me/api/portraits/men/32.jpg" }}
+              source={{ uri: receiver.avatar }}
               style={styles.profileImage}
             />
             <View style={styles.editIconContainer}>
