@@ -5,7 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Text,
-  RefreshControl,
+  Platform
 } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
@@ -162,9 +162,17 @@ const Project = () => {
   // connect socket -> cmd(IPv4 Address): ipconfig
   const socketRef = useRef();
 
-  const IPv4 = "192.168.81.170";
+  const IPv4 =
+    Platform.OS === "android" || Platform.OS === "ios"
+      ? "192.168.1.3" // URL cho Android và iOS
+      : "localhost"; // URL cho web hoặc môi trường khác
+
   useEffect(() => {
-    const socket = io.connect(`http://${IPv4}:8080`);
+    const socket = io(`http://${IPv4}:8080`, {
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
     socketRef.current = socket;
   }, []);
 
@@ -229,15 +237,6 @@ const Project = () => {
       socketRef.current.on("RES_ADD_GROUP", fetchRequestCount);
     }
     fetchRequestCount();
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.off("RES_ADD_FRIEND", fetchRequestCount);
-        socketRef.current.off("RES_CANCEL_FRIEND", fetchRequestCount);
-        socketRef.current.off("RES_REJECT_FRIEND", fetchRequestCount);
-        socketRef.current.off("RES_ACCEPT_FRIEND", fetchRequestCount);
-        socketRef.current.off("RES_ADD_GROUP", fetchRequestCount);
-      }
-    };
   }, []);
 
   return (
