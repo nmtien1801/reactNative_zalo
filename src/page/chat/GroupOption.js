@@ -266,6 +266,11 @@ const ChatInfoScreen = ({ route }) => {
       };
       fetchMembers();
     });
+
+    // update avatar group
+    socketRef.current.on("RES_UPDATE_AVATAR", (data) => {
+      setUploadedUrl(data.avatar);
+    });
   }, []);
   console.log("role", role);
 
@@ -382,8 +387,11 @@ const ChatInfoScreen = ({ route }) => {
           );
 
           if (a.payload.EC === 0) {
-          socketRef.current.emit("REQ_UPDATE_AVATAR", receiver);
-        }
+            socketRef.current.emit("REQ_UPDATE_AVATAR", {
+              receiver,
+              avatar: res.DT,
+            });
+          }
         } else {
           console.log("err : ", res.EM);
         }
