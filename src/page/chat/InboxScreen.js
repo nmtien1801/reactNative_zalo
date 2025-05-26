@@ -62,6 +62,23 @@ const InboxScreen = ({ route }) => {
   const [allMsg, setAllMsg] = useState([]);
   const [role, setRole] = useState(null); // Lưu vai trò của người dùng trong nhóm
 
+  const emojiToTextMap = {
+    heart: "Love",
+    "thumbs-up": "Like",
+    laugh: "Haha",
+    "sad-cry": "Sad",
+    angry: "Angry",
+    like: "Like",
+  };
+
+  const textToEmojiMap = {
+    "Like": "👍",
+    "Love": "❤️",
+    "Haha": "😂", 
+    "Sad": "😢",
+    "Angry": "😡",
+    "Wow": "😮"
+  };
   // ImageViewer
   const [previewImages, setPreviewImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -1092,6 +1109,16 @@ const InboxScreen = ({ route }) => {
       socketRef.current.on("REACTION_ERROR", (data) => {
         console.error("Reaction error:", data.error);
       });
+
+      return () => {
+        if (socketRef.current) {
+          socketRef.current.off("RECEIVED_MSG");
+          socketRef.current.off("RECALL_MSG");
+          socketRef.current.off("DELETED_MSG");
+          socketRef.current.off("RECEIVED_REACTION");
+          socketRef.current.off("REACTION_ERROR");
+        }
+      };
     }
   }, [roomData.receiver]);
 
@@ -1682,6 +1709,28 @@ const InboxScreen = ({ route }) => {
                       <FontAwesome5 name="smile" size={18} color="#666" />
                     </TouchableOpacity>
                   </View>
+
+                  {/* Hiển thị reactions khi có */}
+                  {reactions[item._id] && reactions[item._id].length > 0 && (
+                    <View style={styles.reactionSummary}>
+                      {Object.entries(
+                        reactions[item._id].reduce((acc, reaction) => {
+                          if (!acc[reaction.emoji]) {
+                            acc[reaction.emoji] = 0;
+                          }
+                          acc[reaction.emoji] += 1;
+                          return acc;
+                        }, {})
+                      ).map(([emoji, count], index) => (
+                        <View key={index} style={styles.reactionItem}>
+                          <Text style={styles.reactionEmoji}>
+                            {textToEmojiMap[emoji] || emoji}
+                          </Text>
+                          <Text style={styles.reactionCount}>{count}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
 
                   <View style={styles.messageTimeContainer}>
                     {/* Hiển thị thời gian */}
