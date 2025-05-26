@@ -101,8 +101,8 @@ const EmojiPopup = ({ isOpen, position, onClose, onSelect }) => {
   const popupHeight = 350;
 
   // Vị trí mặc định tránh tràn ra ngoài màn hình
-  const top = height - popupHeight - 10; // 10px cách đáy
-  const left = 10; // 10px từ mép trái
+  const top = height - popupHeight - 100; // 10px cách đáy
+  const left = 20; // 10px từ mép trái
 
   return (
     <Modal visible={isOpen} transparent animationType="fade">
