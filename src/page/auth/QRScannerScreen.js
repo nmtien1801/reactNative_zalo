@@ -283,8 +283,8 @@ const CustomCameraScanner = ({ onScan, scanned }) => {
                 }
             );
 
-            const imageDataUrl = `data:image/jpeg;base64,${resizedResult.base64}`;
-            console.log("Image Data URL:", imageDataUrl);
+            // const imageDataUrl = `data:image/jpeg;base64,${resizedResult.base64}`;
+            // console.log("Image Data URL:", imageDataUrl);
 
             return resizedResult.uri;
 

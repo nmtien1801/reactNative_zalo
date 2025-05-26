@@ -138,17 +138,6 @@ const Project = () => {
   const [receiver, setReceiver] = useState(null);
   const [jitsiUrl, setJitsiUrl] = useState(null);
 
-  useEffect(() => {
-    console.log("🚀 Kết nối đến backend... http://192.168.81.170:8080/api/ping");
-    axios.get('http://192.168.81.170:8080/api/ping')
-      .then((res) => {
-        console.log('✅ Kết nối backend thành công:', res.data);
-      })
-      .catch((err) => {
-        console.error('❌ Không kết nối được backend:', err.message);
-      });
-  }, []);
-
   const fetchDataAccount = async () => {
     if (!user || !user?.access_Token) {
       await dispatch(doGetAccount());
@@ -164,8 +153,19 @@ const Project = () => {
 
   const IPv4 =
     Platform.OS === "android" || Platform.OS === "ios"
-      ? "192.168.1.3" // URL cho Android và iOS
+      ? "192.168.81.170" // URL cho Android và iOS
       : "localhost"; // URL cho web hoặc môi trường khác
+
+  useEffect(() => {
+    console.log(`🚀 Kết nối đến backend... `);
+    axios.get(`http://${IPv4}:8080/api/ping`)
+      .then((res) => {
+        console.log('✅ Kết nối backend thành công:', res.data);
+      })
+      .catch((err) => {
+        console.error('❌ Không kết nối được backend:', err.message);
+      });
+  }, []);
 
   useEffect(() => {
     const socket = io(`http://${IPv4}:8080`, {
