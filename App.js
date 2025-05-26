@@ -150,7 +150,11 @@ const Project = () => {
 
   const IPv4 = "localhost";
   useEffect(() => {
-    const socket = io.connect(`http://${IPv4}:8080`);
+    const socket = io.connect(`http://${IPv4}:8080`, {
+      reconnect: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
     socketRef.current = socket;
   }, []);
 
