@@ -219,7 +219,7 @@ const InboxScreen = ({ route }) => {
           username: user.username,
           receiver: roomData.receiver,
           // Thêm conversationId để đồng bộ với web
-          conversationId: roomData.receiver._id,
+          conversationId: receiver._id,
         };
 
         console.log("Sending typing data from mobile:", typingData);
@@ -790,7 +790,7 @@ const InboxScreen = ({ route }) => {
           socketRef.current.emit("MARK_READ", {
             messageId,
             userId: user._id,
-            conversationId: roomData.receiver._id,
+            conversationId: receiver._id,
           });
           console.log("Socket MARK_READ", response);
         }
@@ -1102,14 +1102,6 @@ const InboxScreen = ({ route }) => {
       socketRef.current.on("REACTION_ERROR", (data) => {
         console.error("Reaction error:", data.error);
       });
-
-      return () => {
-        socketRef.current.off("RECEIVED_MSG");
-        socketRef.current.off("RECALL_MSG");
-        socketRef.current.off("DELETED_MSG");
-        socketRef.current.off("RECEIVED_REACTION");
-        socketRef.current.off("REACTION_ERROR");
-      };
     }
   }, [roomData.receiver]);
 
@@ -1172,7 +1164,7 @@ const InboxScreen = ({ route }) => {
   useEffect(() => {
     if (roomData && roomData.receiver && user) {
       // Đánh dấu tất cả tin nhắn trong phòng là đã đọc
-      markAllMessagesAsRead(roomData.receiver._id);
+      markAllMessagesAsRead(receiver._id);
     }
   }, [roomData]);
 
@@ -1199,12 +1191,12 @@ const InboxScreen = ({ route }) => {
       // Lắng nghe sự kiện USER_TYPING
       socketRef.current.on("USER_TYPING", (data) => {
         console.log("Received USER_TYPING in mobile:", data);
-        console.log("Mobile current room:", roomData.receiver._id);
+        console.log("Mobile current room:", receiver._id);
 
         const { userId, username, conversationId } = data;
 
         // Kiểm tra xem sự kiện typing có thuộc conversation hiện tại không
-        if (userId === roomData.receiver._id) {
+        if (userId === receiver._id) {
           console.log(`${username} is typing...`);
           setTypingUsers((prev) => ({
             ...prev,
@@ -1218,7 +1210,7 @@ const InboxScreen = ({ route }) => {
         const { userId, conversationId } = data;
 
         // Chỉ xử lý nếu đúng conversation hiện tại
-        if (userId === roomData.receiver._id) {
+        if (userId === receiver._id) {
           console.log(`User ${userId} stopped typing`);
           setTypingUsers((prev) => {
             const newState = { ...prev };
@@ -1230,9 +1222,6 @@ const InboxScreen = ({ route }) => {
 
       // Cleanup
       return () => {
-        socketRef.current.off("USER_TYPING");
-        socketRef.current.off("USER_STOP_TYPING");
-
         // Dừng typing khi rời khỏi màn hình
         if (socketRef.current) {
           socketRef.current.emit("STOP_TYPING", {
@@ -1279,12 +1268,6 @@ const InboxScreen = ({ route }) => {
           )
         );
       });
-
-      // Cleanup function
-      return () => {
-        socketRef.current.off("MESSAGE_READ");
-        socketRef.current.off("ALL_MESSAGES_READ");
-      };
     }
   }, [socketRef, user, roomData]);
 
@@ -2089,12 +2072,6 @@ const InboxScreen = ({ route }) => {
                     handleDeleteMessageForMe(selectedMessage._id, user._id);
                     setModalVisible(false);
                   },
-                },
-                {
-                  name: "Xóa",
-                  icon: "trash",
-                  action: () =>
-                    handleDeleteMessageForMe(selectedMessage._id, user._id),
                 },
               ].map((item, index) => (
                 <TouchableOpacity

@@ -215,15 +215,6 @@ const Project = () => {
       socketRef.current.on("RES_ADD_GROUP", fetchRequestCount);
     }
     fetchRequestCount();
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.off("RES_ADD_FRIEND", fetchRequestCount);
-        socketRef.current.off("RES_CANCEL_FRIEND", fetchRequestCount);
-        socketRef.current.off("RES_REJECT_FRIEND", fetchRequestCount);
-        socketRef.current.off("RES_ACCEPT_FRIEND", fetchRequestCount);
-        socketRef.current.off("RES_ADD_GROUP", fetchRequestCount);
-      }
-    };
   }, []);
 
   return (
