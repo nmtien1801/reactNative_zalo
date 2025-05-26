@@ -105,6 +105,7 @@ const InformationAccount = ({ route }) => {
     let data = {
       ...userUpdate,
       avatar: avatarUrl,
+      userId: user._id,
     };
 
     try {
