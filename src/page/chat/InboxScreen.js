@@ -1497,8 +1497,16 @@ const InboxScreen = ({ route }) => {
   const handleReply = async (selectedMessage) => {
     // Tách nội dung từ dòng 2 trở đi (nếu có \n)
     const parts = selectedMessage.msg.split("\n\n");
-    const contentAfterFirstLine =
+    let contentAfterFirstLine =
       parts.length > 1 ? parts.slice(1).join("\n") : selectedMessage.msg;
+
+    if (
+      contentAfterFirstLine.startsWith(
+        "https://monhoc1.s3.ap-southeast-1.amazonaws.com/media"
+      )
+    ) {
+      contentAfterFirstLine = "*file*";
+    }
 
     setPreviewReply(selectedMessage.sender.name + ": " + contentAfterFirstLine);
   };
