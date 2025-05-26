@@ -302,7 +302,7 @@ const InboxScreen = ({ route }) => {
                 : styles.systemMessageTextFriend
             }
           >
-            {msg.msg || ""}
+            {(msg.msg || "").toString()}
           </Text>
         );
       default:
@@ -314,7 +314,7 @@ const InboxScreen = ({ route }) => {
                 : styles.messageTextFriend
             }
           >
-            {msg.msg || ""}
+            {(msg.msg || "").toString()}
           </Text>
         );
     }
@@ -2240,23 +2240,27 @@ const styles = StyleSheet.create({
     color: "white",
     flexDirection: "row",
     flexWrap: "wrap",
-    maxWidth: "70%",
+    maxWidth:
+      Platform.OS === "android" || Platform.OS === "ios" ? "80%" : "70%",
     minWidth: "50px",
     marginLeft: 10,
-    fontSize: ".9375rem",
+    fontSize: 18,
     fontWeight: "400",
-    lineHeight: "1.5",
+    lineHeight:
+      Platform.OS === "android" || Platform.OS === "ios" ? "24" : "1.5",
   },
   messageTextFriend: {
     color: "black",
     flexDirection: "row", // Đảm bảo text hiển thị theo chiều ngang
     flexWrap: "wrap",
-    maxWidth: "70%",
+    maxWidth:
+      Platform.OS === "android" || Platform.OS === "ios" ? "80%" : "70%",
     minWidth: "50px",
     marginRight: 10,
-    fontSize: ".9375rem",
+    fontSize: 18,
     fontWeight: "400",
-    lineHeight: "1.5",
+    lineHeight:
+      Platform.OS === "android" || Platform.OS === "ios" ? "24" : "1.5",
   },
   inputContainer: {
     position: "absolute",
