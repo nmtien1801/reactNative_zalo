@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 //SEARCH: axios npm github
 
-const URL_ANDROID = "http://192.168.1.3:8080/api";
+const URL_ANDROID = "http://192.168.81.170:8080/api";
 URL_WEB = "http://localhost:8080/api";
 
 const baseUrl =
@@ -17,6 +17,8 @@ const instance = axios.create({
   baseURL: baseUrl,
   withCredentials: true, // để FE có thể nhận cookie từ BE
 });
+
+console.log("Base URL:", baseUrl);
 
 // Cài đặt header mặc định
 instance.defaults.headers.common[

@@ -46,6 +46,15 @@ const logoutUserService = () => {
   return customizeAxios.post("/logout");
 };
 
+const verifyQRLoginService = (qrToken, userId) => {
+  console.log("QR Token:", qrToken);
+  console.log("User ID:", userId);
+  return customizeAxios.post("/verify-qr-login", {
+    qrToken,
+    userId
+  });
+};
+
 export {
   handleLoginApi,
   doGetAccountService,
@@ -54,5 +63,6 @@ export {
   resetPasswordService,
   changePasswordService,
   verifyEmailService,
-  logoutUserService
+  logoutUserService,
+  verifyQRLoginService
 };

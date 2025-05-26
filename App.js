@@ -43,6 +43,9 @@ import {
   getFriendRequestsService,
   getGroupJoinRequestsService,
 } from "./src/service/friendRequestService";
+import customizeAxios from "./src/component/customizeAxios";
+import QRScannerScreen from "./src/page/auth/QRScannerScreen";
+import axios from "axios";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -135,6 +138,17 @@ const Project = () => {
   const [receiver, setReceiver] = useState(null);
   const [jitsiUrl, setJitsiUrl] = useState(null);
 
+  useEffect(() => {
+    console.log("🚀 Kết nối đến backend... http://192.168.81.170:8080/api/ping");
+    axios.get('http://192.168.81.170:8080/api/ping')
+      .then((res) => {
+        console.log('✅ Kết nối backend thành công:', res.data);
+      })
+      .catch((err) => {
+        console.error('❌ Không kết nối được backend:', err.message);
+      });
+  }, []);
+
   const fetchDataAccount = async () => {
     if (!user || !user?.access_Token) {
       await dispatch(doGetAccount());
@@ -148,7 +162,7 @@ const Project = () => {
   // connect socket -> cmd(IPv4 Address): ipconfig
   const socketRef = useRef();
 
-  const IPv4 = "localhost";
+  const IPv4 = "192.168.81.170";
   useEffect(() => {
     const socket = io.connect(`http://${IPv4}:8080`);
     socketRef.current = socket;
@@ -327,6 +341,11 @@ const Project = () => {
                 name="GroupRequest"
                 component={GroupRequest}
                 initialParams={{ socketRef }}
+              />
+              <Stack.Screen 
+                name="QRScannerScreen" 
+                component={QRScannerScreen} 
+                options={{ headerShown: false }} 
               />
             </>
           ) : (

@@ -92,7 +92,7 @@ export default function SearchHeader({ option, socketRef, onlineUsers }) {
 
       {option !== "person" && (
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('QRScannerScreen')}>
             <Image
               source={require("../../assets/qr.png")}
               style={{ marginLeft: 10 }}
