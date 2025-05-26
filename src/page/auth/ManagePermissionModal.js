@@ -30,7 +30,7 @@ const ManagePermissionModal = ({ closeModal, receiver, socketRef }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [selectedTab, setSelectedTab] = useState("Thêm phó nhóm");
   const navigation = useNavigation();
-  
+
   const fetchAllMembers = async () => {
     try {
       const response = await getAllMemberGroupService(receiver._id);
@@ -217,6 +217,8 @@ const ManagePermissionModal = ({ closeModal, receiver, socketRef }) => {
                 data={searchResults}
                 keyExtractor={(item) => item._id}
                 renderItem={renderUserItem}
+                showsVerticalScrollIndicator={false}
+                style={{ maxHeight: 200 }}
               />
             </View>
 
