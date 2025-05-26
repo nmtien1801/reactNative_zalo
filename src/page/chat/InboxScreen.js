@@ -14,7 +14,7 @@ import {
   CheckBox,
   TouchableWithoutFeedback,
   Dimensions,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,7 +32,7 @@ import {
   sendReactionService,
   getReactionMessageService,
   markMessageAsReadService,
-  markAllMessagesAsReadService 
+  markAllMessagesAsReadService,
 } from "../../service/chatService";
 
 const InboxScreen = ({ route }) => {
@@ -69,7 +69,10 @@ const InboxScreen = ({ route }) => {
 
   // Reaction
   const [reactions, setReactions] = useState({});
-  const [reactionPopupPosition, setReactionPopupPosition] = useState({ x: 0, y: 0 });
+  const [reactionPopupPosition, setReactionPopupPosition] = useState({
+    x: 0,
+    y: 0,
+  });
   const [messageIdForReaction, setMessageIdForReaction] = useState(null);
 
   //Typing
@@ -92,23 +95,22 @@ const InboxScreen = ({ route }) => {
 
   // Ánh xạ Emoji - Text
   const emojiToTextMap = {
-    "heart": "Love",
-    "thumbs-up": "Like", 
-    "laugh": "Haha",
+    heart: "Love",
+    "thumbs-up": "Like",
+    laugh: "Haha",
     "sad-cry": "Sad",
-    "angry": "Angry",
-    "like": "Like" 
+    angry: "Angry",
+    like: "Like",
   };
-
 
   // Ánh xạ Text - Icon (sử dụng FontAwesome5)
   const textToEmojiMap = {
-    "Like": "👍",
-    "Love": "❤️",
-    "Haha": "😂", 
-    "Sad": "😢",
-    "Angry": "😡",
-    "Wow": "😮"
+    Like: "👍",
+    Love: "❤️",
+    Haha: "😂",
+    Sad: "😢",
+    Angry: "😡",
+    Wow: "😮",
   };
 
   // share mess
@@ -163,18 +165,17 @@ const InboxScreen = ({ route }) => {
 
   // Hàm xử lý khi người dùng nhấp vào tin nhắn
   const handleMessageClick = (messageId) => {
-
     Animated.sequence([
       Animated.timing(scaleAnim, {
         toValue: 1.02,
         duration: 100,
-        useNativeDriver: true
+        useNativeDriver: true,
       }),
       Animated.timing(scaleAnim, {
         toValue: 1,
         duration: 100,
-        useNativeDriver: true
-      })
+        useNativeDriver: true,
+      }),
     ]).start();
 
     if (selectedReadStatus === messageId) {
@@ -203,12 +204,12 @@ const InboxScreen = ({ route }) => {
   // Hàm theo dõi typing
   const handleTyping = (text) => {
     setInput(text);
-    
+
     // Nếu đang có timeout, xóa đi để reset
     if (typingTimeout.current) {
       clearTimeout(typingTimeout.current);
     }
-    
+
     // Gửi sự kiện TYPING nếu đang nhập
     if (text.trim() !== "") {
       // Emit typing event
@@ -218,20 +219,20 @@ const InboxScreen = ({ route }) => {
           username: user.username,
           receiver: roomData.receiver,
           // Thêm conversationId để đồng bộ với web
-          conversationId: roomData.receiver._id
+          conversationId: roomData.receiver._id,
         };
-        
+
         console.log("Sending typing data from mobile:", typingData);
         socketRef.current.emit("TYPING", typingData);
       }
-      
+
       // Set timeout để dừng typing sau 1.5 giây không nhập
       typingTimeout.current = setTimeout(() => {
         // Emit stop typing
         if (socketRef.current) {
           socketRef.current.emit("STOP_TYPING", {
             userId: user._id,
-            receiver: roomData.receiver
+            receiver: roomData.receiver,
           });
         }
       }, 1500);
@@ -240,7 +241,7 @@ const InboxScreen = ({ route }) => {
       if (socketRef.current) {
         socketRef.current.emit("STOP_TYPING", {
           userId: user._id,
-          receiver: roomData.receiver
+          receiver: roomData.receiver,
         });
       }
     }
@@ -304,20 +305,25 @@ const InboxScreen = ({ route }) => {
         );
       case "system":
         return (
-          <Text style={
-            msg.sender._id === user._id
-              ? styles.systemMessageTextUser
-              : styles.systemMessageTextFriend}>
+          <Text
+            style={
+              msg.sender._id === user._id
+                ? styles.systemMessageTextUser
+                : styles.systemMessageTextFriend
+            }
+          >
             {msg.msg || ""}
           </Text>
         );
       default:
         return (
-          <Text style={
-            msg.sender._id === user._id
-              ? styles.messageTextUser
-              : styles.messageTextFriend
-          }>
+          <Text
+            style={
+              msg.sender._id === user._id
+                ? styles.messageTextUser
+                : styles.messageTextFriend
+            }
+          >
             {msg.msg || ""}
           </Text>
         );
@@ -339,7 +345,7 @@ const InboxScreen = ({ route }) => {
       userId: user._id,
       username: user.username,
       emoji: emojiText,
-      receiver: roomData.receiver
+      receiver: roomData.receiver,
     };
 
     // Kiểm tra nếu có socket connection thì gửi event
@@ -352,7 +358,7 @@ const InboxScreen = ({ route }) => {
     //   .then((response) => {
     //     if (response.EC === 0) {
     //       console.log("Reaction sent successfully:", response.DT);
-          
+
     //       setReactions((prevReactions) => {
     //         const currentReactions = prevReactions[messageId] || [];
     //         const existingReactionIndex = currentReactions.findIndex(
@@ -389,42 +395,45 @@ const InboxScreen = ({ route }) => {
     //     console.error("Error sending reaction:", error);
     //   });
   };
-  
+
   //Xử lý vị trí popup Reaction
   const handleShowReactionPopup = (event, messageId) => {
     const { pageX, pageY } = event.nativeEvent;
-    
+
     // Lấy kích thước màn hình
-    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-    
+    const { width: screenWidth, height: screenHeight } =
+      Dimensions.get("window");
+
     // Ước lượng kích thước của popup (điều chỉnh theo thiết kế thực tế)
-    const popupWidth = 200;  // Chiều rộng ước lượng của popup
-    const popupHeight = 50;  // Chiều cao ước lượng của popup
-    
+    const popupWidth = 200; // Chiều rộng ước lượng của popup
+    const popupHeight = 50; // Chiều cao ước lượng của popup
+
     // Tính toán vị trí tốt nhất cho popup
-    let x = pageX - 70;  // Vị trí mặc định
-    let y = pageY - 60;  // Vị trí mặc định
-    
+    let x = pageX - 70; // Vị trí mặc định
+    let y = pageY - 60; // Vị trí mặc định
+
     // Xử lý trường hợp vượt quá bên phải màn hình
     if (x + popupWidth > screenWidth) {
-      x = screenWidth - popupWidth - 10;  // 10px padding
+      x = screenWidth - popupWidth - 10; // 10px padding
     }
-    
+
     // Xử lý trường hợp vượt quá bên trái màn hình
     if (x < 10) {
-      x = 10;  // 10px padding
+      x = 10; // 10px padding
     }
-    
+
     // Xử lý trường hợp vượt quá phía trên
-    if (y < 70) {  // 70px là chiều cao của header
-      y = pageY + 20;  // Hiển thị bên dưới thay vì phía trên
+    if (y < 70) {
+      // 70px là chiều cao của header
+      y = pageY + 20; // Hiển thị bên dưới thay vì phía trên
     }
-    
+
     // Xử lý trường hợp vượt quá phía dưới
-    if (y + popupHeight > screenHeight - 70) {  // 70px là chiều cao của input container
-      y = pageY - popupHeight - 20;  // Hiển thị phía trên thay vì bên dưới
+    if (y + popupHeight > screenHeight - 70) {
+      // 70px là chiều cao của input container
+      y = pageY - popupHeight - 20; // Hiển thị phía trên thay vì bên dưới
     }
-    
+
     // Cập nhật vị trí popup và hiển thị
     setReactionPopupPosition({ x, y });
     setMessageIdForReaction(messageId);
@@ -434,23 +443,25 @@ const InboxScreen = ({ route }) => {
   // Hàm kiểm tra hiển thị avatar và timestamp
   const checkMessageDisplay = (currentMsg, prevMsg, index) => {
     // Kiểm tra người gửi có giống nhau không
-    const isSameSender = prevMsg && prevMsg.sender._id === currentMsg.sender._id;
-    
+    const isSameSender =
+      prevMsg && prevMsg.sender._id === currentMsg.sender._id;
+
     // Tính khoảng thời gian giữa 2 tin nhắn (> 10 phút = 600000ms)
-    const timeDiff = prevMsg 
-      ? new Date(currentMsg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime() 
+    const timeDiff = prevMsg
+      ? new Date(currentMsg.createdAt).getTime() -
+        new Date(prevMsg.createdAt).getTime()
       : 0;
     const isLongTimeDiff = timeDiff > 600000; // 10 phút
-    
+
     // Hiển thị avatar khi: tin nhắn đầu tiên, người gửi khác, hoặc khoảng cách > 10p
     const showAvatar = !isSameSender || isLongTimeDiff || index === 0;
-    
+
     // Hiển thị timestamp khi khoảng cách > 10p hoặc là tin nhắn đầu tiên
     const showTimestamp = isLongTimeDiff || index === 0;
-    
+
     // Hiển thị tên người gửi khi: tin nhắn đầu tiên hoặc người gửi khác
     const showSenderName = !isSameSender || index === 0;
-    
+
     return { showAvatar, showTimestamp, showSenderName, isSameSender };
   };
 
@@ -483,7 +494,6 @@ const InboxScreen = ({ route }) => {
   useEffect(() => {
     let receiverOnline; // lấy socketId của người nhận từ danh sách onlineUsers
     if (receiver.type === 1) {
-
       // Reset pagination state
       setPage(1);
       setHasMoreMessages(true);
@@ -613,32 +623,29 @@ const InboxScreen = ({ route }) => {
   }, []);
 
   const handleLoadMessages = async (receiver, type, currentPage = 1) => {
-
     const limit = 20;
 
     try {
-
       // Lưu lại vị trí scroll hiện tại trước khi tải
       let currentScrollPosition = null;
       let contentHeight = null;
-      
+
       if (currentPage > 1 && flatListRef.current) {
         // Ghi lại độ dài nội dung và vị trí cuộn hiện tại
         contentHeight = allMsg.length;
       }
 
       const res = await dispatch(
-        loadMessages({ 
-          sender: user._id, 
-          receiver: receiver, 
+        loadMessages({
+          sender: user._id,
+          receiver: receiver,
           type: type,
           page: currentPage,
-          limit: limit 
+          limit: limit,
         })
       );
 
       if (res.payload.EC === 0) {
-
         let newMessages = res.payload.DT;
         const filteredMessages = newMessages.filter(
           (msg) => !msg.memberDel?.includes(user._id)
@@ -657,14 +664,16 @@ const InboxScreen = ({ route }) => {
         } else {
           // Prepend new messages to existing ones (for pagination)
           // Also avoid duplicates by checking message IDs
-          const existingIds = new Set(allMsg.map(msg => msg._id));
-          const uniqueNewMessages = filteredMessages.filter(msg => !existingIds.has(msg._id));
+          const existingIds = new Set(allMsg.map((msg) => msg._id));
+          const uniqueNewMessages = filteredMessages.filter(
+            (msg) => !existingIds.has(msg._id)
+          );
 
           // Lưu chiều cao nội dung hiện tại
           const previousMsgCount = allMsg.length;
-          
-          setAllMsg(prevMessages => [...uniqueNewMessages, ...prevMessages]);
-          
+
+          setAllMsg((prevMessages) => [...uniqueNewMessages, ...prevMessages]);
+
           if (filteredMessages.length > 0) {
             setOldestMessageId(filteredMessages[0]._id);
           }
@@ -673,16 +682,16 @@ const InboxScreen = ({ route }) => {
           setTimeout(() => {
             if (flatListRef.current && uniqueNewMessages.length > 0) {
               // Dùng index của message cũ đầu tiên để định vị scroll
-              const oldFirstMsgIndex = uniqueNewMessages.length; 
+              const oldFirstMsgIndex = uniqueNewMessages.length;
               flatListRef.current.scrollToIndex({
                 index: oldFirstMsgIndex > 0 ? oldFirstMsgIndex - 1 : 0,
                 animated: false,
-                viewPosition: 0 // 0 là đầu màn hình, 1 là cuối màn hình
+                viewPosition: 0, // 0 là đầu màn hình, 1 là cuối màn hình
               });
             }
           }, 100);
         }
-        
+
         // If we didn't get any new messages but hasMoreMessages is still true
         if (filteredMessages.length === 0 && hasMoreMessages) {
           setHasMoreMessages(false);
@@ -695,7 +704,6 @@ const InboxScreen = ({ route }) => {
           }, 500);
         }
       }
-
     } catch (error) {
       console.error("Error loading messages:", error);
     }
@@ -703,9 +711,9 @@ const InboxScreen = ({ route }) => {
 
   const handleLoadMoreMessages = async () => {
     if (isLoadingMore || !hasMoreMessages) return;
-    
+
     setIsLoadingMore(true);
-    
+
     try {
       const nextPage = page + 1;
       await handleLoadMessages(receiver._id, receiver.type, nextPage);
@@ -724,14 +732,14 @@ const InboxScreen = ({ route }) => {
 
   // Thêm vào nơi phù hợp trong component
   const onScrollToIndexFailed = (info) => {
-    const wait = new Promise(resolve => setTimeout(resolve, 500));
+    const wait = new Promise((resolve) => setTimeout(resolve, 500));
     wait.then(() => {
       // Thử scrollToIndex với index gần đó nhất mà hợp lệ
       if (flatListRef.current) {
         flatListRef.current.scrollToIndex({
           index: Math.min(info.highestMeasuredFrameIndex, info.index - 1),
           animated: false,
-          viewPosition: 0
+          viewPosition: 0,
         });
       }
     });
@@ -782,7 +790,7 @@ const InboxScreen = ({ route }) => {
           socketRef.current.emit("MARK_READ", {
             messageId,
             userId: user._id,
-            conversationId: roomData.receiver._id
+            conversationId: roomData.receiver._id,
           });
           console.log("Socket MARK_READ", response);
         }
@@ -795,13 +803,19 @@ const InboxScreen = ({ route }) => {
   // Đánh dấu tất cả tin nhắn là đã đọc
   const markAllMessagesAsRead = async (conversationId) => {
     try {
-      console.log("Marking all messages as read for conversation:", conversationId);
-      const response = await markAllMessagesAsReadService(conversationId, user._id);
+      console.log(
+        "Marking all messages as read for conversation:",
+        conversationId
+      );
+      const response = await markAllMessagesAsReadService(
+        conversationId,
+        user._id
+      );
       if (response.EC === 0) {
         // Emit socket event
         socketRef.current.emit("MARK_ALL_READ", {
           userId: user._id,
-          conversationId: conversationId
+          conversationId: conversationId,
         });
         console.log("Socket MARK_ALL_READ", response);
       }
@@ -1050,19 +1064,21 @@ const InboxScreen = ({ route }) => {
       socketRef.current.on("RECEIVED_REACTION", (data) => {
         console.log("Received reaction:", data);
         const { messageId, userId, emoji } = data;
-        
-        setReactions(prevReactions => {
+
+        setReactions((prevReactions) => {
           const currentReactions = prevReactions[messageId] || [];
-          
+
           const existingReactionIndex = currentReactions.findIndex(
-            reaction => String(reaction.userId) === String(userId) && reaction.emoji === emoji
+            (reaction) =>
+              String(reaction.userId) === String(userId) &&
+              reaction.emoji === emoji
           );
-          
+
           let updatedReactions;
           if (existingReactionIndex !== -1) {
             // Nếu đã tồn tại chính xác emoji này từ user này -> xóa
-            updatedReactions = currentReactions.filter((_, index) => 
-              index !== existingReactionIndex
+            updatedReactions = currentReactions.filter(
+              (_, index) => index !== existingReactionIndex
             );
           } else {
             // Nếu chưa có emoji này -> thêm mới, không cần xóa emoji khác
@@ -1071,14 +1087,14 @@ const InboxScreen = ({ route }) => {
               {
                 userId: userId,
                 emoji: emoji,
-                count: 1
-              }
+                count: 1,
+              },
             ];
           }
-          
+
           return {
             ...prevReactions,
-            [messageId]: updatedReactions
+            [messageId]: updatedReactions,
           };
         });
       });
@@ -1094,23 +1110,22 @@ const InboxScreen = ({ route }) => {
         socketRef.current.off("RECEIVED_REACTION");
         socketRef.current.off("REACTION_ERROR");
       };
-
     }
   }, [roomData.receiver]);
-  
+
   //Trích xuất ID từ object MongoDB
   const extractId = (idObject) => {
     if (!idObject) return null;
-    
+
     // Nếu là object với $oid
     if (idObject.$oid) return idObject.$oid;
-    
+
     // Nếu là string
-    if (typeof idObject === 'string') return idObject;
-    
+    if (typeof idObject === "string") return idObject;
+
     // Nếu là object MongoDB đã chuyển đổi
     if (idObject.toString) return idObject.toString();
-    
+
     return null;
   };
 
@@ -1119,9 +1134,9 @@ const InboxScreen = ({ route }) => {
     if (!readBy || !Array.isArray(readBy) || readBy.length === 0) {
       return { readers: [], count: 0 };
     }
-    
+
     // Lọc bỏ người dùng hiện tại
-    const filteredReaders = readBy.filter(readerId => {
+    const filteredReaders = readBy.filter((readerId) => {
       const id1 = extractId(readerId);
       const id2 = extractId(currentUserId);
       return id1 !== id2;
@@ -1131,19 +1146,25 @@ const InboxScreen = ({ route }) => {
     if (filteredReaders.length === 0) {
       return { readers: [], count: 0 };
     }
-    
+
     // Tìm thông tin chi tiết của người đọc (tối đa 3 người)
-    const detailedReaders = filteredReaders
-      .slice(0, 3)
-      .map(readerId => {
-        const id = extractId(readerId);
-        const memberInfo = conversations.find(conv => extractId(conv._id) === id);
-        return memberInfo || { _id: id, avatar: "https://i.imgur.com/l5HXBdTg.jpg", username: "Unknown" };
-      });
-    
+    const detailedReaders = filteredReaders.slice(0, 3).map((readerId) => {
+      const id = extractId(readerId);
+      const memberInfo = conversations.find(
+        (conv) => extractId(conv._id) === id
+      );
+      return (
+        memberInfo || {
+          _id: id,
+          avatar: "https://i.imgur.com/l5HXBdTg.jpg",
+          username: "Unknown",
+        }
+      );
+    });
+
     return {
       readers: detailedReaders,
-      count: filteredReaders.length
+      count: filteredReaders.length,
     };
   };
 
@@ -1160,12 +1181,13 @@ const InboxScreen = ({ route }) => {
     if (allMsg && allMsg.length > 0) {
       // Tìm tin nhắn chưa đọc từ người khác
       const unreadMessages = allMsg.filter(
-        msg => msg.sender._id !== user._id && 
-              (!msg.readBy || !msg.readBy.includes(user._id))
+        (msg) =>
+          msg.sender._id !== user._id &&
+          (!msg.readBy || !msg.readBy.includes(user._id))
       );
-      
+
       // Đánh dấu từng tin nhắn chưa đọc
-      unreadMessages.forEach(msg => {
+      unreadMessages.forEach((msg) => {
         markMessageAsRead(msg._id);
       });
     }
@@ -1176,26 +1198,25 @@ const InboxScreen = ({ route }) => {
     if (socketRef.current) {
       // Lắng nghe sự kiện USER_TYPING
       socketRef.current.on("USER_TYPING", (data) => {
-
         console.log("Received USER_TYPING in mobile:", data);
         console.log("Mobile current room:", roomData.receiver._id);
 
         const { userId, username, conversationId } = data;
-        
+
         // Kiểm tra xem sự kiện typing có thuộc conversation hiện tại không
         if (userId === roomData.receiver._id) {
           console.log(`${username} is typing...`);
           setTypingUsers((prev) => ({
             ...prev,
-            [userId]: username
+            [userId]: username,
           }));
         }
       });
-      
+
       // Lắng nghe sự kiện USER_STOP_TYPING
       socketRef.current.on("USER_STOP_TYPING", (data) => {
         const { userId, conversationId } = data;
-        
+
         // Chỉ xử lý nếu đúng conversation hiện tại
         if (userId === roomData.receiver._id) {
           console.log(`User ${userId} stopped typing`);
@@ -1206,17 +1227,17 @@ const InboxScreen = ({ route }) => {
           });
         }
       });
-      
+
       // Cleanup
       return () => {
         socketRef.current.off("USER_TYPING");
         socketRef.current.off("USER_STOP_TYPING");
-        
+
         // Dừng typing khi rời khỏi màn hình
         if (socketRef.current) {
           socketRef.current.emit("STOP_TYPING", {
             userId: user._id,
-            receiver: roomData.receiver
+            receiver: roomData.receiver,
           });
         }
       };
@@ -1226,31 +1247,35 @@ const InboxScreen = ({ route }) => {
   // Socket đã đọc
   useEffect(() => {
     if (socketRef.current) {
-
       // Xử lý sự kiện tin nhắn đã đọc
       socketRef.current.on("MESSAGE_READ", (data) => {
         // Cập nhật trạng thái đã đọc cho tin nhắn
-        setAllMsg((prevMsgs) => 
-          prevMsgs.map((msg) => 
-            msg._id === data.messageId 
-            ? { ...msg, isRead: true, readBy: [...(msg.readBy || []), data.userId] } 
-            : msg
+        setAllMsg((prevMsgs) =>
+          prevMsgs.map((msg) =>
+            msg._id === data.messageId
+              ? {
+                  ...msg,
+                  isRead: true,
+                  readBy: [...(msg.readBy || []), data.userId],
+                }
+              : msg
           )
         );
       });
-      
+
       // Xử lý sự kiện tất cả tin nhắn đã đọc
       socketRef.current.on("ALL_MESSAGES_READ", (data) => {
         // Cập nhật trạng thái đã đọc cho tất cả tin nhắn từ người dùng cụ thể
-        setAllMsg((prevMsgs) => 
-          prevMsgs.map((msg) => 
-            (msg.sender._id === user._id && msg.receiver._id === data.conversationId)
-            ? { 
-                ...msg, 
-                isRead: true, 
-                readBy: [...new Set([...(msg.readBy || []), data.userId])] 
-              } 
-            : msg
+        setAllMsg((prevMsgs) =>
+          prevMsgs.map((msg) =>
+            msg.sender._id === user._id &&
+            msg.receiver._id === data.conversationId
+              ? {
+                  ...msg,
+                  isRead: true,
+                  readBy: [...new Set([...(msg.readBy || []), data.userId])],
+                }
+              : msg
           )
         );
       });
@@ -1503,6 +1528,16 @@ const InboxScreen = ({ route }) => {
   // call
   const handleStartCall = route.params?.handleStartCall;
 
+  // lọc xóa phía tôi
+  const filteredMessages = allMsg.filter(
+    (item) =>
+      !(
+        (item.isDeletedBySender && item.sender._id === user._id) ||
+        (item.isDeletedByReceiver && item.receiver._id === user._id) ||
+        (Array.isArray(item.memberDel) && item.memberDel.includes(user._id))
+      )
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -1557,203 +1592,259 @@ const InboxScreen = ({ route }) => {
 
       <FlatList
         ref={flatListRef}
-        data={allMsg}
+        data={filteredMessages}
         keyExtractor={(item) => item._id}
         renderItem={({ item, index }) => {
-
-          const prevMsg = index > 0 ? allMsg[index - 1] : null;
-          const { showAvatar, showTimestamp, showSenderName, isSameSender } = 
+          const prevMsg = index > 0 ? filteredMessages[index - 1] : null;
+          const { showAvatar, showTimestamp, showSenderName, isSameSender } =
             checkMessageDisplay(item, prevMsg, index);
-          
+
           // Lấy thông tin người gửi
-          const senderAvatar = item.sender._id !== user._id ? 
-            (item.sender.avatar || "https://i.imgur.com/l5HXBdTg.jpg") :
-            null;
-          const senderName = item.sender._id !== user._id ? item.sender.name || "User" : null;
+          const senderAvatar =
+            item.sender._id !== user._id
+              ? item.sender.avatar || "https://i.imgur.com/l5HXBdTg.jpg"
+              : null;
+          const senderName =
+            item.sender._id !== user._id ? item.sender.name || "User" : null;
 
           return (
             <View>
-
-          {showTimestamp && (
-            <View style={styles.timestampContainer}>
-              <Text style={styles.timestampText}>
-                {new Date(item.createdAt).toLocaleString('vi-VN', {
-                  hour: '2-digit', 
-                  minute: '2-digit',
-                  day: '2-digit', 
-                  month: '2-digit', 
-                  year: 'numeric'
-                })}
-              </Text>
-            </View>
-          )}
-          <Animated.View
-            style={[
-              styles.message,
-              item.sender._id === user._id
-                ? styles.userMessage
-                : styles.friendMessage,
-              selectedReadStatus === item._id ? { transform: [{ scale: scaleAnim }] } : {}
-            ]}
-          >
-            {/* Hiển thị avatar và tên người gửi - kiểu giống ảnh mẫu */}
-            {item.sender._id !== user._id && showAvatar && (
-              <View style={styles.senderInfoContainer}>
-                <Image
-                  source={{ uri: senderAvatar }}
-                  style={styles.avatarCircle}
-                />
-              </View>
-            )}
-            
-            {/* Nếu không phải tin nhắn đầu và cùng người gửi, hiển thị khoảng trống */}
-            {item.sender._id !== user._id && !showAvatar && (
-              <View style={styles.avatarPlaceholder} />
-            )}
-
-            <View style={styles.messageContentContainer}>
-
-              <View style={[
-                styles.messageBubble,
-                item.sender._id === user._id ? styles.userBubble : styles.friendBubble
-              ]}>
-
-                {item.sender._id !== user._id && showAvatar && (
-                  <Text style={styles.senderNameBelow}>{senderName}</Text>
-                )}
-
-                {/* Nội dung tin nhắn */}
-                <TouchableOpacity
-                  onLongPress={() => {
-                    setSelectedMessage(item);
-                    setModalVisible(true);
-                  }}
-                  onPress={() => item.sender._id === user._id && handleMessageClick(item._id)}
-                  style={styles.messageInner}
-                >{renderMessageContent(item)}</TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={
-                    item.sender._id === user._id
-                      ? styles.reactionButtonUser
-                      : styles.reactionButtonFriend}
-                  onPress={() => {
-                    handleReactToMessage(item._id, "heart");
-                  }}
-                  onLongPress={(event) => {
-                    handleShowReactionPopup(event, item._id);
-                  }}
-                >
-                  <FontAwesome5 name="smile" size={18} color="#666" />
-                </TouchableOpacity>
-
-              </View>
-
-              {/* Hiển thị reactions khi có */}
-              {reactions[item._id] && reactions[item._id].length > 0 && (
-                <View style={styles.reactionSummary}>
-                  {Object.entries(
-                    reactions[item._id].reduce((acc, reaction) => {
-                      if (!acc[reaction.emoji]) {
-                        acc[reaction.emoji] = 0;
-                      }
-                      acc[reaction.emoji] += 1;
-                      return acc;
-                    }, {})
-                  ).map(([emoji, count], index) => (
-                    <View key={index} style={styles.reactionItem}>
-                      <Text style={styles.reactionEmoji}>
-                        {textToEmojiMap[emoji] || emoji}
-                      </Text>
-                      <Text style={styles.reactionCount}>{count}</Text>
-                    </View>
-                  ))}
+              {showTimestamp && (
+                <View style={styles.timestampContainer}>
+                  <Text style={styles.timestampText}>
+                    {new Date(item.createdAt).toLocaleString("vi-VN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </Text>
                 </View>
               )}
-
-              <View style={styles.messageTimeContainer}>
-                {/* Hiển thị thời gian */}
-                <Text style={[
-                  styles.messageTime,
-                  item.sender._id === user._id ? styles.userMessageTime : styles.friendMessageTime
-                ]}>
-                  {convertTime(item.createdAt)}
-                </Text>
-                {item.sender._id === user._id && (
-                  <View style={styles.readStatusContainer}>
-                    {index === allMsg.length - 1 || selectedReadStatus === item._id ? (
-                      <>
-                        {receiver.type === 2 ? (
-                          // Chat nhóm
-                          item.readBy && item.readBy.length > 0 ? (
-                            <View style={styles.readStatusInner}>
-                              {(() => {
-                                {/* Hiển thị avatar người đọc */}
-                                // Xử lý dữ liệu readBy
-                                const { readers, count } = processReadByData(item.readBy, user._id, conversations);
-                                
-                                return (
-                                  <>
-                                    {readers.length > 0 ? (
-                                      <>
-                                        <View style={styles.readAvatarContainer}>
-                                          {readers.map((reader, index) => (
-                                            <Image 
-                                              key={index}
-                                              source={{ uri: reader.avatar || "https://i.imgur.com/l5HXBdTg.jpg" }}
-                                              style={[
-                                                styles.readAvatar,
-                                                { marginLeft: index > 0 ? -5 : 0 }
-                                              ]}
-                                            />
-                                          ))}
-                                          {count > 3 && (
-                                            <View style={styles.readCounter}>
-                                              <Text style={styles.readCounterText}>+{count - 3}</Text>
-                                            </View>
-                                          )}
-                                        </View>
-                                      </>
-                                    ) : (
-                                      <Text>
-                                        <FontAwesome5 name="check" size={12} color="#666" />
-                                      </Text>
-                                    )}
-                                  </>
-                                );
-                              })()}
-                            </View>
-                          ) : (
-                            <Text>
-                              <FontAwesome5 name="check" size={12} color="#666" />
-                            </Text>
-                          )
-                        ) : (
-                          // Chat 1-1
-                          item.readBy && item.readBy.some(readerId => 
-                            extractId(readerId) === extractId(receiver._id)
-                          ) ? (
-                            <View style={styles.readStatusInner}>
-                              <Image
-                                source={{ uri: receiver.avatar || "https://i.imgur.com/l5HXBdTg.jpg" }}
-                                style={styles.readAvatarSingle}
-                              />
-                            </View>
-                          ) : (
-                            <Text>
-                              <FontAwesome5 name="check" size={12} color="#666" />
-                            </Text>
-                          )
-                        )}
-                      </>
-                    ) : null}
+              <Animated.View
+                style={[
+                  styles.message,
+                  item.sender._id === user._id
+                    ? styles.userMessage
+                    : styles.friendMessage,
+                  selectedReadStatus === item._id
+                    ? { transform: [{ scale: scaleAnim }] }
+                    : {},
+                ]}
+              >
+                {/* Hiển thị avatar và tên người gửi - kiểu giống ảnh mẫu */}
+                {item.sender._id !== user._id && showAvatar && (
+                  <View style={styles.senderInfoContainer}>
+                    <Image
+                      source={{ uri: senderAvatar }}
+                      style={styles.avatarCircle}
+                    />
                   </View>
                 )}
-              </View>
+
+                {/* Nếu không phải tin nhắn đầu và cùng người gửi, hiển thị khoảng trống */}
+                {item.sender._id !== user._id && !showAvatar && (
+                  <View style={styles.avatarPlaceholder} />
+                )}
+
+                <View style={styles.messageContentContainer}>
+                  <View
+                    style={[
+                      styles.messageBubble,
+                      item.sender._id === user._id
+                        ? styles.userBubble
+                        : styles.friendBubble,
+                    ]}
+                  >
+                    {item.sender._id !== user._id && showAvatar && (
+                      <Text style={styles.senderNameBelow}>{senderName}</Text>
+                    )}
+
+                    {/* Nội dung tin nhắn */}
+                    <TouchableOpacity
+                      onLongPress={() => {
+                        setSelectedMessage(item);
+                        setModalVisible(true);
+                      }}
+                      onPress={() =>
+                        item.sender._id === user._id &&
+                        handleMessageClick(item._id)
+                      }
+                      style={styles.messageInner}
+                    >
+                      {renderMessageContent(item)}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={
+                        item.sender._id === user._id
+                          ? styles.reactionButtonUser
+                          : styles.reactionButtonFriend
+                      }
+                      onPress={() => {
+                        handleReactToMessage(item._id, "heart");
+                      }}
+                      onLongPress={(event) => {
+                        handleShowReactionPopup(event, item._id);
+                      }}
+                    >
+                      <FontAwesome5 name="smile" size={18} color="#666" />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Hiển thị reactions khi có */}
+                  {reactions[item._id] && reactions[item._id].length > 0 && (
+                    <View style={styles.reactionSummary}>
+                      {Object.entries(
+                        reactions[item._id].reduce((acc, reaction) => {
+                          if (!acc[reaction.emoji]) {
+                            acc[reaction.emoji] = 0;
+                          }
+                          acc[reaction.emoji] += 1;
+                          return acc;
+                        }, {})
+                      ).map(([emoji, count], index) => (
+                        <View key={index} style={styles.reactionItem}>
+                          <Text style={styles.reactionEmoji}>
+                            {textToEmojiMap[emoji] || emoji}
+                          </Text>
+                          <Text style={styles.reactionCount}>{count}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  <View style={styles.messageTimeContainer}>
+                    {/* Hiển thị thời gian */}
+                    <Text
+                      style={[
+                        styles.messageTime,
+                        item.sender._id === user._id
+                          ? styles.userMessageTime
+                          : styles.friendMessageTime,
+                      ]}
+                    >
+                      {convertTime(item.createdAt)}
+                    </Text>
+                    {item.sender._id === user._id && (
+                      <View style={styles.readStatusContainer}>
+                        {index === allMsg.length - 1 ||
+                        selectedReadStatus === item._id ? (
+                          <>
+                            {receiver.type === 2 ? (
+                              // Chat nhóm
+                              item.readBy && item.readBy.length > 0 ? (
+                                <View style={styles.readStatusInner}>
+                                  {(() => {
+                                    {
+                                      /* Hiển thị avatar người đọc */
+                                    }
+                                    // Xử lý dữ liệu readBy
+                                    const { readers, count } =
+                                      processReadByData(
+                                        item.readBy,
+                                        user._id,
+                                        conversations
+                                      );
+
+                                    return (
+                                      <>
+                                        {readers.length > 0 ? (
+                                          <>
+                                            <View
+                                              style={styles.readAvatarContainer}
+                                            >
+                                              {readers.map((reader, index) => (
+                                                <Image
+                                                  key={index}
+                                                  source={{
+                                                    uri:
+                                                      reader.avatar ||
+                                                      "https://i.imgur.com/l5HXBdTg.jpg",
+                                                  }}
+                                                  style={[
+                                                    styles.readAvatar,
+                                                    {
+                                                      marginLeft:
+                                                        index > 0 ? -5 : 0,
+                                                    },
+                                                  ]}
+                                                />
+                                              ))}
+                                              {count > 3 && (
+                                                <View
+                                                  style={styles.readCounter}
+                                                >
+                                                  <Text
+                                                    style={
+                                                      styles.readCounterText
+                                                    }
+                                                  >
+                                                    +{count - 3}
+                                                  </Text>
+                                                </View>
+                                              )}
+                                            </View>
+                                          </>
+                                        ) : (
+                                          <Text>
+                                            <FontAwesome5
+                                              name="check"
+                                              size={12}
+                                              color="#666"
+                                            />
+                                          </Text>
+                                        )}
+                                      </>
+                                    );
+                                  })()}
+                                </View>
+                              ) : (
+                                <Text>
+                                  <FontAwesome5
+                                    name="check"
+                                    size={12}
+                                    color="#666"
+                                  />
+                                </Text>
+                              )
+                            ) : // Chat 1-1
+                            item.readBy &&
+                              item.readBy.some(
+                                (readerId) =>
+                                  extractId(readerId) ===
+                                  extractId(receiver._id)
+                              ) ? (
+                              <View style={styles.readStatusInner}>
+                                <Image
+                                  source={{
+                                    uri:
+                                      receiver.avatar ||
+                                      "https://i.imgur.com/l5HXBdTg.jpg",
+                                  }}
+                                  style={styles.readAvatarSingle}
+                                />
+                              </View>
+                            ) : (
+                              <Text>
+                                <FontAwesome5
+                                  name="check"
+                                  size={12}
+                                  color="#666"
+                                />
+                              </Text>
+                            )}
+                          </>
+                        ) : null}
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </Animated.View>
             </View>
-          </Animated.View>
-          </View>
-        )}}
+          );
+        }}
         contentContainerStyle={styles.messagesContainer}
         scrollEventThrottle={16} //Hiệu suất scroll
         onScrollToIndexFailed={onScrollToIndexFailed}
@@ -1767,21 +1858,28 @@ const InboxScreen = ({ route }) => {
         }}
         onScroll={({ nativeEvent }) => {
           // Check if user has scrolled to the top
-          if (nativeEvent.contentOffset.y <= 0 && !isLoadingMore && hasMoreMessages) {
+          if (
+            nativeEvent.contentOffset.y <= 0 &&
+            !isLoadingMore &&
+            hasMoreMessages
+          ) {
             setPreventAutoScroll(true); // Ngăn scroll xuống dưới khi đang tải thêm
             handleLoadMoreMessages();
           }
 
           // Kiểm tra vị trí cuộn để quyết định hiển thị nút scroll to bottom
-          const isScrolledUp = 
-            nativeEvent.contentOffset.y < 
-            nativeEvent.contentSize.height - nativeEvent.layoutMeasurement.height - 200; // 200px là ngưỡng
-          
+          const isScrolledUp =
+            nativeEvent.contentOffset.y <
+            nativeEvent.contentSize.height -
+              nativeEvent.layoutMeasurement.height -
+              200; // 200px là ngưỡng
+
           setShowScrollButton(isScrolledUp);
-          
+
           // Nếu người dùng scroll xuống dưới, bật lại auto scroll
           if (
-            nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >=
+            nativeEvent.layoutMeasurement.height +
+              nativeEvent.contentOffset.y >=
             nativeEvent.contentSize.height - 50
           ) {
             setPreventAutoScroll(false);
@@ -1794,7 +1892,9 @@ const InboxScreen = ({ route }) => {
             {isLoadingMore ? (
               <ActivityIndicator size="small" color="#007bff" />
             ) : !hasMoreMessages ? (
-              <Text style={styles.noMoreMessagesText}>Không còn tin nhắn cũ hơn</Text>
+              <Text style={styles.noMoreMessagesText}>
+                Không còn tin nhắn cũ hơn
+              </Text>
             ) : null}
           </View>
         )}
@@ -1884,27 +1984,29 @@ const InboxScreen = ({ route }) => {
       {/* Popup Reaction */}
       {reactionModalVisible && (
         <View style={StyleSheet.absoluteFill}>
-          <TouchableWithoutFeedback onPress={() => setReactionModalVisible(false)}>
+          <TouchableWithoutFeedback
+            onPress={() => setReactionModalVisible(false)}
+          >
             <View style={styles.reactionPopupOverlay}>
-              <View 
+              <View
                 style={[
                   styles.reactionPopupContainer,
                   {
-                    position: 'absolute',
+                    position: "absolute",
                     left: reactionPopupPosition.x,
                     top: reactionPopupPosition.y,
-                  }
+                  },
                 ]}
               >
                 {[
-                  {emoji: "❤️", type: "heart"},
-                  {emoji: "👍", type: "thumbs-up"},
-                  {emoji: "😂", type: "laugh"},
-                  {emoji: "😢", type: "sad-cry"},
-                  {emoji: "😡", type: "angry"}
+                  { emoji: "❤️", type: "heart" },
+                  { emoji: "👍", type: "thumbs-up" },
+                  { emoji: "😂", type: "laugh" },
+                  { emoji: "😢", type: "sad-cry" },
+                  { emoji: "😡", type: "angry" },
                 ].map((item, index) => (
-                  <TouchableOpacity 
-                    key={index} 
+                  <TouchableOpacity
+                    key={index}
                     style={styles.reactionEmojiButton}
                     onPress={() => {
                       if (messageIdForReaction) {
@@ -1937,7 +2039,9 @@ const InboxScreen = ({ route }) => {
             {selectedMessage && (
               <View style={styles.highlightedMessage}>
                 <Text style={styles.messageText} numberOfLines={2}>
-                  {selectedMessage.type === "text" ? selectedMessage.msg : "Media content"}
+                  {selectedMessage.type === "text"
+                    ? selectedMessage.msg
+                    : "Media content"}
                 </Text>
                 <Text style={styles.messageTime}>
                   {convertTime(selectedMessage.createdAt)}
@@ -2082,8 +2186,8 @@ const InboxScreen = ({ route }) => {
             />
 
             {showScrollButton && (
-              <TouchableOpacity 
-                style={styles.scrollToBottomButton} 
+              <TouchableOpacity
+                style={styles.scrollToBottomButton}
                 onPress={scrollToBottom}
               >
                 <View style={styles.scrollButtonInner}>
@@ -2162,9 +2266,9 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   message: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginVertical: 5,
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     maxWidth: "100%",
   },
   userMessage: {
@@ -2178,10 +2282,10 @@ const styles = StyleSheet.create({
   },
   messageTextUser: {
     color: "white",
-    flexDirection: 'row', 
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     maxWidth: "70%",
-    minWidth: "50px", 
+    minWidth: "50px",
     marginLeft: 10,
     fontSize: ".9375rem",
     fontWeight: "400",
@@ -2189,10 +2293,10 @@ const styles = StyleSheet.create({
   },
   messageTextFriend: {
     color: "black",
-    flexDirection: 'row', // Đảm bảo text hiển thị theo chiều ngang
-    flexWrap: 'wrap',
+    flexDirection: "row", // Đảm bảo text hiển thị theo chiều ngang
+    flexWrap: "wrap",
     maxWidth: "70%",
-    minWidth: "50px", 
+    minWidth: "50px",
     marginRight: 10,
     fontSize: ".9375rem",
     fontWeight: "400",
@@ -2307,44 +2411,42 @@ const styles = StyleSheet.create({
     height: 32,
     marginRight: 8,
   },
-  
+
   // Timestamp styles
   timestampContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 10,
   },
   timestampText: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: "#e0e0e0",
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 15,
     fontSize: 12,
-    color: '#666',
+    color: "#666",
   },
-  
+
   // Sender name styles
   senderName: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
     marginBottom: 2,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
-  
+
   // Message container styles
-  messageContentContainer: {
-    
-  },
-  
+  messageContentContainer: {},
+
   // Reaction styles
   reactionSummary: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
+    flexDirection: "row",
+    backgroundColor: "white",
     borderRadius: 16,
     paddingHorizontal: 6,
     paddingVertical: 3,
     marginTop: 2,
-    alignSelf: 'flex-start',
-    shadowColor: '#000',
+    alignSelf: "flex-start",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 2,
@@ -2352,10 +2454,10 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   reactionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginRight: 6,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: 10,
@@ -2363,43 +2465,43 @@ const styles = StyleSheet.create({
   reactionCount: {
     fontSize: 12,
     marginLeft: 2,
-    color: '#666',
-    fontWeight: '500',
+    color: "#666",
+    fontWeight: "500",
   },
-  
+
   // Popup reaction styles
   reactionBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
     marginVertical: 15,
   },
   emojiButton: {
     padding: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     borderRadius: 20,
     marginHorizontal: 4,
   },
-  
+
   // System message style
   systemMessageTextFriend: {
-    fontStyle: 'italic',
-    color: '#666',
+    fontStyle: "italic",
+    color: "#666",
     marginRight: 10,
   },
 
   systemMessageTextUser: {
-    fontStyle: 'italic',
-    color: 'white',
+    fontStyle: "italic",
+    color: "white",
     marginLeft: 10,
   },
 
   senderInfoContainer: {
     marginRight: 8,
-    alignItems: 'center',
+    alignItems: "center",
     width: 40,
     marginBottom: 5,
-    height: "100%"
+    height: "100%",
   },
 
   avatarCircle: {
@@ -2412,29 +2514,29 @@ const styles = StyleSheet.create({
 
   senderNameBelow: {
     fontSize: 12,
-    color: '#5a6981',
+    color: "#5a6981",
     marginTop: 2,
-    fontWeight: '400',
+    fontWeight: "400",
     marginBottom: 5,
   },
 
   messageBubble: {
     borderRadius: 16,
     padding: 10,
-    position: 'relative',
-    maxWidth: '100%',
-    display: 'block'
+    position: "relative",
+    maxWidth: "100%",
+    display: "block",
   },
 
   userBubble: {
-    backgroundColor: '#0084ff',
-    alignSelf: 'flex-end',
+    backgroundColor: "#0084ff",
+    alignSelf: "flex-end",
     borderTopRightRadius: 4,
   },
 
   friendBubble: {
-    backgroundColor: '#e4e6eb',
-    alignSelf: 'flex-start',
+    backgroundColor: "#e4e6eb",
+    alignSelf: "flex-start",
     borderTopLeftRadius: 4,
   },
 
@@ -2444,16 +2546,16 @@ const styles = StyleSheet.create({
 
   // Style cho nút reaction
   reactionButtonFriend: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -12,
     right: -5,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     width: 24,
     height: 24,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.5,
@@ -2462,16 +2564,16 @@ const styles = StyleSheet.create({
   },
 
   reactionButtonUser: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -12,
     left: -5,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     width: 24,
     height: 24,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.5,
@@ -2480,7 +2582,7 @@ const styles = StyleSheet.create({
   },
 
   reactionEmoji: {
-    fontSize: 16, 
+    fontSize: 16,
   },
 
   // Styles cập nhật cho emoji
@@ -2489,13 +2591,13 @@ const styles = StyleSheet.create({
   },
   emojiButton: {
     padding: 10,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     borderRadius: 25,
     margin: 5,
     height: 50,
     width: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   // Style cho thời gian
@@ -2504,29 +2606,28 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   userMessageTime: {
-    color: '#a0a0a0',
-    alignSelf: 'flex-end',
+    color: "#a0a0a0",
+    alignSelf: "flex-end",
   },
   friendMessageTime: {
-    color: '#666',
-    alignSelf: 'flex-start',
+    color: "#666",
+    alignSelf: "flex-start",
   },
-  
 
   // Reaction modal styles
   reactionModalOverlay: {
     flex: 1,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "transparent",
+    justifyContent: "center",
+    alignItems: "center",
   },
   reactionModalContainer: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 30,
     padding: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    shadowColor: '#000',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
@@ -2559,14 +2660,14 @@ const styles = StyleSheet.create({
 
   reactionPopupOverlay: {
     flex: 1,
-    backgroundColor: 'transparent', // Nền trong suốt
+    backgroundColor: "transparent", // Nền trong suốt
   },
   reactionPopupContainer: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 30,
     padding: 5,
-    flexDirection: 'row',
-    shadowColor: '#000',
+    flexDirection: "row",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
@@ -2575,47 +2676,47 @@ const styles = StyleSheet.create({
   },
 
   typingContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 60,
     left: 15,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
     zIndex: 10,
-    maxWidth: '80%',
+    maxWidth: "80%",
   },
   typingText: {
-    color: '#666',
+    color: "#666",
     fontSize: 12,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   messageTimeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginTop: 4,
   },
   readAvatarSingle: {
-    width: 14, 
-    height: 14, 
+    width: 14,
+    height: 14,
     borderRadius: 7,
     borderWidth: 1,
-    borderColor: '#fff',
-    marginLeft: 2
+    borderColor: "#fff",
+    marginLeft: 2,
   },
   readStatusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 4
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 4,
   },
   readAvatarContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginLeft: 2,
   },
   readAvatar: {
@@ -2623,65 +2724,65 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
     borderWidth: 1,
-    borderColor: '#fff',
+    borderColor: "#fff",
   },
   readCounter: {
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    backgroundColor: "rgba(0,0,0,0.1)",
     borderRadius: 10,
     paddingHorizontal: 4,
     marginLeft: 2,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   readCounterText: {
     fontSize: 9,
-    color: '#555',
+    color: "#555",
   },
   messageContentWrapper: {
-    position: 'relative',
+    position: "relative",
   },
   selectedMessage: {
-    backgroundColor: 'rgba(0, 122, 255, 0.05)', // Màu nhẹ khi được chọn
+    backgroundColor: "rgba(0, 122, 255, 0.05)", // Màu nhẹ khi được chọn
   },
   readStatusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginLeft: 4,
-    justifyContent: 'flex-end', // Căn lề bên phải
+    justifyContent: "flex-end", // Căn lề bên phải
   },
   readStatusInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   readAvatarContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginLeft: 2,
-    alignItems: 'center',
+    alignItems: "center",
   },
   readAvatar: {
     width: 14,
     height: 14,
     borderRadius: 7,
     borderWidth: 1,
-    borderColor: '#fff',
+    borderColor: "#fff",
   },
   readAvatarSingle: {
-    width: 14, 
-    height: 14, 
+    width: 14,
+    height: 14,
     borderRadius: 7,
     borderWidth: 1,
-    borderColor: '#fff',
-    marginLeft: 2
+    borderColor: "#fff",
+    marginLeft: 2,
   },
   readCounter: {
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    backgroundColor: "rgba(0,0,0,0.1)",
     borderRadius: 10,
     paddingHorizontal: 4,
     marginLeft: 2,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   readCounterText: {
     fontSize: 9,
-    color: '#555',
+    color: "#555",
   },
 
   loadingIndicator: {
@@ -2690,27 +2791,27 @@ const styles = StyleSheet.create({
 
   loadingHeader: {
     paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   noMoreMessagesText: {
-    color: '#888',
+    color: "#888",
     fontSize: 13,
-    fontStyle: 'italic',
+    fontStyle: "italic",
     padding: 10,
   },
 
   scrollToBottomButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 20,
     bottom: 80, // Đặt phía trên input box
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#007bff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    backgroundColor: "#007bff",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
@@ -2719,11 +2820,18 @@ const styles = StyleSheet.create({
   },
 
   scrollButtonInner: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  videoPlayer: {
+    width: 250,
+    height: 200,
+    borderRadius: 10,
+    backgroundColor: "black",
   },
 });
 
