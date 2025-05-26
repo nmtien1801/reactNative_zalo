@@ -1181,12 +1181,12 @@ const InboxScreen = ({ route }) => {
       // Lắng nghe sự kiện USER_TYPING
       socketRef.current.on("USER_TYPING", (data) => {
         console.log("Received USER_TYPING in mobile:", data);
-        console.log("Mobile current room:", receiver._id);
+        console.log("Mobile current room:", roomData.receiver._id);
 
         const { userId, username, conversationId } = data;
 
         // Kiểm tra xem sự kiện typing có thuộc conversation hiện tại không
-        if (userId === receiver._id) {
+        if (userId === roomData.receiver._id) {
           console.log(`${username} is typing...`);
           setTypingUsers((prev) => ({
             ...prev,
@@ -1200,7 +1200,7 @@ const InboxScreen = ({ route }) => {
         const { userId, conversationId } = data;
 
         // Chỉ xử lý nếu đúng conversation hiện tại
-        if (userId === receiver._id) {
+        if (userId === roomData.receiver._id) {
           console.log(`User ${userId} stopped typing`);
           setTypingUsers((prev) => {
             const newState = { ...prev };
@@ -1212,6 +1212,9 @@ const InboxScreen = ({ route }) => {
 
       // Cleanup
       return () => {
+        socketRef.current.off("USER_TYPING");
+        socketRef.current.off("USER_STOP_TYPING");
+
         // Dừng typing khi rời khỏi màn hình
         if (socketRef.current) {
           socketRef.current.emit("STOP_TYPING", {
@@ -1258,6 +1261,12 @@ const InboxScreen = ({ route }) => {
           )
         );
       });
+
+      // Cleanup function
+      return () => {
+        socketRef.current.off("MESSAGE_READ");
+        socketRef.current.off("ALL_MESSAGES_READ");
+      };
     }
   }, [socketRef, user, roomData]);
 
