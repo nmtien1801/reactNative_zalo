@@ -34,6 +34,7 @@ import {
   markMessageAsReadService,
   markAllMessagesAsReadService,
 } from "../../service/chatService";
+import EmojiPopup from "../../component/EmojiPopup.js";
 
 const InboxScreen = ({ route }) => {
   const [receiver, setReceiver] = useState(route.params?.item || null); // click conversation
@@ -60,8 +61,6 @@ const InboxScreen = ({ route }) => {
   });
   const [allMsg, setAllMsg] = useState([]);
   const [role, setRole] = useState(null); // Lưu vai trò của người dùng trong nhóm
-  const [showPicker, setShowPicker] = useState(false);
-  const ICONS = ["smile", "heart", "thumbs-up", "laugh", "sad-tear"];
 
   // ImageViewer
   const [previewImages, setPreviewImages] = useState([]);
@@ -93,26 +92,6 @@ const InboxScreen = ({ route }) => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [hasNewMessages, setHasNewMessages] = useState(false);
 
-  // Ánh xạ Emoji - Text
-  const emojiToTextMap = {
-    heart: "Love",
-    "thumbs-up": "Like",
-    laugh: "Haha",
-    "sad-cry": "Sad",
-    angry: "Angry",
-    like: "Like",
-  };
-
-  // Ánh xạ Text - Icon (sử dụng FontAwesome5)
-  const textToEmojiMap = {
-    Like: "👍",
-    Love: "❤️",
-    Haha: "😂",
-    Sad: "😢",
-    Angry: "😡",
-    Wow: "😮",
-  };
-
   // share mess
   const [shareModalVisible, setShareModalVisible] = useState(false); // Trạng thái cho modal chia sẻ
   const [selectedConversations, setSelectedConversations] = useState([]); // Lưu các conversation được chọn
@@ -128,40 +107,51 @@ const InboxScreen = ({ route }) => {
     );
   };
 
-  const IconPicker = ({ visible, onClose, onPick }) => (
-    <Modal visible={visible} transparent animationType="fade">
-      <TouchableOpacity
-        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.3)" }}
-        onPress={onClose}
-        activeOpacity={1}
-      >
-        <View
-          style={{
-            backgroundColor: "#fff",
-            padding: 10,
-            margin: 50,
-            borderRadius: 10,
-            flexDirection: "row",
-            flexWrap: "wrap",
-            justifyContent: "center",
-          }}
-        >
-          {ICONS.map((icon, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => {
-                onPick(icon);
-                onClose();
-              }}
-              style={{ margin: 10 }}
-            >
-              <FontAwesome5 name={icon} size={24} color="black" />
-            </TouchableOpacity>
-          ))}
-        </View>
-      </TouchableOpacity>
-    </Modal>
-  );
+  // Emoji Popup
+  const [showEmojiPopup, setShowEmojiPopup] = useState(false);
+  const [emojiButtonPosition, setEmojiButtonPosition] = useState({
+    top: 0,
+    left: 0,
+    right: 0,
+  });
+  const emojiButtonRef = useRef(null);
+
+  // Nhấn Popup Emoji
+  const handleShowEmojiPopup = () => {
+    if (emojiButtonRef.current) {
+      emojiButtonRef.current.measure((x, y, width, height, pageX, pageY) => {
+        const { width: screenWidth, height: screenHeight } =
+          Dimensions.get("window");
+        const popupWidth = 320; // Chiều rộng của EmojiPopup
+        const popupHeight = 350; // Chiều cao của EmojiPopup
+
+        // Tính toán vị trí để đảm bảo popup không bị tràn ra ngoài
+        let left = pageX;
+        let top = pageY - popupHeight - 10; // Hiển thị phía trên nút emoji
+
+        if (left + popupWidth > screenWidth) {
+          left = screenWidth - popupWidth - 10; // Giữ trong màn hình
+        }
+        if (top < 0) {
+          top = pageY + height + 10; // Hiển thị phía dưới nếu không đủ chỗ
+        }
+
+        setEmojiButtonPosition({
+          top,
+          left,
+          right: left + popupWidth,
+          containerLeft: 0,
+          containerRight: screenWidth,
+          containerWidth: screenWidth,
+        });
+        setShowEmojiPopup(true);
+      });
+    }
+  };
+
+  const handleEmojiSelect = (emoji) => {
+    setInput((prev) => prev + emoji);
+  };
 
   // Hàm xử lý khi người dùng nhấp vào tin nhắn
   const handleMessageClick = (messageId) => {
@@ -1676,28 +1666,6 @@ const InboxScreen = ({ route }) => {
                     </TouchableOpacity>
                   </View>
 
-                  {/* Hiển thị reactions khi có */}
-                  {reactions[item._id] && reactions[item._id].length > 0 && (
-                    <View style={styles.reactionSummary}>
-                      {Object.entries(
-                        reactions[item._id].reduce((acc, reaction) => {
-                          if (!acc[reaction.emoji]) {
-                            acc[reaction.emoji] = 0;
-                          }
-                          acc[reaction.emoji] += 1;
-                          return acc;
-                        }, {})
-                      ).map(([emoji, count], index) => (
-                        <View key={index} style={styles.reactionItem}>
-                          <Text style={styles.reactionEmoji}>
-                            {textToEmojiMap[emoji] || emoji}
-                          </Text>
-                          <Text style={styles.reactionCount}>{count}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-
                   <View style={styles.messageTimeContainer}>
                     {/* Hiển thị thời gian */}
                     <Text
@@ -1891,7 +1859,8 @@ const InboxScreen = ({ route }) => {
           <>
             <TouchableOpacity
               style={{ flexDirection: "row", alignItems: "center" }}
-              onPress={() => setShowPicker(true)}
+              onPress={handleShowEmojiPopup}
+              ref={emojiButtonRef}
             >
               <FontAwesome5 name="sticky-note" size={24} color="black" />
               <FontAwesome5
@@ -1958,10 +1927,11 @@ const InboxScreen = ({ route }) => {
         )}
       </View>
 
-      <IconPicker
-        visible={showPicker}
-        onClose={() => setShowPicker(false)}
-        onPick={(iconName) => handleSelectIcon(iconName)}
+      <EmojiPopup
+        isOpen={showEmojiPopup}
+        position={emojiButtonPosition}
+        onClose={() => setShowEmojiPopup(false)}
+        onSelect={handleEmojiSelect}
       />
 
       {/* Popup Reaction */}
