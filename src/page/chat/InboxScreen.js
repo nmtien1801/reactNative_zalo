@@ -1587,7 +1587,6 @@ const InboxScreen = ({ route }) => {
               </Text>
             </View>
           )}
-
           <Animated.View
             style={[
               styles.message,
@@ -1673,7 +1672,6 @@ const InboxScreen = ({ route }) => {
               )}
 
               <View style={styles.messageTimeContainer}>
-
                 {/* Hiển thị thời gian */}
                 <Text style={[
                   styles.messageTime,
@@ -1681,7 +1679,6 @@ const InboxScreen = ({ route }) => {
                 ]}>
                   {convertTime(item.createdAt)}
                 </Text>
-
                 {item.sender._id === user._id && (
                   <View style={styles.readStatusContainer}>
                     {index === allMsg.length - 1 || selectedReadStatus === item._id ? (
@@ -1690,8 +1687,8 @@ const InboxScreen = ({ route }) => {
                           // Chat nhóm
                           item.readBy && item.readBy.length > 0 ? (
                             <View style={styles.readStatusInner}>
-                              {/* Hiển thị avatar người đọc */}
                               {(() => {
+                                {/* Hiển thị avatar người đọc */}
                                 // Xử lý dữ liệu readBy
                                 const { readers, count } = processReadByData(item.readBy, user._id, conversations);
                                 
@@ -1703,14 +1700,13 @@ const InboxScreen = ({ route }) => {
                                           {readers.map((reader, index) => (
                                             <Image 
                                               key={index}
-                                              source={{uri: reader.avatar || "https://i.imgur.com/l5HXBdTg.jpg"}}
+                                              source={{ uri: reader.avatar || "https://i.imgur.com/l5HXBdTg.jpg" }}
                                               style={[
                                                 styles.readAvatar,
-                                                {marginLeft: index > 0 ? -5 : 0}
+                                                { marginLeft: index > 0 ? -5 : 0 }
                                               ]}
                                             />
                                           ))}
-                                          
                                           {count > 3 && (
                                             <View style={styles.readCounter}>
                                               <Text style={styles.readCounterText}>+{count - 3}</Text>
@@ -1719,14 +1715,18 @@ const InboxScreen = ({ route }) => {
                                         </View>
                                       </>
                                     ) : (
-                                      <FontAwesome5 name="check" size={12} color="#666" />
+                                      <Text>
+                                        <FontAwesome5 name="check" size={12} color="#666" />
+                                      </Text>
                                     )}
                                   </>
                                 );
                               })()}
                             </View>
                           ) : (
-                            <FontAwesome5 name="check" size={12} color="#666" />
+                            <Text>
+                              <FontAwesome5 name="check" size={12} color="#666" />
+                            </Text>
                           )
                         ) : (
                           // Chat 1-1
@@ -1734,22 +1734,22 @@ const InboxScreen = ({ route }) => {
                             extractId(readerId) === extractId(receiver._id)
                           ) ? (
                             <View style={styles.readStatusInner}>
-                              <Image 
-                                source={{uri: receiver.avatar || "https://i.imgur.com/l5HXBdTg.jpg"}}
+                              <Image
+                                source={{ uri: receiver.avatar || "https://i.imgur.com/l5HXBdTg.jpg" }}
                                 style={styles.readAvatarSingle}
                               />
                             </View>
                           ) : (
-                            <FontAwesome5 name="check" size={12} color="#666" />
+                            <Text>
+                              <FontAwesome5 name="check" size={12} color="#666" />
+                            </Text>
                           )
                         )}
                       </>
-                    ) : null}  {/* Không hiển thị gì nếu không phải tin nhắn mới nhất và không được chọn */}
+                    ) : null}
                   </View>
                 )}
-
               </View>
-
             </View>
           </Animated.View>
           </View>
