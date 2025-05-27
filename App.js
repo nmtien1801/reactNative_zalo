@@ -153,7 +153,7 @@ const Project = () => {
 
   const IPv4 =
     Platform.OS === "android" || Platform.OS === "ios"
-      ? "192.168.1.3" // URL cho Android và iOS
+      ? "172.28.32.218" // URL cho Android và iOS
       : "localhost"; // URL cho web hoặc môi trường khác
 
   useEffect(() => {

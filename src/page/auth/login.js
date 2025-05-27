@@ -77,7 +77,7 @@ export default function LoginForm() {
         </View>
 
         {/* Captcha Input */}
-        <View style={styles.inputContainer}>
+        {/* <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
             placeholder="Mã kiểm tra"
@@ -90,7 +90,7 @@ export default function LoginForm() {
           >
             <RefreshCw size={20} color="#555" />
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         {/* Submit Button */}
         <TouchableOpacity
